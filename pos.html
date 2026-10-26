@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos Hotel - POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #receipt-area, #receipt-area * { visibility: visible; }
+      #receipt-area { position: absolute; left: 0; top: 0; width: 80mm; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 font-sans">
+
+  <div id="pos-screen" class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+    
+    <!-- Left: Menu Items -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      
+      <!-- Department Selector -->
+      <div class="mb-5">
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Select Your Station</label>
+        <select id="department" onchange="loadPOS()" class="w-full p-3 bg-blue-50 text-blue-900 font-bold border border-blue-200 rounded-xl outline-none">
+          <option value="Bar">🍻 Bar</option>
+          <option value="Kitchen">🍳 Kitchen</option>
+          <option value="Minimart">🛒 Minimart</option>
+        </select>
+      </div>
+
+      <h2 id="menu-title" class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="wine"></i> Bar Menu</h2>
+      <div id="menu-grid" class="grid grid-cols-2 gap-3">
+        <!-- Items load here -->
+      </div>
+    </div>
+
+    <!-- Right: Cart / Checkout -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[80vh]">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="shopping-cart"></i> Current Order</h2>
+      
+      <div id="cart-items" class="flex-1 overflow-y-auto space-y-2">
+        <p class="text-gray-400 text-sm text-center mt-10">No items added yet.</p>
+      </div>
+
+      <div class="border-t pt-4 mt-4">
+        <div class="flex justify-between items-center mb-4">
+          <span class="font-bold text-gray-600">Total:</span>
+          <span id="cart-total" class="text-2xl font-bold text-blue-600">₦0</span>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <button onclick="setPayment('Cash')" class="pay-btn bg-blue-100 border-blue-500 text-blue-700 py-2 rounded-lg text-sm font-medium border">Cash</button>
+          <button onclick="setPayment('POS')" class="pay-btn bg-gray-100 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">POS</button>
+          <button onclick="setPayment('Charge_to_Room')" class="pay-btn bg-gray-100 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">To Room</button>
+        </div>
+
+        <div id="room-input-div" class="hidden mb-3">
+          <input id="room-number" type="text" placeholder="Enter Room No. (e.g. 104)" class="w-full px-3 py-2 border rounded-lg">
+        </div>
+
+        <button onclick="checkout()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-[0.98]">Complete & Print</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt View (Hidden on screen, shows on print) -->
+<div id="receipt-area" class="hidden text-black font-mono text-xs p-2">
+  <div class="text-center mb-4">
+    <h1 class="font-bold text-lg uppercase">Vicnos Hotel & Apartment</h1>
+    <p class="text-[10px] leading-tight">No 1, Vicnos Lane, Off Mouka Foam Road,</p>
+    <p class="text-[10px] leading-tight">Upper Mission Extension, Benin City, Edo State.</p>
+    <p class="text-[10px] leading-tight mt-1">Tel: 09020337604, 08135081794</p>
+    <p class="mt-2 text-sm font-bold uppercase" id="r-dept"></p>
+    <p id="r-date" class="text-xs mt-1"></p>
+  </div>
+  <div class="border-t border-dashed border-black my-2"></div>
+  <div id="r-items" class="mb-4"></div>
+  <div class="border-t border-dashed border-black pt-2">
+    <p class="flex justify-between font-bold text-base"><span>TOTAL</span> <span id="r-total"></span></p>
+    <p class="flex justify-between"><span>Payment</span> <span id="r-payment"></span></p>
+    <p class="flex justify-between"><span>Room</span> <span id="r-room"></span></p>
+  </div>
+  <p class="text-center mt-6 text-xs">Thank you for staying with us!</p>
+  <p class="text-center text-[10px] mt-1">Powered by Daniel Tochukwu</p>
+</div>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let inventory = [];
+    let cart = [];
+    let currentPaymentMethod = 'Cash';
+    let currentDepartment = 'Bar';
+
+    async function loadPOS() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+
+      currentDepartment = document.getElementById('department').value;
+      document.getElementById('menu-title').innerText = currentDepartment + ' Menu';
+      document.getElementById('menu-title').className = "font-bold text-gray-800 mb-4 flex items-center gap-2";
+
+      // Fetch items ONLY for the selected department
+      const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).gt('stock_quantity', 0);
+      inventory = items || [];
+
+      const grid = document.getElementById('menu-grid');
+      grid.innerHTML = '';
+      
+      if (inventory.length === 0) {
+        grid.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-4">No items in this department yet.</p>';
+      }
+
+      inventory.forEach(item => {
+        grid.innerHTML += `
+          <button onclick="addToCart('${item.id}')" class="bg-gray-50 text-gray-800 p-3 rounded-xl flex flex-col items-center justify-center border border-gray-200 hover:bg-blue-50 transition">
+            <span class="font-bold text-sm">${item.item_name}</span>
+            <span class="text-xs mt-1 text-blue-600 font-bold">₦${item.price}</span>
+          </button>
+        `;
+      });
+
+      // Clear cart when switching departments
+      cart = [];
+      renderCart();
+    }
+
+    function addToCart(id) {
+      const item = inventory.find(i => i.id === id);
+      const existing = cart.find(c => c.id === id);
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({ ...item, qty: 1 });
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      const cartDiv = document.getElementById('cart-items');
+      let total = 0;
+      cartDiv.innerHTML = '';
+      
+      if (cart.length === 0) {
+        cartDiv.innerHTML = '<p class="text-gray-400 text-sm text-center mt-10">No items added yet.</p>';
+      }
+
+      cart.forEach((c, index) => {
+        total += c.price * c.qty;
+        cartDiv.innerHTML += `
+          <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
+            <div>
+              <p class="font-bold text-sm text-gray-800">${c.item_name}</p>
+              <p class="text-xs text-gray-500">${c.qty} x ₦${c.price}</p>
+            </div>
+            <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+      document.getElementById('cart-total').innerText = '₦' + total.toLocaleString();
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      renderCart();
+    }
+
+    function setPayment(method) {
+      currentPaymentMethod = method;
+      document.querySelectorAll('.pay-btn').forEach(b => {
+        b.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
+        b.classList.add('bg-gray-100', 'border-gray-300');
+      });
+      event.target.classList.remove('bg-gray-100', 'border-gray-300');
+      event.target.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
+      
+      if (method === 'Charge_to_Room') {
+        document.getElementById('room-input-div').classList.remove('hidden');
+      } else {
+        document.getElementById('room-input-div').classList.add('hidden');
+      }
+    }
+
+    async function checkout() {
+      if (cart.length === 0) return alert('Cart is empty!');
+      
+      const roomNo = document.getElementById('room-number').value;
+      if (currentPaymentMethod === 'Charge_to_Room' && !roomNo) {
+        return alert('Please enter a room number!');
+      }
+
+      let total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+      // 1. Save Order (with department tag!)
+      await db.from('pos_orders').insert({
+        room_number: currentPaymentMethod === 'Charge_to_Room' ? roomNo : null,
+        total_amount: total,
+        payment_method: currentPaymentMethod,
+        department: currentDepartment,
+        created_by: currentUser.id
+      });
+
+      // 2. Deduct Stock
+      for (const item of cart) {
+        await db.from('inventory').update({ 
+          stock_quantity: item.stock_quantity - item.qty 
+        }).eq('id', item.id);
+      }
+
+      // 3. Populate Receipt
+      document.getElementById('r-date').innerText = new Date().toLocaleString();
+      document.getElementById('r-dept').innerText = currentDepartment;
+      document.getElementById('r-total').innerText = '₦' + total.toLocaleString();
+      document.getElementById('r-payment').innerText = currentPaymentMethod;
+      document.getElementById('r-room').innerText = currentPaymentMethod === 'Charge_to_Room' ? roomNo : 'N/A';
+      
+      const rItems = document.getElementById('r-items');
+      rItems.innerHTML = '';
+      cart.forEach(c => {
+        rItems.innerHTML += `<p>${c.qty}x ${c.item_name} <span class="float-right">₦${(c.price * c.qty).toLocaleString()}</span></p>`;
+      });
+
+      // 4. Show Receipt & Print
+      const receipt = document.getElementById('receipt-area');
+      receipt.classList.remove('hidden');
+      
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          receipt.classList.add('hidden');
+          cart = [];
+          renderCart();
+          document.getElementById('room-number').value = '';
+          loadPOS(); // Refresh inventory count
+        }, 500);
+      }, 100);
+    }
+
+    loadPOS();
+  </script>
+</body>
+</html>

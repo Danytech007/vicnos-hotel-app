@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script> 
+</head>
+<body class="bg-gray-50 min-h-screen pb-24 font-sans">
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-50 p-2 rounded-xl text-blue-600"><i data-lucide="hotel" class="w-6 h-6"></i></div>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Vicnos Hotel</h1>
+        <p id="user-role-display" class="text-xs text-gray-500 uppercase tracking-widest font-bold">Loading Role...</p>
+      </div>
+    </div>
+    <button onclick="logout()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-gray-200"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-5">
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+      <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">User Profile</p>
+        <h2 id="admin-name" class="text-xl font-bold text-gray-800">Loading... 👋</h2>
+        <p class="text-sm text-gray-500">Welcome back.</p>
+      </div>
+      <span id="role-badge" class="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border">ROLE</span>
+    </div>
+
+    <!-- Stats Grid (Only visible to Managers/Admins/Receptionists) -->
+    <div id="stats-section">
+      <h3 class="font-bold text-gray-800 mb-3">Hotel Overview</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
+          <div class="bg-blue-50 p-3 rounded-xl text-blue-600"><i data-lucide="bed-double" class="w-6 h-6"></i></div>
+          <div><p class="text-xs text-gray-500">Available Rooms</p><p id="stat-available" class="text-xl font-bold text-blue-600">0</p></div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
+          <div class="bg-teal-50 p-3 rounded-xl text-teal-600"><i data-lucide="users" class="w-6 h-6"></i></div>
+          <div><p class="text-xs text-gray-500">Guests Inside</p><p id="stat-guests" class="text-xl font-bold text-teal-600">0</p></div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
+          <div class="bg-orange-50 p-3 rounded-xl text-orange-600"><i data-lucide="sparkles" class="w-6 h-6"></i></div>
+          <div><p class="text-xs text-gray-500">Dirty Rooms</p><p id="stat-dirty" class="text-xl font-bold text-orange-600">0</p></div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
+          <div class="bg-red-50 p-3 rounded-xl text-red-600"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
+          <div><p class="text-xs text-gray-500">Maintenance</p><p id="stat-maint" class="text-xl font-bold text-red-600">0</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-gray-800 mb-3">Core Operations</h3>
+      <div id="operations-grid" class="grid grid-cols-3 gap-2">
+        <!-- Buttons will be injected here by JavaScript based on Role -->
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function loadDashboard() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+
+      const { data: profile } = await db.from('profiles').select('full_name, role').eq('id', user.id).single();
+      
+      if (profile) {
+        document.getElementById('admin-name').textContent = profile.full_name + ' 👋';
+        document.getElementById('user-role-display').textContent = profile.role + ' Portal';
+        
+        // Style the role badge
+        const badge = document.getElementById('role-badge');
+        badge.textContent = profile.role.toUpperCase();
+        if(profile.role === 'admin' || profile.role === 'manager') badge.className = 'bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full border border-purple-200';
+        else badge.className = 'bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200';
+
+        renderOperations(profile.role);
+        loadStats(profile.role);
+      }
+    }
+
+    function renderOperations(role) {
+      const grid = document.getElementById('operations-grid');
+      let buttons = '';
+
+      // Helper to create buttons
+      const btn = (href, icon, color, label) => `
+        <a href="${href}" class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+          <i data-lucide="${icon}" class="w-6 h-6 ${color}"></i>
+          <span class="text-[10px] font-medium text-gray-700 text-center">${label}</span>
+        </a>
+      `;
+
+      // ADMIN & MANAGER: See Everything
+      if (role === 'admin' || role === 'manager') {
+        buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
+        buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
+        buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+        buttons += btn('manager-settings.html', 'settings', 'text-purple-600', 'Manage Rooms');
+        buttons += btn('staff.html', 'users', 'text-teal-600', 'Staff');
+        buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
+        buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
+      } 
+      // RECEPTIONIST: Check In, Check Out, POS, Rooms
+      else if (role === 'receptionist') {
+        buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
+        buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
+        buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+        buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
+      }
+      // BARMAN / WAITRESS / CHEF: POS only
+      else if (role === 'barman' || role === 'waitress' || role === 'chef') {
+        buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+      }
+      // HOUSEKEEPING: Rooms only (to see what needs cleaning)
+      else if (role === 'housekeeping') {
+        buttons += btn('rooms.html', 'sparkles', 'text-orange-600', 'Room Status');
+      }
+      // STORE KEEPER: Store only
+      else if (role === 'store_keeper') {
+        buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
+      }
+      // Fallback (anyone else just sees POS and Rooms)
+      else {
+        buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+        buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
+      }
+
+      grid.innerHTML = buttons;
+      lucide.createIcons();
+    }
+
+    async function loadStats(role) {
+      // Only load stats for people who need to see them
+      if (role === 'barman' || role === 'waitress' || role === 'housekeeper' || role === 'store_keeper') {
+        document.getElementById('stats-section').style.display = 'none';
+        return;
+      }
+
+      const [roomsData, guestsData] = await Promise.all([
+        db.from('rooms').select('status'),
+        db.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'Checked In')
+      ]);
+      if (roomsData.data) {
+        document.getElementById('stat-available').textContent = roomsData.data.filter(r => r.status === 'Available').length;
+        document.getElementById('stat-dirty').textContent = roomsData.data.filter(r => r.status === 'Dirty').length;
+        document.getElementById('stat-maint').textContent = roomsData.data.filter(r => r.status === 'Maintenance').length;
+      }
+      if (guestsData.count !== null) document.getElementById('stat-guests').textContent = guestsData.count;
+    }
+
+    async function logout() { await db.auth.signOut(); window.location.href = 'index.html'; }
+    loadDashboard();
+  </script>
+</body>
+</html>

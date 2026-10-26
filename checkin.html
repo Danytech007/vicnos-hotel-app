@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos Hotel - Check In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 font-sans flex flex-col items-center py-10">
+
+  <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 w-full max-w-2xl">
+    
+    <!-- Header -->
+    <div class="text-center mb-6 border-b pb-4">
+      <div class="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="key" class="w-8 h-8 text-blue-600"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-800">Guest Check-In Form</h1>
+      <p class="text-gray-500 text-sm">Room <span id="display-room" class="font-bold text-blue-600 text-lg"></span></p>
+    </div>
+
+    <form id="checkin-form" class="space-y-6">
+      
+      <!-- Room Selection (Only shows if opened from Dashboard) -->
+      <div id="room-select-container" class="hidden bg-blue-50 p-4 rounded-xl border border-blue-200">
+        <label class="block text-sm font-bold text-blue-800 mb-1">Select Available Room</label>
+        <select id="room-select" class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl outline-none font-semibold">
+          <option value="">-- Choose an Available Room --</option>
+        </select>
+      </div>
+
+      <!-- SECTION 1: GUEST INFORMATION -->
+      <div>
+        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Guest Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name *</label>
+            <input id="guest-name" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Date of Birth</label>
+            <input id="guest-dob" type="date" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none text-gray-600">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Sex</label>
+            <select id="guest-sex" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none text-gray-600">
+              <option value="">Select...</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Nationality</label>
+            <input id="guest-nationality" type="text" placeholder="e.g. Nigerian" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">City / State</label>
+            <input id="guest-city" type="text" placeholder="e.g. Benin City" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Home Address</label>
+            <input id="guest-address" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Phone Number *</label>
+            <input id="guest-phone" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Occupation</label>
+            <input id="guest-occupation" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Means of Identity (ID Type & Number)</label>
+            <input id="guest-id" type="text" placeholder="e.g. NIN, Driver's License, Passport" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: ADDITIONAL GUEST -->
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Additional Guest (If Applicable)</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name</label>
+            <input id="add-name" type="text" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Relation to Primary Guest</label>
+            <input id="add-relation" type="text" placeholder="e.g. Spouse, Child" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Age & Sex</label>
+            <input id="add-age-sex" type="text" placeholder="e.g. 30, Female" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: STAY DETAILS & PAYMENT -->
+      <div>
+        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Stay Details & Payment</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Expected Checkout Date *</label>
+            <input id="checkout-date" type="date" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Room Rate (₦)</label>
+            <input id="room-rate" type="number" readonly class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Payment Method</label>
+            <select id="payment-method" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+              <option value="POS">POS</option>
+              <option value="Card">Card</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: RULES -->
+      <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input id="agree-rules" type="checkbox" required class="mt-1 w-5 h-5 text-blue-600 rounded">
+          <span class="text-xs text-red-800 leading-tight">
+            <strong>I agree to the Hotel Rules & Regulations.</strong> Check-in is 2pm, check-out is 11:55am. Failure to check out at the appointed time attracts 50% of the room rate. No smoking, no pets, no cult activities, no parties. Quiet time is 11pm - 6am. Breaking items will amount to fines.
+          </span>
+        </label>
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all mt-2">
+        Complete Check-In & Assign Key
+      </button>
+    </form>
+    <p id="message" class="mt-4 text-center text-sm font-medium"></p>
+    <button onclick="window.location.href='rooms.html'" class="w-full mt-3 bg-gray-100 text-gray-600 py-3 rounded-xl font-semibold">Cancel</button>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let selectedRoomId = urlParams.get('id');
+    let selectedRoomNum = urlParams.get('room');
+
+    async function initPage() {
+      if (selectedRoomId) {
+        document.getElementById('display-room').textContent = selectedRoomNum;
+        document.getElementById('room-rate').value = urlParams.get('price');
+      } else {
+        document.getElementById('display-room').textContent = "Select Below";
+        document.getElementById('room-select-container').classList.remove('hidden');
+        
+        const { data: availRooms } = await db.from('rooms').select('*').eq('status', 'Available').order('room_number');
+        const select = document.getElementById('room-select');
+        
+        if(!availRooms || availRooms.length === 0) {
+            select.innerHTML = '<option value="">No rooms available</option>';
+        } else {
+            availRooms.forEach(r => {
+                select.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} - ₦${r.price_per_night.toLocaleString()}</option>`;
+            });
+        }
+
+        select.addEventListener('change', (e) => {
+          const opt = e.target.options[e.target.selectedIndex];
+          if(opt.value) {
+              selectedRoomId = opt.value;
+              selectedRoomNum = opt.dataset.num;
+              document.getElementById('room-rate').value = opt.dataset.price;
+              document.getElementById('display-room').textContent = selectedRoomNum;
+          } else {
+              selectedRoomId = null;
+              document.getElementById('room-rate').value = '';
+              document.getElementById('display-room').textContent = "Select Below";
+          }
+        });
+      }
+    }
+
+    document.getElementById('checkin-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedRoomId) return alert("Please select a room first.");
+
+      const msg = document.getElementById('message');
+      msg.textContent = 'Processing...';
+
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+
+      // 1. Create the Guest with all the new fields
+      const { data: guest, error: guestErr } = await db.from('guests').insert({
+        full_name: document.getElementById('guest-name').value,
+        phone: document.getElementById('guest-phone').value,
+        dob: document.getElementById('guest-dob').value || null,
+        sex: document.getElementById('guest-sex').value,
+        nationality: document.getElementById('guest-nationality').value,
+        city: document.getElementById('guest-city').value,
+        address: document.getElementById('guest-address').value,
+        occupation: document.getElementById('guest-occupation').value,
+        id_type: document.getElementById('guest-id').value
+      }).select().single();
+
+      if (guestErr) { msg.textContent = guestErr.message; return; }
+
+      // 2. Create the Booking
+      const { error: bookErr } = await db.from('bookings').insert({
+        room_id: selectedRoomId,
+        guest_id: guest.id,
+        expected_check_out: document.getElementById('checkout-date').value,
+        status: 'Checked In',
+        created_by: user.id,
+        payment_method: document.getElementById('payment-method').value,
+        additional_guest_name: document.getElementById('add-name').value,
+        additional_guest_relation: document.getElementById('add-relation').value,
+        agreed_to_rules: document.getElementById('agree-rules').checked
+      });
+
+      if (bookErr) { msg.textContent = bookErr.message; return; }
+
+      // 3. Update Room Status
+      await db.from('rooms').update({ status: 'Occupied' }).eq('id', selectedRoomId);
+
+      msg.innerHTML = '✅ Checked In! <br><br><span class="text-blue-600">Sending signal to Key Encoder...</span>';
+      
+      setTimeout(() => {
+        alert("Simulated: Key Card Written for Room " + selectedRoomNum);
+        window.location.href = 'rooms.html';
+      }, 2000);
+    });
+
+    initPage();
+  </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos Hotel - Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 min-h-screen pb-24 font-sans">
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </a>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Store & Inventory</h1>
+        <p class="text-xs text-gray-500">Store Keeper Dashboard</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-5">
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <i data-lucide="package-minus" class="w-5 h-5 text-orange-500"></i> Issue Stock
+      </h2>
+      <form id="issue-form" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Select Item</label>
+          <select id="issue-item" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition">
+            <option value="">-- Loading items... --</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Quantity</label>
+            <input id="issue-qty" type="number" required min="1" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Issue To</label>
+            <select id="issue-to" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition">
+              <option value="issue_to_bar">Barman / Waitress</option>
+              <option value="issue_to_housekeeping">Housekeeping / Porter</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold shadow-lg shadow-orange-500/30 active:scale-[0.98] transition-all mt-2">
+          Dispense Item
+        </button>
+      </form>
+      <p id="issue-msg" class="mt-3 text-center text-sm font-medium"></p>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <i data-lucide="boxes" class="w-5 h-5 text-blue-600"></i> Current Store Stock
+      </h2>
+      <div id="stock-list" class="space-y-3">
+        <p class="text-center text-gray-500 text-sm">Loading...</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let inventoryItems = [];
+
+    async function loadStore() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+
+      const { data: items } = await db.from('inventory').select('*').order('item_name');
+      inventoryItems = items || [];
+
+      const select = document.getElementById('issue-item');
+      select.innerHTML = '<option value="">-- Select an item --</option>';
+      inventoryItems.forEach(i => {
+        select.innerHTML += `<option value="${i.id}">${i.item_name} (${i.stock_quantity} left)</option>`;
+      });
+
+      const list = document.getElementById('stock-list');
+      list.innerHTML = '';
+      inventoryItems.forEach(i => {
+        const color = i.stock_quantity < 10 ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50';
+        list.innerHTML += `
+          <div class="flex justify-between items-center p-3 border border-gray-100 rounded-xl">
+            <div>
+              <p class="font-bold text-gray-800 text-sm">${i.item_name}</p>
+              <p class="text-xs text-gray-500">${i.category}</p>
+            </div>
+            <span class="text-sm font-bold px-3 py-1 rounded-lg ${color}">${i.stock_quantity} left</span>
+          </div>
+        `;
+      });
+    }
+
+    document.getElementById('issue-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('issue-msg');
+      const itemId = document.getElementById('issue-item').value;
+      const qty = parseInt(document.getElementById('issue-qty').value);
+      const action = document.getElementById('issue-to').value;
+
+      const item = inventoryItems.find(i => i.id === itemId);
+      if (!item || qty > item.stock_quantity) {
+        msg.textContent = 'Error: Not enough stock!';
+        msg.className = 'mt-3 text-center text-sm text-red-600';
+        return;
+      }
+
+      msg.textContent = 'Processing...';
+
+      const { error: movErr } = await db.from('stock_movements').insert({
+        item_id: itemId,
+        action: action,
+        quantity: qty,
+        performed_by: currentUser.id,
+        notes: `Issued ${qty} units`
+      });
+
+      if (movErr) {
+        msg.textContent = 'Error: ' + movErr.message;
+        msg.className = 'mt-3 text-center text-sm text-red-600';
+        return;
+      }
+
+      await db.from('inventory').update({ 
+        stock_quantity: item.stock_quantity - qty 
+      }).eq('id', itemId);
+
+      msg.textContent = 'Stock issued successfully!';
+      msg.className = 'mt-3 text-center text-sm text-green-600';
+      document.getElementById('issue-form').reset();
+      loadStore();
+    });
+
+    loadStore();
+  </script>
+</body>
+</html>

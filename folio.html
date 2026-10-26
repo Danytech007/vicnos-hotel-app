@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos Hotel - Guest Folio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 font-sans flex items-center justify-center">
+
+  <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
+    
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <div>
+        <h1 class="text-xl font-bold text-gray-800">Room <span id="display-room"></span> Folio</h1>
+        <p id="guest-name" class="text-sm text-blue-600 font-semibold">Loading...</p>
+      </div>
+      <a href="rooms.html" class="bg-gray-100 p-2 rounded-full hover:bg-gray-200 transition"><i data-lucide="x" class="w-5 h-5"></i></a>
+    </div>
+
+    <!-- Charges List -->
+    <div class="mb-6 space-y-3 max-h-60 overflow-y-auto pr-2">
+      <!-- Room Charge (Auto) -->
+      <div class="flex justify-between items-center bg-blue-50 p-3 rounded-lg border border-blue-100">
+        <div>
+          <p class="font-bold text-sm text-blue-900">Room Accommodation</p>
+          <p class="text-xs text-blue-600" id="room-nights">1 Night</p>
+        </div>
+        <p class="font-bold text-blue-900" id="room-total">₦0</p>
+      </div>
+      
+      <!-- Extra Charges will appear here -->
+      <div id="extra-charges"></div>
+    </div>
+
+    <!-- Add Charge Form -->
+    <div class="bg-gray-50 p-4 rounded-xl mb-6">
+      <p class="text-xs font-bold text-gray-500 uppercase mb-2">Add Charge (Bar/Kitchen)</p>
+      <div class="flex gap-2">
+        <select id="charge-dept" class="bg-white border rounded-lg px-2 py-2 text-sm w-1/3 outline-none">
+          <option value="Bar">Bar</option>
+          <option value="Kitchen">Kitchen</option>
+        </select>
+        <input id="charge-desc" type="text" placeholder="Item (e.g. Coke)" class="bg-white border rounded-lg px-2 py-2 text-sm w-1/3 outline-none">
+        <input id="charge-amt" type="number" placeholder="₦" class="bg-white border rounded-lg px-2 py-2 text-sm w-1/3 outline-none">
+      </div>
+      <button onclick="addCharge()" class="w-full mt-2 bg-gray-800 text-white py-2 rounded-lg text-sm font-bold active:scale-95 transition">Add to Bill</button>
+    </div>
+
+    <!-- Total & Checkout -->
+    <div class="border-t pt-4">
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-lg font-bold text-gray-800">Total Due:</span>
+        <span class="text-2xl font-extrabold text-green-600" id="grand-total">₦0</span>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="applyDiscount()" class="bg-orange-100 text-orange-700 py-3 rounded-xl font-bold text-sm active:scale-95 transition">Apply Discount</button>
+        <button onclick="checkout()" class="bg-green-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition">Checkout & Pay</button>
+      </div>
+    </div>
+
+    <p id="message" class="mt-3 text-center text-sm font-bold"></p>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    // Get URL Params
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('room_id');
+    const roomNum = urlParams.get('room_num');
+    const roomPrice = parseInt(urlParams.get('price')) || 0;
+    
+    document.getElementById('display-room').textContent = roomNum || '';
+
+    let activeBookingId = null;
+    let currentTotal = 0;
+
+    async function loadFolio() {
+      if (!roomId) {
+        document.getElementById('guest-name').textContent = "No room selected.";
+        document.getElementById('message').textContent = "Please select a room from the Rooms page.";
+        return;
+      }
+
+      // 1. Find the active booking for this room
+      const { data: bookings, error } = await db.from('bookings')
+        .select('id, expected_check_out, guests(full_name)')
+        .eq('room_id', roomId)
+        .eq('status', 'Checked In')
+        .order('check_in_date', { ascending: false })
+        .limit(1);
+
+      if (error || !bookings || bookings.length === 0) {
+        console.error("Booking Error:", error);
+        document.getElementById('guest-name').textContent = "No active booking found.";
+        document.getElementById('message').textContent = "Error: Room is marked Occupied, but no 'Checked In' booking exists in the database.";
+        document.getElementById('message').className = "mt-3 text-center text-sm font-bold text-red-600";
+        return;
+      }
+
+      const booking = bookings[0];
+      activeBookingId = booking.id;
+      document.getElementById('guest-name').textContent = booking.guests.full_name;
+
+      // 2. Calculate Nights
+      const today = new Date();
+      const checkoutDate = new Date(booking.expected_check_out);
+      const diffTime = Math.abs(checkoutDate - today);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+      
+      document.getElementById('room-nights').textContent = `${diffDays} Night(s) @ ₦${roomPrice.toLocaleString()}`;
+      
+      const roomCost = diffDays * roomPrice;
+      document.getElementById('room-total').textContent = `₦${roomCost.toLocaleString()}`;
+
+      // 3. Load Extra Charges
+      const { data: charges } = await db.from('folio_charges')
+        .select('*')
+        .eq('booking_id', activeBookingId)
+        .order('created_at');
+
+      let extraTotal = 0;
+      const chargesHtml = (charges || []).map(c => {
+        extraTotal += c.amount;
+        return `
+          <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border">
+            <div>
+              <p class="font-bold text-sm text-gray-800">${c.description}</p>
+              <p class="text-xs text-gray-500">${c.department}</p>
+            </div>
+            <p class="font-bold text-gray-800">₦${c.amount.toLocaleString()}</p>
+          </div>
+        `;
+      }).join('');
+      
+      document.getElementById('extra-charges').innerHTML = chargesHtml;
+
+      // 4. Calculate Grand Total
+      currentTotal = roomCost + extraTotal;
+      document.getElementById('grand-total').textContent = `₦${currentTotal.toLocaleString()}`;
+    }
+
+    async function addCharge() {
+      if (!activeBookingId) return alert("Cannot add charge: No active booking found for this room.");
+      const dept = document.getElementById('charge-dept').value;
+      const desc = document.getElementById('charge-desc').value;
+      const amt = parseFloat(document.getElementById('charge-amt').value);
+      if (!desc || !amt) return alert("Enter item and amount");
+      
+      const { error } = await db.from('folio_charges').insert({ 
+        booking_id: activeBookingId, 
+        department: dept, 
+        description: desc, 
+        amount: amt 
+      });
+      
+      if (error) { 
+        alert("Error adding charge: " + error.message); 
+      } else {
+        document.getElementById('charge-desc').value = '';
+        document.getElementById('charge-amt').value = '';
+        loadFolio();
+      }
+    }
+
+    function applyDiscount() {
+      const pin = prompt("Enter Manager PIN to apply discount:");
+      if (pin === "1234") {
+        const discountPercent = prompt("Enter discount percentage (e.g., 10):");
+        if (discountPercent) {
+          const discountAmount = currentTotal * (parseFloat(discountPercent) / 100);
+          currentTotal = currentTotal - discountAmount;
+          document.getElementById('grand-total').textContent = `₦${currentTotal.toLocaleString()}`;
+          document.getElementById('message').textContent = `Discount Applied!`;
+          document.getElementById('message').className = "mt-3 text-center text-sm font-bold text-orange-600";
+        }
+      } else if (pin !== null) { 
+        alert("Invalid PIN!"); 
+      }
+    }
+
+    async function checkout() {
+      if (!activeBookingId) return alert("Cannot checkout: No active booking found.");
+      
+      const confirmCheckout = confirm(`Process Payment of ₦${currentTotal.toLocaleString()} and Check Out?`);
+      if (!confirmCheckout) return;
+
+      try {
+        // 1. Mark the booking as Checked Out
+        const { error: bookingError } = await db.from('bookings')
+          .update({ status: 'Checked Out' })
+          .eq('id', activeBookingId);
+
+        if (bookingError) throw bookingError;
+
+        // 2. Mark the room as Dirty (so housekeeping knows to clean it)
+        const { error: roomError } = await db.from('rooms')
+          .update({ status: 'Dirty' })
+          .eq('id', roomId);
+
+        if (roomError) throw roomError;
+
+        // 3. Show success and redirect
+        alert("✅ Checkout Successful! Room is now marked as Dirty.");
+        window.location.href = 'rooms.html';
+
+      } catch (error) {
+        alert("Checkout Error: " + error.message);
+      }
+    }
+
+    loadFolio();
+  </script>
+</body>
+</html>

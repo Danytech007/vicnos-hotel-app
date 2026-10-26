@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Rooms</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 min-h-screen pb-24 font-sans">
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div>
+        <h1 id="page-title" class="font-bold text-gray-800 text-lg leading-tight">Room Status</h1>
+        <p class="text-xs text-gray-500">Front Desk View</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-5">
+    <div class="flex justify-center gap-4 text-xs font-medium text-gray-600 mb-2">
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> Available</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Occupied</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Dirty</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-500"></span> Maint.</span>
+    </div>
+    <div id="rooms-grid" class="grid grid-cols-3 gap-3">
+      <p class="text-center text-gray-500 text-sm col-span-3">Loading rooms...</p>
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewMode = urlParams.get('view'); 
+    let userRole = 'receptionist'; // Default to lowest privilege
+
+    if (viewMode === 'checkout') {
+      document.getElementById('page-title').textContent = "Select Room to Check-Out";
+    }
+
+    async function loadUserAndRooms() {
+      // 1. Get the logged-in user's role
+      const { data: { user } } = await db.auth.getUser();
+      if (user) {
+        const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+        if (profile) userRole = profile.role;
+      }
+      // 2. Now load the rooms
+      loadRooms();
+    }
+
+    async function loadRooms() {
+      const grid = document.getElementById('rooms-grid');
+      const { data: rooms, error } = await db.from('rooms').select('*').order('room_number');
+      
+      if (error) { grid.innerHTML = `<p class="text-red-500 col-span-3 text-center">Error: ${error.message}</p>`; return; }
+      grid.innerHTML = '';
+      
+      let roomsToDisplay = rooms;
+      if (viewMode === 'checkout') {
+        roomsToDisplay = rooms.filter(r => r.status === 'Occupied');
+        if (roomsToDisplay.length === 0) {
+          grid.innerHTML = `<p class="text-center text-gray-500 col-span-3 py-10">No guests are currently checked in.</p>`;
+          return;
+        }
+      }
+
+      roomsToDisplay.forEach(room => {
+        let bgClass = 'bg-gray-100 border-gray-300 text-gray-800';
+        let iconColor = 'text-gray-500';
+        let iconName = 'door-closed';
+
+        if (room.status === 'Available') { bgClass = 'bg-green-50 border-green-200 text-green-800'; iconColor = 'text-green-600'; iconName = 'check-circle'; } 
+        else if (room.status === 'Occupied') { bgClass = 'bg-red-500 border-red-600 text-white shadow-md'; iconColor = 'text-white'; iconName = 'flame'; } 
+        else if (room.status === 'Dirty') { bgClass = 'bg-orange-50 border-orange-200 text-orange-800'; iconColor = 'text-orange-600'; iconName = 'sparkles'; } 
+        else if (room.status === 'Maintenance') { bgClass = 'bg-gray-200 border-gray-400 text-gray-800'; iconColor = 'text-gray-600'; iconName = 'wrench'; }
+
+        // ONLY show the gear icon if the user is a manager or admin
+        let gearIconHtml = '';
+        if (userRole === 'manager' || userRole === 'admin') {
+            gearIconHtml = `
+              <button onclick="changeStatusPrompt('${room.id}', '${room.room_number}', '${room.status}')" class="absolute top-1 right-1 p-1 opacity-50 hover:opacity-100">
+                  <i data-lucide="settings" class="w-4 h-4 ${iconColor}"></i>
+              </button>
+            `;
+        }
+
+        grid.innerHTML += `
+          <div class="relative border ${bgClass} rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm hover:scale-105 transition-transform">
+            ${gearIconHtml}
+            <div onclick="handleRoomClick('${room.id}', '${room.room_number}', '${room.status}', '${room.price_per_night}')" class="flex flex-col items-center justify-center w-full h-full cursor-pointer pt-2">
+              <i data-lucide="${iconName}" class="w-6 h-6 ${iconColor} mb-2"></i>
+              <p class="font-bold text-lg">${room.room_number}</p>
+              <p class="text-[10px] uppercase font-semibold opacity-80">${room.status}</p>
+            </div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function handleRoomClick(id, number, status, price) {
+      if (status === 'Available') {
+        window.location.href = `checkin.html?id=${id}&room=${number}&price=${price}`;
+      } else if (status === 'Occupied') {
+        window.location.href = `folio.html?room_id=${id}&room_num=${number}&price=${price}`;
+      } else {
+        alert(`Room ${number} is ${status}. Please contact the Manager to change status.`);
+      }
+    }
+
+    async function changeStatusPrompt(id, number, currentStatus) {
+      // Double check security before allowing
+      if (userRole !== 'manager' && userRole !== 'admin') {
+        return alert("Access Denied. Only Managers can change room status manually.");
+      }
+
+      const newStatus = prompt(`Change status for Room ${number} (Current: ${currentStatus}):\n\nType:\n1 - Available\n2 - Dirty\n3 - Maintenance\n4 - Occupied`);
+      let statusToSet = null;
+      if (newStatus === '1') statusToSet = 'Available';
+      if (newStatus === '2') statusToSet = 'Dirty';
+      if (newStatus === '3') statusToSet = 'Maintenance';
+      if (newStatus === '4') statusToSet = 'Occupied';
+
+      if (statusToSet) {
+        await db.from('rooms').update({ status: statusToSet }).eq('id', id);
+        loadRooms(); 
+      }
+    }
+    loadUserAndRooms();
+  </script>
+</body>
+</html>
