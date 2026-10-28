@@ -30,7 +30,7 @@
       <span id="role-badge" class="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border">ROLE</span>
     </div>
 
-    <!-- Stats Grid -->
+    <!-- Stats Grid (Only visible to MDs, Managers, Admins, Receptionists) -->
     <div id="stats-section">
       <h3 class="font-bold text-gray-800 mb-3">Hotel Overview</h3>
       <div class="grid grid-cols-2 gap-3">
@@ -101,8 +101,9 @@
       `;
 
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-600', 'Clock In/Out');
+      const maintBtn = btn('maintenance.html', 'wrench', 'text-red-600', 'Maintenance');
 
-      // MD, ADMIN & MANAGER: See Everything including Attendance Report
+      // MD, ADMIN & MANAGER: See Everything
       if (['md', 'admin', 'manager'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
@@ -111,35 +112,43 @@
         buttons += btn('staff.html', 'users', 'text-teal-600', 'Staff');
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
-        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance Report'); // NEW BUTTON
+        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance Report');
+        buttons += maintBtn;
         buttons += clockBtn;
       } 
-      // SUPERVISOR: Rooms + Attendance Report + Clock
+      // SUPERVISOR: Rooms, Attendance Report, Maintenance, Clock
       else if (role === 'supervisor') {
         buttons += btn('rooms.html', 'eye', 'text-purple-600', 'Inspect Rooms');
-        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance Report'); // NEW BUTTON
+        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance Report');
+        buttons += maintBtn;
         buttons += clockBtn;
       }
-      // OTHER ROLES (Receptionist, Housekeeping, etc.)
+      // RECEPTIONIST
       else if (role === 'receptionist') {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
+        buttons += maintBtn;
         buttons += clockBtn;
       }
+      // HOUSEKEEPING: Rooms, Maintenance, Clock
       else if (role === 'housekeeping') {
         buttons += btn('rooms.html', 'sparkles', 'text-orange-600', 'Clean Rooms');
+        buttons += maintBtn;
         buttons += clockBtn;
       }
+      // STORE KEEPER: Store, Clock
       else if (role === 'store_keeper') {
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
         buttons += clockBtn;
       }
+      // BARMAN, WAITRESS, CHEF: POS, Clock
       else if (['barman', 'waitress', 'chef'].includes(role)) {
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
         buttons += clockBtn;
       }
+      // Fallback
       else {
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');

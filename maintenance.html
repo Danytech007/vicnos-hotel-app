@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos Hotel - Maintenance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 min-h-screen pb-24 font-sans">
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Maintenance</h1>
+        <p class="text-xs text-gray-500">Report & Track Issues</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-5">
+    
+    <!-- Log New Issue -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="wrench" class="w-5 h-5 text-red-600"></i> Report a Problem</h2>
+      <form id="ticket-form" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Room / Location</label>
+          <select id="room-id" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500">
+            <option value="">-- Select Room or General Area --</option>
+            <!-- Rooms will populate here -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Describe the Issue</label>
+          <textarea id="issue-desc" required rows="2" placeholder="e.g. AC is leaking water" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Submit Ticket</button>
+      </form>
+      <p id="msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
+    </div>
+
+    <!-- Open Tickets List -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-orange-500"></i> Open Tickets</h2>
+      <div id="ticket-list" class="space-y-3">
+        <p class="text-center text-gray-400 text-sm">Loading tickets...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let userRole = 'receptionist';
+
+    async function init() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+      
+      const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+      if(profile) userRole = profile.role;
+
+      // Load Rooms for dropdown
+      const { data: rooms } = await db.from('rooms').select('id, room_number').order('room_number');
+      const select = document.getElementById('room-id');
+      rooms.forEach(r => {
+        select.innerHTML += `<option value="${r.id}">Room ${r.room_number}</option>`;
+      });
+      select.innerHTML += `<option value="general">General Area (Lobby, Pool, etc)</option>`;
+
+      loadTickets();
+    }
+
+    async function loadTickets() {
+      const list = document.getElementById('ticket-list');
+      // Fetch open tickets, joining with rooms and profiles to get room numbers and names
+      const { data: tickets, error } = await db.from('maintenance_tickets')
+        .select(`
+          id, issue_description, status, created_at,
+          rooms (room_number),
+          profiles (full_name)
+        `)
+        .neq('status', 'Resolved')
+        .order('created_at', { ascending: false });
+
+      if (error) { list.innerHTML = `<p class="text-red-500">Error loading tickets.</p>`; return; }
+
+      if (tickets.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 py-4">No open tickets. Everything is working! 🎉</p>';
+        return;
+      }
+
+      list.innerHTML = tickets.map(t => {
+        const location = t.rooms ? `Room ${t.rooms.room_number}` : 'General Area';
+        const timeReported = new Date(t.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // Only managers/admins can mark as resolved
+        let resolveBtn = '';
+        if (['admin', 'manager', 'md', 'supervisor'].includes(userRole)) {
+            resolveBtn = `<button onclick="resolveTicket('${t.id}')" class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold mt-2 w-full active:scale-95">Mark as Resolved</button>`;
+        }
+
+        return `
+          <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 mb-2">
+            <div class="flex justify-between items-start mb-1">
+              <p class="font-bold text-orange-900 text-sm">${location}</p>
+              <span class="text-[10px] text-orange-600 font-bold bg-orange-200 px-2 py-0.5 rounded">${timeReported}</span>
+            </div>
+            <p class="text-sm text-gray-700">${t.issue_description}</p>
+            <p class="text-[10px] text-gray-500 mt-1">Reported by: ${t.profiles ? t.profiles.full_name : 'Staff'}</p>
+            ${resolveBtn}
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('ticket-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('msg');
+      msg.textContent = "Submitting...";
+      
+      const roomVal = document.getElementById('room-id').value;
+      
+      const { error } = await db.from('maintenance_tickets').insert({
+        room_id: roomVal === 'general' ? null : roomVal,
+        reported_by: currentUser.id,
+        issue_description: document.getElementById('issue-desc').value,
+        status: 'Open'
+      });
+
+      if (error) {
+        msg.textContent = "Error: " + error.message;
+        msg.className = "mt-2 text-center text-sm font-bold text-red-600";
+      } else {
+        msg.textContent = "✅ Ticket submitted!";
+        msg.className = "mt-2 text-center text-sm font-bold text-green-600";
+        document.getElementById('ticket-form').reset();
+        loadTickets();
+        setTimeout(() => msg.textContent = '', 3000);
+      }
+    });
+
+    async function resolveTicket(id) {
+        if(!confirm("Mark this issue as resolved?")) return;
+        await db.from('maintenance_tickets').update({ status: 'Resolved', resolved_at: new Date().toISOString() }).eq('id', id);
+        loadTickets();
+    }
+
+    init();
+  </script>
+</body>
+</html>
