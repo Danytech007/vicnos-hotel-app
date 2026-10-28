@@ -20,12 +20,15 @@
   </nav>
 
   <main class="p-4 max-w-2xl mx-auto space-y-5">
-    <div class="flex justify-center gap-4 text-xs font-medium text-gray-600 mb-2">
+    <!-- Legend -->
+    <div class="flex flex-wrap justify-center gap-3 text-xs font-medium text-gray-600 mb-2">
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> Available</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Occupied</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Dirty</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500"></span> Inspect</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-500"></span> Maint.</span>
     </div>
+
     <div id="rooms-grid" class="grid grid-cols-3 gap-3">
       <p class="text-center text-gray-500 text-sm col-span-3">Loading rooms...</p>
     </div>
@@ -40,20 +43,18 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const viewMode = urlParams.get('view'); 
-    let userRole = 'receptionist'; // Default to lowest privilege
+    let userRole = 'receptionist'; 
 
     if (viewMode === 'checkout') {
       document.getElementById('page-title').textContent = "Select Room to Check-Out";
     }
 
     async function loadUserAndRooms() {
-      // 1. Get the logged-in user's role
       const { data: { user } } = await db.auth.getUser();
       if (user) {
         const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
         if (profile) userRole = profile.role;
       }
-      // 2. Now load the rooms
       loadRooms();
     }
 
@@ -81,9 +82,10 @@
         if (room.status === 'Available') { bgClass = 'bg-green-50 border-green-200 text-green-800'; iconColor = 'text-green-600'; iconName = 'check-circle'; } 
         else if (room.status === 'Occupied') { bgClass = 'bg-red-500 border-red-600 text-white shadow-md'; iconColor = 'text-white'; iconName = 'flame'; } 
         else if (room.status === 'Dirty') { bgClass = 'bg-orange-50 border-orange-200 text-orange-800'; iconColor = 'text-orange-600'; iconName = 'sparkles'; } 
+        else if (room.status === 'Pending Inspection') { bgClass = 'bg-purple-100 border-purple-300 text-purple-800'; iconColor = 'text-purple-600'; iconName = 'eye'; }
         else if (room.status === 'Maintenance') { bgClass = 'bg-gray-200 border-gray-400 text-gray-800'; iconColor = 'text-gray-600'; iconName = 'wrench'; }
 
-        // ONLY show the gear icon if the user is a manager or admin
+        // ONLY show the gear icon to Managers/Admins
         let gearIconHtml = '';
         if (userRole === 'manager' || userRole === 'admin') {
             gearIconHtml = `
@@ -107,21 +109,42 @@
       lucide.createIcons();
     }
 
-    function handleRoomClick(id, number, status, price) {
+    async function handleRoomClick(id, number, status, price) {
       if (status === 'Available') {
         window.location.href = `checkin.html?id=${id}&room=${number}&price=${price}`;
       } else if (status === 'Occupied') {
         window.location.href = `folio.html?room_id=${id}&room_num=${number}&price=${price}`;
+      } else if (status === 'Pending Inspection') {
+        // If it's pending inspection, only a manager can approve it
+        if (userRole === 'manager' || userRole === 'admin') {
+           const pin = prompt("Enter Manager PIN to approve cleaning for Room " + number);
+           if (pin === "1234") {
+               await db.from('rooms').update({ status: 'Available' }).eq('id', id);
+               loadRooms();
+           } else if (pin !== null) {
+               alert("Invalid PIN!");
+           }
+        } else {
+           alert("This room is waiting for the Manager to inspect and approve it.");
+        }
+      } else if (status === 'Dirty') {
+         // If it's dirty, a cleaner can mark it as Pending Inspection
+         if (userRole === 'housekeeping' || userRole === 'manager' || userRole === 'admin') {
+             const confirmClean = confirm("Have you finished cleaning Room " + number + "? Submit for Manager Inspection?");
+             if (confirmClean) {
+                 await db.from('rooms').update({ status: 'Pending Inspection' }).eq('id', id);
+                 loadRooms();
+             }
+         } else {
+             alert(`Room ${number} is Dirty. Please contact Housekeeping.`);
+         }
       } else {
-        alert(`Room ${number} is ${status}. Please contact the Manager to change status.`);
+        alert(`Room ${number} is ${status}. Change status via the gear icon.`);
       }
     }
 
     async function changeStatusPrompt(id, number, currentStatus) {
-      // Double check security before allowing
-      if (userRole !== 'manager' && userRole !== 'admin') {
-        return alert("Access Denied. Only Managers can change room status manually.");
-      }
+      if (userRole !== 'manager' && userRole !== 'admin') return;
 
       const newStatus = prompt(`Change status for Room ${number} (Current: ${currentStatus}):\n\nType:\n1 - Available\n2 - Dirty\n3 - Maintenance\n4 - Occupied`);
       let statusToSet = null;
