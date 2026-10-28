@@ -30,7 +30,7 @@
       <span id="role-badge" class="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border">ROLE</span>
     </div>
 
-    <!-- Stats Grid (Only visible to MDs, Managers, Admins, Receptionists) -->
+    <!-- Stats Grid -->
     <div id="stats-section">
       <h3 class="font-bold text-gray-800 mb-3">Hotel Overview</h3>
       <div class="grid grid-cols-2 gap-3">
@@ -55,9 +55,7 @@
 
     <div>
       <h3 class="font-bold text-gray-800 mb-3">Core Operations</h3>
-      <div id="operations-grid" class="grid grid-cols-3 gap-2">
-        <!-- Buttons will be injected here by JavaScript based on Role -->
-      </div>
+      <div id="operations-grid" class="grid grid-cols-3 gap-2"></div>
     </div>
   </main>
 
@@ -78,10 +76,9 @@
         document.getElementById('admin-name').textContent = profile.full_name + ' 👋';
         document.getElementById('user-role-display').textContent = profile.role + ' Portal';
         
-        // Style the role badge
         const badge = document.getElementById('role-badge');
         badge.textContent = profile.role.toUpperCase();
-        if(profile.role === 'admin' || profile.role === 'manager' || profile.role === 'md') {
+        if(['admin', 'manager', 'md'].includes(profile.role)) {
             badge.className = 'bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full border border-purple-200';
         } else {
             badge.className = 'bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200';
@@ -96,7 +93,6 @@
       const grid = document.getElementById('operations-grid');
       let buttons = '';
 
-      // Helper to create buttons
       const btn = (href, icon, color, label) => `
         <a href="${href}" class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
           <i data-lucide="${icon}" class="w-6 h-6 ${color}"></i>
@@ -104,10 +100,9 @@
         </a>
       `;
 
-      // EVERYONE gets the Clock In/Out button
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-600', 'Clock In/Out');
 
-      // MD, ADMIN & MANAGER: See Everything
+      // MD, ADMIN & MANAGER: See Everything including Attendance Report
       if (['md', 'admin', 'manager'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
@@ -116,9 +111,16 @@
         buttons += btn('staff.html', 'users', 'text-teal-600', 'Staff');
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
+        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance Report'); // NEW BUTTON
         buttons += clockBtn;
       } 
-      // RECEPTIONIST: Check In, Check Out, POS, Rooms, Clock
+      // SUPERVISOR: Rooms + Attendance Report + Clock
+      else if (role === 'supervisor') {
+        buttons += btn('rooms.html', 'eye', 'text-purple-600', 'Inspect Rooms');
+        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance Report'); // NEW BUTTON
+        buttons += clockBtn;
+      }
+      // OTHER ROLES (Receptionist, Housekeeping, etc.)
       else if (role === 'receptionist') {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
@@ -126,27 +128,18 @@
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
         buttons += clockBtn;
       }
-      // SUPERVISOR: Rooms (to inspect), Clock
-      else if (role === 'supervisor') {
-        buttons += btn('rooms.html', 'eye', 'text-purple-600', 'Inspect Rooms');
-        buttons += clockBtn;
-      }
-      // HOUSEKEEPING: Rooms (to clean), Clock
       else if (role === 'housekeeping') {
         buttons += btn('rooms.html', 'sparkles', 'text-orange-600', 'Clean Rooms');
         buttons += clockBtn;
       }
-      // STORE KEEPER: Store, Clock
       else if (role === 'store_keeper') {
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
         buttons += clockBtn;
       }
-      // BARMAN, WAITRESS, CHEF: POS only, Clock
       else if (['barman', 'waitress', 'chef'].includes(role)) {
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
         buttons += clockBtn;
       }
-      // Fallback
       else {
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
@@ -158,7 +151,6 @@
     }
 
     async function loadStats(role) {
-      // Hide stats for non-management roles to keep their dashboard clean
       if (['barman', 'waitress', 'chef', 'housekeeping', 'store_keeper'].includes(role)) {
         document.getElementById('stats-section').style.display = 'none';
         return;
