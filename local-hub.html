@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Local Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; }
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+    
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body class="min-h-screen pb-24">
+
+  <!-- Top Nav -->
+  <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+    <div class="flex items-center gap-2">
+      <a href="guest-portal.html?room=101" class="bg-gray-50 p-2 rounded-full active:scale-95 transition"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
+      <span class="font-bold text-gray-900 tracking-widest text-sm ml-2">LOCAL HUB</span>
+    </div>
+    <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
+      <p class="text-[9px] uppercase text-blue-500 font-bold tracking-wider">Room</p>
+      <p id="nav-room-num" class="font-bold text-blue-700 leading-none text-lg">---</p>
+    </div>
+  </nav>
+
+  <main class="max-w-md mx-auto fade-in pb-6">
+    
+    <!-- Hero Text -->
+    <div class="px-5 pt-6 pb-2">
+      <h1 class="text-3xl font-bold text-gray-800 mb-1">Explore & Order</h1>
+      <p class="text-sm text-gray-500">Everything you need, delivered to your door.</p>
+    </div>
+
+    <!-- SPONSORED AD BANNER (Top of Local Hub) -->
+    <div class="px-4 mt-2 mb-6">
+      <div class="bg-gradient-to-r from-blue-900 to-indigo-800 rounded-xl p-3 flex items-center justify-between shadow-md relative overflow-hidden">
+        <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-bold px-2 py-0.5 rounded-bl-lg">SPONSORED</div>
+        <div class="flex items-center gap-3 z-10">
+          <div class="bg-white/10 p-2 rounded-lg"><i data-lucide="smartphone" class="w-5 h-5 text-white"></i></div>
+          <div>
+            <p class="text-white text-xs font-bold">Need a Charger?</p>
+            <p class="text-gray-300 text-[10px]">Rent one from XYZ Tech for ₦2k.</p>
+          </div>
+        </div>
+        <button class="bg-white text-black text-[10px] font-bold px-3 py-1.5 rounded-lg z-10 active:scale-95">View</button>
+      </div>
+    </div>
+
+    <!-- CATEGORY GRID -->
+    <div class="px-4 space-y-4">
+
+      <!-- 1. Late Night Bites -->
+      <a href="#" onclick="alert('Suya, Pizza, and Shawarma ordering coming next!')" class="block relative rounded-2xl overflow-hidden shadow-md h-40 active:scale-95 transition-transform">
+        <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+          <div>
+            <h2 class="text-white text-xl font-bold">Late Night Bites</h2>
+            <p class="text-gray-200 text-xs mt-1">Craving Suya or Pizza? Delivered hot.</p>
+          </div>
+          <div class="bg-orange-500 p-2 rounded-full"><i data-lucide="pizza" class="w-5 h-5 text-white"></i></div>
+        </div>
+      </a>
+
+      <!-- 2. Ride & Drive -->
+      <a href="#" onclick="alert('Taxi and Car Rental booking coming next!')" class="block relative rounded-2xl overflow-hidden shadow-md h-40 active:scale-95 transition-transform">
+        <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+          <div>
+            <h2 class="text-white text-xl font-bold">Ride & Drive</h2>
+            <p class="text-gray-200 text-xs mt-1">Airport shuttles, taxis, or luxury cars.</p>
+          </div>
+          <div class="bg-blue-500 p-2 rounded-full"><i data-lucide="car" class="w-5 h-5 text-white"></i></div>
+        </div>
+      </a>
+
+      <!-- 3. Explore Benin -->
+      <a href="#" onclick="alert('Tours and City Ambassadors coming next!')" class="block relative rounded-2xl overflow-hidden shadow-md h-40 active:scale-95 transition-transform">
+        <img src="https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+          <div>
+            <h2 class="text-white text-xl font-bold">Explore Benin</h2>
+            <p class="text-gray-200 text-xs mt-1">Oba's Palace tours & social hosts.</p>
+          </div>
+          <div class="bg-teal-500 p-2 rounded-full"><i data-lucide="map" class="w-5 h-5 text-white"></i></div>
+        </div>
+      </a>
+
+      <!-- 4. Personal Care -->
+      <a href="#" onclick="alert('Spa, Tailoring, and Doctors coming next!')" class="block relative rounded-2xl overflow-hidden shadow-md h-40 active:scale-95 transition-transform">
+        <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+          <div>
+            <h2 class="text-white text-xl font-bold">Personal Care</h2>
+            <p class="text-gray-200 text-xs mt-1">Massages, tailoring, or a doctor on call.</p>
+          </div>
+          <div class="bg-pink-500 p-2 rounded-full"><i data-lucide="heart-pulse" class="w-5 h-5 text-white"></i></div>
+        </div>
+      </a>
+
+      <!-- 5. Take Benin Home -->
+      <a href="#" onclick="alert('Artisan Market coming next!')" class="block relative rounded-2xl overflow-hidden shadow-md h-40 active:scale-95 transition-transform">
+        <img src="https://images.unsplash.com/photo-1600106078126-8869e104c4d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+          <div>
+            <h2 class="text-white text-xl font-bold">Take Benin Home</h2>
+            <p class="text-gray-200 text-xs mt-1">Bronze castings & premium Ankara.</p>
+          </div>
+          <div class="bg-purple-500 p-2 rounded-full"><i data-lucide="shopping-bag" class="w-5 h-5 text-white"></i></div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- ADVERTISE HERE FOOTER -->
+    <div class="px-4 mt-6 mb-2">
+      <a href="https://wa.me/2348000000000?text=Hello,%20I%20want%20to%20be%20a%20vendor%20on%20the%20Vicnos%20Local%20Hub." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
+        <div class="flex items-center gap-2">
+          <i data-lucide="store" class="w-4 h-4 text-gray-400"></i>
+          <p class="text-[11px] font-semibold text-gray-600">Are you a local business? Partner with us.</p>
+        </div>
+        <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">Apply</span>
+      </a>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR (Local Hub Active) -->
+  <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+    <div class="flex justify-around items-center h-16 max-w-md mx-auto">
+      <a href="guest-portal.html?room=101" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+        <i data-lucide="home" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium mt-1">Home</span>
+      </a>
+      <a href="local-hub.html?room=101" class="flex flex-col items-center text-blue-600">
+        <i data-lucide="map" class="w-6 h-6"></i>
+        <span class="text-[10px] font-bold mt-1">Local Hub</span>
+      </a>
+      <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+        <i data-lucide="utensils" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium mt-1">Food</span>
+      </a>
+      <a href="guest-profile.html?room=101" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+        <i data-lucide="user" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium mt-1">My Bill</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomNum = urlParams.get('room') || '101'; 
+    document.getElementById('nav-room-num').textContent = roomNum;
+  </script>
+</body>
+</html>

@@ -48,6 +48,7 @@
 
   <main class="max-w-md mx-auto fade-in pb-6">
     
+    <!-- HERO SECTION -->
     <div class="relative h-60 w-full">
       <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="w-full h-full object-cover">
       <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
@@ -57,6 +58,7 @@
       </div>
     </div>
 
+    <!-- BOOKING WIDGET -->
     <div class="mx-4 -mt-6 relative z-10 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 flex justify-between items-center">
       <div class="text-center flex-1 border-r border-gray-100">
         <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Booking ID</p>
@@ -72,6 +74,7 @@
       </div>
     </div>
 
+    <!-- 4x2 ICON GRID -->
     <div class="p-4 mt-2">
       <div class="grid grid-cols-4 gap-y-6 gap-x-2">
         
@@ -89,7 +92,8 @@
           <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">House<br>Keeping</span>
         </a>
 
-        <a href="#" onclick="alert('The Local Hub (Suya, Taxis, Tours) coming next!')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+        <!-- LINK TO LOCAL HUB -->
+        <a href="local-hub.html" id="link-local-hub" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
           <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
             <i data-lucide="map" class="w-6 h-6 text-blue-600"></i>
           </div>
@@ -163,7 +167,7 @@
 
     <!-- ADVERTISE HERE (For you to make money) -->
     <div class="px-4 mt-3 mb-6">
-      <a href="https://wa.me/2349075356149?text=Hello%20Daniel,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
+      <a href="https://wa.me/2348000000000?text=Hello%20Daniel,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
         <div class="flex items-center gap-2">
           <i data-lucide="megaphone" class="w-4 h-4 text-gray-400"></i>
           <p class="text-[11px] font-semibold text-gray-600">Want your business featured here?</p>
@@ -172,6 +176,7 @@
       </a>
     </div>
 
+    <!-- HORIZONTAL PROMO CAROUSEL -->
     <div class="mt-2 pl-4">
       <div class="flex justify-between items-center pr-4 mb-3">
         <h2 class="text-lg font-bold text-gray-800">Hotel Highlights</h2>
@@ -204,11 +209,11 @@
   <!-- FLOATING BOTTOM NAVIGATION BAR -->
   <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
     <div class="flex justify-around items-center h-16 max-w-md mx-auto">
-      <a href="guest-portal.html?room=101" class="flex flex-col items-center text-blue-600">
+      <a href="#" class="flex flex-col items-center text-blue-600">
         <i data-lucide="home" class="w-6 h-6"></i>
         <span class="text-[10px] font-bold mt-1">Home</span>
       </a>
-      <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+      <a href="local-hub.html" id="nav-link-hub" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
         <i data-lucide="map" class="w-6 h-6"></i>
         <span class="text-[10px] font-medium mt-1">Local Hub</span>
       </a>
@@ -216,7 +221,7 @@
         <i data-lucide="utensils" class="w-6 h-6"></i>
         <span class="text-[10px] font-medium mt-1">Food</span>
       </a>
-      <a href="guest-profile.html?room=101" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+      <a href="guest-profile.html" id="nav-link-bill" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
         <i data-lucide="user" class="w-6 h-6"></i>
         <span class="text-[10px] font-medium mt-1">My Bill</span>
       </a>
@@ -236,6 +241,11 @@
 
     document.getElementById('nav-room-num').textContent = roomNum;
     document.getElementById('booking-id').textContent = `VIC-${roomNum}`;
+
+    // Dynamically update links to carry the room number
+    document.getElementById('link-local-hub').href = `local-hub.html?room=${roomNum}`;
+    document.getElementById('nav-link-hub').href = `local-hub.html?room=${roomNum}`;
+    document.getElementById('nav-link-bill').href = `guest-profile.html?room=${roomNum}`;
 
     async function loadGuest() {
       try {
