@@ -54,12 +54,15 @@
         
         <div class="grid grid-cols-3 gap-2 mb-3">
           <button onclick="setPayment('Cash')" class="pay-btn bg-blue-100 border-blue-500 text-blue-700 py-2 rounded-lg text-sm font-medium border">Cash</button>
-          <button onclick="setPayment('POS')" class="pay-btn bg-gray-100 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">POS</button>
+          <button onclick="setPayment('POS')" class="pay-btn bg-gray-100 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">POS / Card</button>
           <button onclick="setPayment('Charge_to_Room')" class="pay-btn bg-gray-100 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">To Room</button>
         </div>
 
-        <div id="room-input-div" class="hidden mb-3">
-          <input id="room-number" type="text" placeholder="Enter Room No. (e.g. 104)" class="w-full px-3 py-2 border rounded-lg">
+        <div id="room-select-div" class="hidden mb-3">
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Select Occupied Room</label>
+          <select id="room-select" class="w-full px-3 py-2 border rounded-lg outline-none focus:border-blue-500">
+            <option value="">-- Loading rooms... --</option>
+          </select>
         </div>
 
         <button onclick="checkout()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-[0.98]">Complete & Print</button>
@@ -68,25 +71,25 @@
   </div>
 
   <!-- Receipt View (Hidden on screen, shows on print) -->
-<div id="receipt-area" class="hidden text-black font-mono text-xs p-2">
-  <div class="text-center mb-4">
-    <h1 class="font-bold text-lg uppercase">Vicnos Hotel & Apartment</h1>
-    <p class="text-[10px] leading-tight">No 1, Vicnos Lane, Off Mouka Foam Road,</p>
-    <p class="text-[10px] leading-tight">Upper Mission Extension, Benin City, Edo State.</p>
-    <p class="text-[10px] leading-tight mt-1">Tel: 09020337604, 08135081794</p>
-    <p class="mt-2 text-sm font-bold uppercase" id="r-dept"></p>
-    <p id="r-date" class="text-xs mt-1"></p>
+  <div id="receipt-area" class="hidden text-black font-mono text-xs p-2">
+    <div class="text-center mb-4">
+      <h1 class="font-bold text-lg uppercase">Vicnos Hotel & Apartment</h1>
+      <p class="text-[10px] leading-tight">No 1, Vicnos Lane, Off Mouka Foam Road,</p>
+      <p class="text-[10px] leading-tight">Upper Mission Extension, Benin City, Edo State.</p>
+      <p class="text-[10px] leading-tight mt-1">Tel: 09020337604, 08135081794</p>
+      <p class="mt-2 text-sm font-bold uppercase" id="r-dept"></p>
+      <p id="r-date" class="text-xs mt-1"></p>
+    </div>
+    <div class="border-t border-dashed border-black my-2"></div>
+    <div id="r-items" class="mb-4"></div>
+    <div class="border-t border-dashed border-black pt-2">
+      <p class="flex justify-between font-bold text-base"><span>TOTAL</span> <span id="r-total"></span></p>
+      <p class="flex justify-between"><span>Payment</span> <span id="r-payment"></span></p>
+      <p class="flex justify-between"><span>Room</span> <span id="r-room"></span></p>
+    </div>
+    <p class="text-center mt-6 text-xs">Thank you for staying with us!</p>
+    <p class="text-center text-[10px] mt-1">Powered by Vicnos HMS</p>
   </div>
-  <div class="border-t border-dashed border-black my-2"></div>
-  <div id="r-items" class="mb-4"></div>
-  <div class="border-t border-dashed border-black pt-2">
-    <p class="flex justify-between font-bold text-base"><span>TOTAL</span> <span id="r-total"></span></p>
-    <p class="flex justify-between"><span>Payment</span> <span id="r-payment"></span></p>
-    <p class="flex justify-between"><span>Room</span> <span id="r-room"></span></p>
-  </div>
-  <p class="text-center mt-6 text-xs">Thank you for staying with us!</p>
-  <p class="text-center text-[10px] mt-1">Powered by Daniel Tochukwu</p>
-</div>
 
   <script>
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -108,9 +111,7 @@
 
       currentDepartment = document.getElementById('department').value;
       document.getElementById('menu-title').innerText = currentDepartment + ' Menu';
-      document.getElementById('menu-title').className = "font-bold text-gray-800 mb-4 flex items-center gap-2";
 
-      // Fetch items ONLY for the selected department
       const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).gt('stock_quantity', 0);
       inventory = items || [];
 
@@ -118,19 +119,18 @@
       grid.innerHTML = '';
       
       if (inventory.length === 0) {
-        grid.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-4">No items in this department yet.</p>';
+        grid.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-4">No items in stock.</p>';
       }
 
       inventory.forEach(item => {
         grid.innerHTML += `
-          <button onclick="addToCart('${item.id}')" class="bg-gray-50 text-gray-800 p-3 rounded-xl flex flex-col items-center justify-center border border-gray-200 hover:bg-blue-50 transition">
-            <span class="font-bold text-sm">${item.item_name}</span>
-            <span class="text-xs mt-1 text-blue-600 font-bold">₦${item.price}</span>
+          <button onclick="addToCart('${item.id}')" class="bg-gray-50 text-gray-800 p-3 rounded-xl flex flex-col items-center justify-center border border-gray-200 hover:bg-blue-50 transition active:scale-95">
+            <span class="font-bold text-sm text-center">${item.item_name}</span>
+            <span class="text-xs mt-1 text-blue-600 font-bold">₦${item.price.toLocaleString()}</span>
           </button>
         `;
       });
 
-      // Clear cart when switching departments
       cart = [];
       renderCart();
     }
@@ -161,7 +161,7 @@
           <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
             <div>
               <p class="font-bold text-sm text-gray-800">${c.item_name}</p>
-              <p class="text-xs text-gray-500">${c.qty} x ₦${c.price}</p>
+              <p class="text-xs text-gray-500">${c.qty} x ₦${c.price.toLocaleString()}</p>
             </div>
             <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
@@ -176,8 +176,9 @@
       renderCart();
     }
 
-    function setPayment(method) {
+    async function setPayment(method) {
       currentPaymentMethod = method;
+      
       document.querySelectorAll('.pay-btn').forEach(b => {
         b.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
         b.classList.add('bg-gray-100', 'border-gray-300');
@@ -186,44 +187,92 @@
       event.target.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
       
       if (method === 'Charge_to_Room') {
-        document.getElementById('room-input-div').classList.remove('hidden');
+        document.getElementById('room-select-div').classList.remove('hidden');
+        await loadOccupiedRooms();
       } else {
-        document.getElementById('room-input-div').classList.add('hidden');
+        document.getElementById('room-select-div').classList.add('hidden');
       }
+    }
+
+    async function loadOccupiedRooms() {
+      const select = document.getElementById('room-select');
+      select.innerHTML = '<option value="">-- Loading... --</option>';
+      
+      const { data: rooms } = await db.from('rooms').select('*').eq('status', 'Occupied').order('room_number');
+      
+      if (!rooms || rooms.length === 0) {
+        select.innerHTML = '<option value="">No occupied rooms</option>';
+        return;
+      }
+
+      select.innerHTML = '<option value="">-- Select Room --</option>';
+      rooms.forEach(r => {
+        select.innerHTML += `<option value="${r.id}">Room ${r.room_number}</option>`;
+      });
     }
 
     async function checkout() {
       if (cart.length === 0) return alert('Cart is empty!');
       
-      const roomNo = document.getElementById('room-number').value;
-      if (currentPaymentMethod === 'Charge_to_Room' && !roomNo) {
-        return alert('Please enter a room number!');
+      const roomId = document.getElementById('room-select').value;
+      if (currentPaymentMethod === 'Charge_to_Room' && !roomId) {
+        return alert('Please select a room to charge!');
       }
 
       let total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      const selectedRoomText = currentPaymentMethod === 'Charge_to_Room' ? document.getElementById('room-select').options[document.getElementById('room-select').selectedIndex].text : 'N/A';
 
-      // 1. Save Order (with department tag!)
+      // 1. If charging to room, add to folio FIRST
+      if (currentPaymentMethod === 'Charge_to_Room') {
+        const { data: bookings, error: bookingError } = await db.from('bookings')
+          .select('id')
+          .eq('room_id', roomId)
+          .eq('status', 'Checked In')
+          .limit(1);
+
+        if (bookingError || !bookings || bookings.length === 0) {
+          return alert("Error: No active check-in found for this room. Is the guest checked in?");
+        }
+
+        const bookingId = bookings[0].id;
+
+        for (const item of cart) {
+          const { error: chargeError } = await db.from('folio_charges').insert({
+            booking_id: bookingId,
+            department: currentDepartment,
+            description: `${item.qty}x ${item.item_name}`,
+            amount: item.price * item.qty
+          });
+          
+          if (chargeError) {
+            return alert("Database Error: Could not save to room bill. \n\n" + chargeError.message);
+          }
+        }
+        alert("✅ Successfully added to Room Folio!");
+      }
+
+      // 2. Save Order for POS Audit
       await db.from('pos_orders').insert({
-        room_number: currentPaymentMethod === 'Charge_to_Room' ? roomNo : null,
+        room_number: currentPaymentMethod === 'Charge_to_Room' ? selectedRoomText : null,
         total_amount: total,
         payment_method: currentPaymentMethod,
         department: currentDepartment,
         created_by: currentUser.id
       });
 
-      // 2. Deduct Stock
+      // 3. Deduct Stock
       for (const item of cart) {
         await db.from('inventory').update({ 
           stock_quantity: item.stock_quantity - item.qty 
         }).eq('id', item.id);
       }
 
-      // 3. Populate Receipt
+      // 4. Populate Receipt
       document.getElementById('r-date').innerText = new Date().toLocaleString();
       document.getElementById('r-dept').innerText = currentDepartment;
       document.getElementById('r-total').innerText = '₦' + total.toLocaleString();
-      document.getElementById('r-payment').innerText = currentPaymentMethod;
-      document.getElementById('r-room').innerText = currentPaymentMethod === 'Charge_to_Room' ? roomNo : 'N/A';
+      document.getElementById('r-payment').innerText = currentPaymentMethod.replace('_', ' ');
+      document.getElementById('r-room').innerText = selectedRoomText;
       
       const rItems = document.getElementById('r-items');
       rItems.innerHTML = '';
@@ -231,7 +280,7 @@
         rItems.innerHTML += `<p>${c.qty}x ${c.item_name} <span class="float-right">₦${(c.price * c.qty).toLocaleString()}</span></p>`;
       });
 
-      // 4. Show Receipt & Print
+      // 5. Print
       const receipt = document.getElementById('receipt-area');
       receipt.classList.remove('hidden');
       
@@ -241,8 +290,8 @@
           receipt.classList.add('hidden');
           cart = [];
           renderCart();
-          document.getElementById('room-number').value = '';
-          loadPOS(); // Refresh inventory count
+          document.getElementById('room-select').value = '';
+          loadPOS(); 
         }, 500);
       }, 100);
     }
