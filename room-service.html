@@ -222,7 +222,8 @@
           room_number: roomNum,
           items: cart,
           total_amount: totalAmount,
-          status: 'Pending'
+          status: 'Pending',
+          estimated_minutes: 30 // Default time
         });
         if (orderError) throw orderError;
 
@@ -236,14 +237,15 @@
             });
         }
 
-        alert("✅ Order Sent to Kitchen!\nIt has been added to your room bill.");
         cart = [];
         updateCartUI();
         closeCart();
+        
+        // REDIRECT TO TRACKING PAGE!
+        window.location.href = `track-order.html?room=${roomNum}`;
 
       } catch (err) {
         alert("Order Failed: " + err.message);
-      } finally {
         btn.innerText = "Charge to Room & Order";
         btn.disabled = false;
       }

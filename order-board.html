@@ -13,24 +13,27 @@
 </head>
 <body class="min-h-screen p-4">
 
-  <!-- Header -->
-  <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+  <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 gap-4">
     <div class="flex items-center gap-3">
       <div class="bg-red-100 p-2 rounded-xl text-red-600 animate-pulse"><i data-lucide="bell" class="w-6 h-6"></i></div>
       <div>
-        <h1 class="font-bold text-gray-800 text-lg">Live Order Board</h1>
-        <p class="text-xs text-gray-500">Listening for new orders...</p>
+        <h1 class="font-bold text-gray-800 text-lg">Kitchen Order Board</h1>
+        <p class="text-xs text-gray-500">Manage and track guest orders</p>
       </div>
     </div>
-    <button onclick="window.location.href='dashboard.html'" class="bg-gray-100 px-4 py-2 rounded-xl text-sm font-bold text-gray-600">Back</button>
+    
+    <div class="flex gap-2">
+        <button id="sound-btn" onclick="enableSound()" class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm animate-bounce">
+            🔊 Enable Sound
+        </button>
+        <button onclick="window.location.href='dashboard.html'" class="bg-gray-100 px-4 py-2 rounded-xl text-sm font-bold text-gray-600">Back</button>
+    </div>
   </div>
 
-  <!-- Orders Grid -->
   <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    <p class="text-gray-500 col-span-full text-center py-10">No pending orders right now.</p>
+    <p class="text-gray-500 col-span-full text-center py-10">No active orders right now.</p>
   </div>
 
-  <!-- Notification Sound -->
   <audio id="notification-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
 
   <script>
@@ -40,12 +43,21 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
+    let soundEnabled = false;
+
+    function enableSound() {
+        soundEnabled = true;
+        document.getElementById('sound-btn').innerText = "✅ Sound Enabled";
+        document.getElementById('sound-btn').className = "bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm";
+        document.getElementById('notification-sound').play();
+    }
+
     async function loadOrders() {
       const grid = document.getElementById('orders-grid');
       
       const { data: orders, error } = await db.from('guest_orders')
-        .select('*')
-        .eq('status', 'Pending')
+        .select(`*, bookings ( guests ( full_name ) )`)
+        .neq('status', 'Delivered') // Show everything except delivered orders
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -54,16 +66,21 @@
       }
 
       if (!orders || orders.length === 0) {
-        grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">No pending orders right now. Relax! ☕</p>';
+        grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">No active orders right now. Relax! ☕</p>';
         return;
       }
 
       grid.innerHTML = orders.map(order => {
         const time = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        let guestName = order.bookings?.guests?.full_name || "Unknown Guest";
         
+        let statusColor = "bg-yellow-100 text-yellow-800";
+        if(order.status === 'Preparing') statusColor = "bg-blue-100 text-blue-800";
+        if(order.status === 'On the Way') statusColor = "bg-purple-100 text-purple-800";
+
         let itemsHtml = '';
         order.items.forEach(item => {
-            itemsHtml += `<li class="flex justify-between border-b border-gray-100 py-1">
+            itemsHtml += `<li class="flex justify-between border-b border-gray-100 py-1 text-sm">
                             <span class="font-bold text-gray-800">${item.qty}x ${item.name}</span>
                           </li>`;
         });
@@ -73,36 +90,53 @@
             <div class="bg-gray-50 p-3 flex justify-between items-center border-b">
               <div>
                 <span class="bg-blue-600 text-white font-bold text-xs px-2 py-1 rounded">Room ${order.room_number || 'N/A'}</span>
-                <p class="text-[10px] text-gray-500 mt-1">Ordered at ${time}</p>
+                <span class="text-xs font-bold px-2 py-1 rounded ml-1 ${statusColor}">${order.status}</span>
+                <p class="font-bold text-gray-800 text-sm mt-2">${guestName}</p>
+                <p class="text-[10px] text-gray-500">Ordered at ${time}</p>
               </div>
               <p class="font-extrabold text-blue-600">₦${Number(order.total_amount).toLocaleString()}</p>
             </div>
             
             <div class="p-4 flex-1">
-              <ul class="mb-4">
-                ${itemsHtml}
-              </ul>
-            </div>
-
-            <div class="p-3 bg-white border-t">
-              <button onclick="fulfillOrder('${order.id}')" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold active:scale-95 transition shadow-lg shadow-green-500/30">
-                ✅ Mark as Fulfilled
-              </button>
+              <ul class="mb-4">${itemsHtml}</ul>
+              
+              <!-- Action Area -->
+              <div class="bg-gray-50 p-2 rounded-xl border">
+                <label class="block text-[10px] font-bold text-gray-500 mb-1">Update Status & ETA</label>
+                <div class="flex gap-2">
+                    <select id="status-${order.id}" class="flex-1 text-xs border rounded-lg p-1 outline-none">
+                        <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Preparing" ${order.status === 'Preparing' ? 'selected' : ''}>Preparing</option>
+                        <option value="On the Way" ${order.status === 'On the Way' ? 'selected' : ''}>On the Way</option>
+                        <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                    </select>
+                    <input id="eta-${order.id}" type="number" value="${order.estimated_minutes || 30}" class="w-16 text-xs border rounded-lg p-1 outline-none" placeholder="Mins">
+                    <button onclick="updateOrder('${order.id}')" class="bg-black text-white px-3 py-1 rounded-lg text-xs font-bold active:scale-95">Save</button>
+                </div>
+              </div>
             </div>
           </div>
         `;
       }).join('');
     }
 
-    async function fulfillOrder(id) {
-      await db.from('guest_orders').update({ status: 'Completed' }).eq('id', id);
+    async function updateOrder(id) {
+      const newStatus = document.getElementById(`status-${id}`).value;
+      const newEta = document.getElementById(`eta-${id}`).value;
+      
+      await db.from('guest_orders').update({ 
+          status: newStatus,
+          estimated_minutes: newEta
+      }).eq('id', id);
+      
       loadOrders(); 
     }
 
-    // Realtime Listener for new orders
     db.channel('custom-insert-channel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
-        document.getElementById('notification-sound').play();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_orders' }, payload => {
+        if (payload.eventType === 'INSERT' && soundEnabled) {
+            document.getElementById('notification-sound').play().catch(e => console.log("Audio block"));
+        }
         loadOrders();
       })
       .subscribe();

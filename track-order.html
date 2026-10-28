@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Track Order</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+  </style>
+</head>
+<body class="min-h-screen p-4 flex flex-col items-center">
+
+  <nav class="w-full max-w-md bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 mb-6">
+    <a href="room-service.html" id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
+    <h1 class="font-bold text-gray-800 text-lg">Track Order</h1>
+  </nav>
+
+  <main class="w-full max-w-md">
+    <div id="tracking-container" class="hidden bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
+        
+        <div class="text-center mb-8">
+            <div class="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="chef-hat" class="w-10 h-10 text-blue-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800" id="order-status-text">Preparing</h2>
+            <p class="text-gray-500 text-sm mt-1">Estimated Time: <span id="order-eta" class="font-bold text-gray-800">30 mins</span></p>
+        </div>
+
+        <!-- Timeline -->
+        <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+            
+            <!-- Step 1: Pending -->
+            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active" id="step-pending">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                    <i data-lucide="receipt" class="w-5 h-5"></i>
+                </div>
+                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                    <p class="font-bold text-gray-800 text-sm">Order Received</p>
+                </div>
+            </div>
+
+            <!-- Step 2: Preparing -->
+            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active" id="step-preparing">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                    <i data-lucide="cooking-pot" class="w-5 h-5"></i>
+                </div>
+                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                    <p class="font-bold text-gray-800 text-sm">Preparing Food</p>
+                </div>
+            </div>
+
+            <!-- Step 3: On the Way -->
+            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active" id="step-ontheway">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                    <i data-lucide="bike" class="w-5 h-5"></i>
+                </div>
+                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                    <p class="font-bold text-gray-800 text-sm">On the Way</p>
+                </div>
+            </div>
+
+            <!-- Step 4: Delivered -->
+            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active" id="step-delivered">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                </div>
+                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                    <p class="font-bold text-gray-800 text-sm">Delivered</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 border-t pt-4">
+            <p class="text-xs font-bold text-gray-400 uppercase mb-2">Your Items</p>
+            <div id="order-items" class="space-y-1 text-sm text-gray-600"></div>
+        </div>
+    </div>
+
+    <div id="empty-container" class="text-center py-20 hidden">
+        <i data-lucide="utensils-crossed" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+        <p class="text-gray-500">You have no active food orders right now.</p>
+        <a href="room-service.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Order Now</a>
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomNum = urlParams.get('room') || '101'; 
+    
+    document.getElementById('back-btn').href = `room-service.html?room=${roomNum}`;
+
+    async function loadActiveOrder() {
+        // Get the most recent order for this room that is not 'Delivered'
+        const { data: orders } = await db.from('guest_orders')
+            .select('*')
+            .eq('room_number', roomNum)
+            .neq('status', 'Delivered')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (!orders || orders.length === 0) {
+            document.getElementById('tracking-container').classList.add('hidden');
+            document.getElementById('empty-container').classList.remove('hidden');
+            return;
+        }
+
+        const order = orders[0];
+        document.getElementById('tracking-container').classList.remove('hidden');
+        document.getElementById('empty-container').classList.add('hidden');
+
+        // Set Text
+        document.getElementById('order-status-text').innerText = order.status;
+        document.getElementById('order-eta').innerText = `${order.estimated_minutes || 30} mins`;
+
+        // Render Items
+        let itemsHtml = '';
+        order.items.forEach(i => {
+            itemsHtml += `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>₦${Number(i.price).toLocaleString()}</span></div>`;
+        });
+        document.getElementById('order-items').innerHTML = itemsHtml;
+
+        // Highlight Timeline Steps
+        const steps = ['Pending', 'Preparing', 'On the Way', 'Delivered'];
+        const currentIndex = steps.indexOf(order.status);
+
+        // Reset all to gray
+        document.querySelectorAll('[id^="step-"]').forEach(el => {
+            el.querySelector('div:first-child').className = 'flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2';
+        });
+
+        // Color active steps
+        for (let i = 0; i <= currentIndex; i++) {
+            let stepId = `step-${steps[i].replace(/\s/g, '').toLowerCase()}`;
+            let el = document.getElementById(stepId);
+            if (el) {
+                el.querySelector('div:first-child').className = 'flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-blue-600 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2';
+            }
+        }
+    }
+
+    // Realtime listener for status updates
+    db.channel('track-order-channel')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'guest_orders' }, payload => {
+        loadActiveOrder(); // Refresh UI when kitchen updates status
+      })
+      .subscribe();
+
+    loadActiveOrder();
+  </script>
+</body>
+</html>
