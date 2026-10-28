@@ -23,7 +23,10 @@
       <p id="time-display" class="text-3xl font-extrabold text-blue-600 mt-2">--:--</p>
     </div>
 
-    <button id="clock-btn" onclick="handleClock()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition hidden">
+    <!-- The Selfie Camera Input (Hidden) -->
+    <input type="file" id="selfie-camera" accept="image/*" capture="user" class="hidden" onchange="processClockIn(this)">
+
+    <button id="clock-btn" onclick="triggerCamera()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition hidden">
       Clock In
     </button>
     
@@ -39,8 +42,8 @@
 
     let currentUser = null;
     let currentRecord = null;
+    let hotelWorkTime = "08:00"; // Default fallback
 
-    // Live Clock
     setInterval(() => {
       document.getElementById('time-display').innerText = new Date().toLocaleTimeString();
     }, 1000);
@@ -53,14 +56,14 @@
       const { data: profile } = await db.from('profiles').select('full_name').eq('id', user.id).single();
       if (profile) document.getElementById('staff-name').innerText = profile.full_name;
 
-      // Check if they have an open shift today
+      // Get the hotel's official resumption time
+      const { data: settings } = await db.from('settings').select('work_start_time').single();
+      if (settings) hotelWorkTime = settings.work_start_time;
+
       const today = new Date().toISOString().split('T')[0];
       const { data: records } = await db.from('attendance')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('date', today)
-        .order('clock_in', { ascending: false })
-        .limit(1);
+        .select('*').eq('user_id', user.id).eq('date', today)
+        .order('clock_in', { ascending: false }).limit(1);
 
       const btn = document.getElementById('clock-btn');
       const statusText = document.getElementById('status-text');
@@ -68,45 +71,74 @@
       if (records && records.length > 0) {
         currentRecord = records[0];
         if (currentRecord.clock_out === null) {
-          // They are currently clocked in
           statusText.innerHTML = `Clocked In at <br><span class="text-blue-600">${new Date(currentRecord.clock_in).toLocaleTimeString()}</span>`;
           btn.innerText = "Clock Out";
           btn.className = "w-full bg-red-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-red-500/30 active:scale-95 transition";
           btn.classList.remove('hidden');
         } else {
-          // They already finished their shift
           statusText.innerHTML = `Shift Completed. <br><span class="text-green-600">Out at ${new Date(currentRecord.clock_out).toLocaleTimeString()}</span>`;
           btn.classList.add('hidden');
         }
       } else {
-        // No record today, ready to clock in
         statusText.innerText = "You have not clocked in yet.";
-        btn.innerText = "Clock In";
+        btn.innerText = "Take Selfie & Clock In";
         btn.className = "w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition";
         btn.classList.remove('hidden');
       }
     }
 
-    async function handleClock() {
+    function triggerCamera() {
+      if (currentRecord && currentRecord.clock_out === null) {
+        // If they are clocking out, just do it instantly (no selfie needed for leaving)
+        clockOut();
+      } else {
+        // If clocking in, open the camera
+        document.getElementById('selfie-camera').click();
+      }
+    }
+
+    async function processClockIn(input) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+      
       const btn = document.getElementById('clock-btn');
-      btn.innerText = "Processing...";
+      btn.innerText = "Uploading Selfie...";
       btn.disabled = true;
 
-      if (currentRecord && currentRecord.clock_out === null) {
-        // Clock OUT
-        await db.from('attendance').update({ clock_out: new Date().toISOString() }).eq('id', currentRecord.id);
-        alert("Successfully Clocked Out!");
-      } else {
-        // Clock IN
+      try {
+        // 1. Upload photo to Supabase Storage
+        const fileName = `${currentUser.id}-${Date.now()}.jpg`;
+        const { data: uploadData, error: uploadError } = await db.storage
+          .from('attendance_photos')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // 2. Get the public URL for the photo
+        const { data: urlData } = db.storage.from('attendance_photos').getPublicUrl(fileName);
+
+        // 3. Save the record to the database
         await db.from('attendance').insert({
           user_id: currentUser.id,
           clock_in: new Date().toISOString(),
-          date: new Date().toISOString().split('T')[0]
+          date: new Date().toISOString().split('T')[0],
+          photo_url: urlData.publicUrl
         });
-        alert("Successfully Clocked In!");
+
+        alert(`Clocked In Successfully!\nHotel Resumption Time: ${hotelWorkTime}`);
+        loadAttendance(); 
+
+      } catch (err) {
+        alert("Upload failed: " + err.message);
+        btn.disabled = false;
+        btn.innerText = "Take Selfie & Clock In";
       }
-      
-      loadAttendance(); // Refresh UI
+    }
+
+    async function clockOut() {
+        await db.from('attendance').update({ clock_out: new Date().toISOString() }).eq('id', currentRecord.id);
+        alert("Successfully Clocked Out!");
+        loadAttendance();
     }
 
     loadAttendance();

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos Hotel - Attendance Report</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 min-h-screen pb-24 font-sans">
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Attendance Report</h1>
+        <p class="text-xs text-gray-500">Manager View</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-4">
+    <div class="bg-white p-4 rounded-xl shadow-sm border flex justify-between items-center mb-2">
+        <div>
+            <p class="text-xs text-gray-500 font-bold uppercase">Resumption Time</p>
+            <p id="display-work-time" class="text-lg font-bold text-blue-600">Loading...</p>
+        </div>
+        <button onclick="changeWorkTime()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-bold">Change Time</button>
+    </div>
+
+    <div id="attendance-list" class="space-y-3">
+      <p class="text-center text-gray-500 text-sm">Loading records...</p>
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let hotelWorkTime = "08:00";
+
+    async function loadData() {
+      // 1. Get Work Time
+      const { data: settings } = await db.from('settings').select('work_start_time').single();
+      if (settings) {
+        hotelWorkTime = settings.work_start_time;
+        document.getElementById('display-work-time').innerText = hotelWorkTime;
+      }
+
+      // 2. Get Today's Attendance
+      const today = new Date().toISOString().split('T')[0];
+      const { data: records, error } = await db.from('attendance')
+        .select(`*, profiles(full_name, role)`)
+        .eq('date', today)
+        .order('clock_in', { ascending: false });
+
+      const list = document.getElementById('attendance-list');
+      list.innerHTML = '';
+
+      if (!records || records.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 py-10">No one has clocked in today yet.</p>';
+        return;
+      }
+
+      records.forEach(rec => {
+        const clockInTime = new Date(rec.clock_in);
+        const timeString = clockInTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Lateness Logic
+        const [hours, minutes] = hotelWorkTime.split(':');
+        const expectedTime = new Date(clockInTime);
+        expectedTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+        let isLate = clockInTime > expectedTime;
+        let lateBadge = isLate 
+            ? '<span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 rounded">LATE</span>' 
+            : '<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded">ON TIME</span>';
+
+        list.innerHTML += `
+          <div class="bg-white p-3 rounded-xl shadow-sm border flex items-center gap-3">
+            ${rec.photo_url ? `<img src="${rec.photo_url}" class="w-12 h-12 rounded-full object-cover border">` : `<div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center"><i data-lucide="user" class="w-6 h-6 text-gray-400"></i></div>`}
+            <div class="flex-1">
+              <p class="font-bold text-gray-800">${rec.profiles.full_name}</p>
+              <p class="text-xs text-gray-500 uppercase">${rec.profiles.role}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-bold text-gray-800">${timeString}</p>
+              ${lateBadge}
+            </div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    async function changeWorkTime() {
+        const newTime = prompt("Enter new work start time (HH:MM format, e.g. 08:30):", hotelWorkTime);
+        if (newTime && /^\d{2}:\d{2}$/.test(newTime)) {
+            await db.from('settings').update({ work_start_time: newTime }).eq('id', 1);
+            loadData();
+        } else if (newTime) {
+            alert("Invalid format. Please use HH:MM (e.g. 09:00)");
+        }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
