@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Image Compression Library -->
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; }
     input, select, textarea { user-select: text; }
@@ -21,18 +23,25 @@
       </a>
       <div>
         <h1 class="font-bold text-gray-800 text-lg leading-tight">Menu Manager</h1>
-        <p class="text-xs text-gray-500">Upload Food & Drinks</p>
+        <p class="text-xs text-gray-500">Upload & Edit Food</p>
       </div>
     </div>
   </nav>
 
   <main class="p-4 max-w-2xl mx-auto space-y-5">
     
-    <!-- Upload Form -->
+    <!-- Upload / Edit Form -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5 text-orange-500"></i> Add New Item</h2>
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="form-title" class="font-bold text-gray-800 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-5 h-5 text-orange-500"></i> Add New Item
+        </h2>
+        <button id="cancel-edit-btn" onclick="resetForm()" class="hidden text-xs font-bold text-red-500 bg-red-50 px-3 py-1 rounded-lg">Cancel Edit</button>
+      </div>
       
       <form id="menu-form" class="space-y-3">
+        <input type="hidden" id="edit-item-id" value="">
+        
         <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-gray-500 mb-1">Item Name</label>
@@ -54,8 +63,9 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 mb-1">Food Image</label>
-              <input id="item-image" type="file" accept="image/*" required class="w-full px-2 py-1.5 bg-gray-50 border rounded-xl outline-none text-xs">
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Food Image (JPG/PNG)</label>
+              <input id="item-image" type="file" accept="image/*" class="w-full px-2 py-1.5 bg-gray-50 border rounded-xl outline-none text-xs">
+              <p id="image-hint" class="text-[9px] text-gray-400 mt-1 hidden">Leave empty to keep current image.</p>
             </div>
         </div>
 
@@ -88,16 +98,19 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
+    let allMenuItems = [];
+
     async function loadMenu() {
       const { data: items } = await db.from('menu_items').select('*').order('created_at', { ascending: false });
+      allMenuItems = items || [];
       const list = document.getElementById('menu-list');
       
-      if (!items || items.length === 0) {
+      if (allMenuItems.length === 0) {
         list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No items on the menu yet.</p>';
         return;
       }
 
-      list.innerHTML = items.map(item => `
+      list.innerHTML = allMenuItems.map(item => `
         <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-xl border">
           <img src="${item.image_url}" class="w-14 h-14 rounded-lg object-cover">
           <div class="flex-1">
@@ -105,9 +118,46 @@
             <p class="text-xs text-blue-600 font-bold">₦${Number(item.price).toLocaleString()}</p>
             <p class="text-[10px] text-gray-400 uppercase">${item.category}</p>
           </div>
-          <button onclick="deleteItem('${item.id}')" class="text-red-500 p-2"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+          <div class="flex gap-1">
+            <button onclick="editItem('${item.id}')" class="text-blue-500 bg-blue-50 p-2 rounded-lg active:scale-90 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+            <button onclick="deleteItem('${item.id}')" class="text-red-500 bg-red-50 p-2 rounded-lg active:scale-90 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
         </div>
       `).join('');
+      lucide.createIcons();
+    }
+
+    function editItem(id) {
+      const item = allMenuItems.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('edit-item-id').value = item.id;
+      document.getElementById('item-name').value = item.name;
+      document.getElementById('item-price').value = item.price;
+      document.getElementById('item-category').value = item.category;
+      document.getElementById('item-desc').value = item.description || '';
+      
+      // Update UI for editing
+      document.getElementById('form-title').innerHTML = `<i data-lucide="pencil" class="w-5 h-5 text-blue-500"></i> Edit Item`;
+      document.getElementById('submit-btn').innerText = "Update Item";
+      document.getElementById('submit-btn').className = "w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition mt-2";
+      document.getElementById('cancel-edit-btn').classList.remove('hidden');
+      document.getElementById('item-image').required = false;
+      document.getElementById('image-hint').classList.remove('hidden');
+      
+      lucide.createIcons();
+      window.scrollTo(0, 0); // Scroll to top
+    }
+
+    function resetForm() {
+      document.getElementById('menu-form').reset();
+      document.getElementById('edit-item-id').value = "";
+      document.getElementById('form-title').innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-orange-500"></i> Add New Item`;
+      document.getElementById('submit-btn').innerText = "Upload to Menu";
+      document.getElementById('submit-btn').className = "w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition mt-2";
+      document.getElementById('cancel-edit-btn').classList.add('hidden');
+      document.getElementById('item-image').required = true;
+      document.getElementById('image-hint').classList.add('hidden');
       lucide.createIcons();
     }
 
@@ -115,41 +165,73 @@
       e.preventDefault();
       const btn = document.getElementById('submit-btn');
       const msg = document.getElementById('message');
+      const editId = document.getElementById('edit-item-id').value;
       const file = document.getElementById('item-image').files[0];
 
-      btn.innerText = "Uploading Image...";
+      btn.innerText = "Processing...";
       btn.disabled = true;
 
       try {
-        // 1. Upload Image to Supabase Storage
-        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '')}`;
-        const { error: uploadError } = await db.storage.from('menu_images').upload(fileName, file);
-        if (uploadError) throw uploadError;
+        let imageUrl = null;
 
-        // 2. Get Public URL
-        const { data: urlData } = db.storage.from('menu_images').getPublicUrl(fileName);
+        // 1. If a new image was selected, compress and upload it
+        if (file) {
+          btn.innerText = "Compressing Image...";
+          
+          // Compress the image to look sharp but be tiny in file size
+          const options = {
+            maxSizeMB: 0.2, // 200KB max
+            maxWidthOrHeight: 1000, // 1000px sharpness
+            useWebWorker: true
+          };
+          
+          const compressedFile = await imageCompression(file, options);
+          
+          btn.innerText = "Uploading Image...";
+          const fileName = `${Date.now()}-${compressedFile.name.replace(/\s/g, '')}`;
+          
+          const { error: uploadError } = await db.storage.from('menu_images').upload(fileName, compressedFile);
+          if (uploadError) throw uploadError;
 
-        // 3. Save to Database
-        btn.innerText = "Saving Item...";
-        const { error: dbError } = await db.from('menu_items').insert({
+          const { data: urlData } = db.storage.from('menu_images').getPublicUrl(fileName);
+          imageUrl = urlData.publicUrl;
+        }
+
+        btn.innerText = "Saving...";
+
+        // 2. Prepare the data object
+        const itemData = {
           name: document.getElementById('item-name').value,
           price: document.getElementById('item-price').value,
           category: document.getElementById('item-category').value,
           description: document.getElementById('item-desc').value,
-          image_url: urlData.publicUrl
-        });
-        if (dbError) throw dbError;
+        };
 
-        msg.textContent = "✅ Item Added Successfully!";
+        if (imageUrl) itemData.image_url = imageUrl;
+
+        // 3. Insert or Update
+        if (editId) {
+          // UPDATE existing item
+          const { error: dbError } = await db.from('menu_items').update(itemData).eq('id', editId);
+          if (dbError) throw dbError;
+          msg.textContent = "✅ Item Updated Successfully!";
+        } else {
+          // INSERT new item (image required)
+          if (!imageUrl) throw new Error("Image is required for new items.");
+          itemData.image_url = imageUrl;
+          const { error: dbError } = await db.from('menu_items').insert(itemData);
+          if (dbError) throw dbError;
+          msg.textContent = "✅ Item Added Successfully!";
+        }
+
         msg.className = "mt-3 text-center text-sm font-bold text-green-600";
-        document.getElementById('menu-form').reset();
+        resetForm();
         loadMenu();
 
       } catch (err) {
         msg.textContent = "Error: " + err.message;
         msg.className = "mt-3 text-center text-sm font-bold text-red-600";
-      } finally {
-        btn.innerText = "Upload to Menu";
+        btn.innerText = editId ? "Update Item" : "Upload to Menu";
         btn.disabled = false;
       }
     });
