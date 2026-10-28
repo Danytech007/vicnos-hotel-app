@@ -18,6 +18,9 @@
     
     .fade-in { animation: fadeIn 0.5s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* Safe area padding for newer iPhones */
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   </style>
 </head>
 <body class="min-h-screen pb-24">
@@ -38,7 +41,6 @@
     
     <!-- HERO SECTION -->
     <div class="relative h-60 w-full">
-      <!-- Using a reliable room image link -->
       <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="w-full h-full object-cover">
       <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
       <div class="absolute bottom-8 left-5 right-5 text-white">
@@ -150,7 +152,6 @@
       
       <div class="flex gap-3 overflow-x-auto hide-scroll pb-4 pr-4">
         
-        <!-- Promo Card 1 (Food Specials) -->
         <div class="min-w-[240px] h-32 rounded-2xl relative overflow-hidden shadow-md flex-shrink-0 active:scale-95 transition-transform">
           <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
@@ -160,7 +161,6 @@
           </div>
         </div>
 
-        <!-- Promo Card 2 (Local Hub) -->
         <div class="min-w-[240px] h-32 rounded-2xl relative overflow-hidden shadow-md flex-shrink-0 active:scale-95 transition-transform">
           <img src="https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
@@ -174,6 +174,32 @@
     </div>
 
   </main>
+
+  <!-- FLOATING BOTTOM NAVIGATION BAR -->
+  <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+    <div class="flex justify-around items-center h-16 max-w-md mx-auto">
+      <!-- Home (Active) -->
+      <a href="#" class="flex flex-col items-center text-blue-600">
+        <i data-lucide="home" class="w-6 h-6"></i>
+        <span class="text-[10px] font-bold mt-1">Home</span>
+      </a>
+      <!-- Local Hub -->
+      <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+        <i data-lucide="map" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium mt-1">Local Hub</span>
+      </a>
+      <!-- Room Service -->
+      <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+        <i data-lucide="utensils" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium mt-1">Food</span>
+      </a>
+      <!-- Profile -->
+      <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+        <i data-lucide="user" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium mt-1">Profile</span>
+      </a>
+    </div>
+  </div>
 
   <script>
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
