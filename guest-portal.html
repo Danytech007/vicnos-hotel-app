@@ -78,7 +78,8 @@
     <div class="p-4 mt-2">
       <div class="grid grid-cols-4 gap-y-6 gap-x-2">
         
-        <a href="#" onclick="alert('Room Service Menu coming next!')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+        <!-- Room Service (Updated Link) -->
+        <a href="room-service.html" id="link-room-service" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
           <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center">
             <i data-lucide="utensils" class="w-6 h-6 text-orange-600"></i>
           </div>
@@ -92,7 +93,7 @@
           <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">House<br>Keeping</span>
         </a>
 
-        <!-- LINK TO LOCAL HUB -->
+        <!-- Local Hub (Updated Link) -->
         <a href="local-hub.html" id="link-local-hub" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
           <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
             <i data-lucide="map" class="w-6 h-6 text-blue-600"></i>
@@ -167,7 +168,7 @@
 
     <!-- ADVERTISE HERE (For you to make money) -->
     <div class="px-4 mt-3 mb-6">
-      <a href="https://wa.me/2349075356149?text=Hello%20Daniel,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
+      <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE?text=Hello,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
         <div class="flex items-center gap-2">
           <i data-lucide="megaphone" class="w-4 h-4 text-gray-400"></i>
           <p class="text-[11px] font-semibold text-gray-600">Want your business featured here?</p>
@@ -217,7 +218,8 @@
         <i data-lucide="map" class="w-6 h-6"></i>
         <span class="text-[10px] font-medium mt-1">Local Hub</span>
       </a>
-      <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+      <!-- Bottom Nav Food (Updated Link) -->
+      <a href="room-service.html" id="nav-link-food" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
         <i data-lucide="utensils" class="w-6 h-6"></i>
         <span class="text-[10px] font-medium mt-1">Food</span>
       </a>
@@ -245,6 +247,8 @@
     // Dynamically update links to carry the room number
     document.getElementById('link-local-hub').href = `local-hub.html?room=${roomNum}`;
     document.getElementById('nav-link-hub').href = `local-hub.html?room=${roomNum}`;
+    document.getElementById('link-room-service').href = `room-service.html?room=${roomNum}`;
+    document.getElementById('nav-link-food').href = `room-service.html?room=${roomNum}`;
     document.getElementById('nav-link-bill').href = `guest-profile.html?room=${roomNum}`;
 
     async function loadGuest() {

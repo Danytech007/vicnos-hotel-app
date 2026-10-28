@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Menu Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; }
+    input, select, textarea { user-select: text; }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </a>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Menu Manager</h1>
+        <p class="text-xs text-gray-500">Upload Food & Drinks</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-5">
+    
+    <!-- Upload Form -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5 text-orange-500"></i> Add New Item</h2>
+      
+      <form id="menu-form" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Item Name</label>
+              <input id="item-name" type="text" required placeholder="e.g. Jollof Rice" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Price (₦)</label>
+              <input id="item-price" type="number" required placeholder="e.g. 5000" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Category</label>
+              <select id="item-category" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
+                <option value="Kitchen">Kitchen (Food)</option>
+                <option value="Bar">Bar (Drinks)</option>
+                <option value="Minimart">Minimart</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Food Image</label>
+              <input id="item-image" type="file" accept="image/*" required class="w-full px-2 py-1.5 bg-gray-50 border rounded-xl outline-none text-xs">
+            </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Short Description (Optional)</label>
+          <input id="item-desc" type="text" placeholder="e.g. Served with fried plantain" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
+        </div>
+
+        <button type="submit" id="submit-btn" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition mt-2">
+          Upload to Menu
+        </button>
+      </form>
+      <p id="message" class="mt-3 text-center text-sm font-bold"></p>
+    </div>
+
+    <!-- Current Menu Items -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-blue-500"></i> Current Menu</h2>
+      <div id="menu-list" class="space-y-3">
+        <p class="text-center text-gray-500 text-sm">Loading menu...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function loadMenu() {
+      const { data: items } = await db.from('menu_items').select('*').order('created_at', { ascending: false });
+      const list = document.getElementById('menu-list');
+      
+      if (!items || items.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No items on the menu yet.</p>';
+        return;
+      }
+
+      list.innerHTML = items.map(item => `
+        <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-xl border">
+          <img src="${item.image_url}" class="w-14 h-14 rounded-lg object-cover">
+          <div class="flex-1">
+            <p class="font-bold text-gray-800 text-sm">${item.name}</p>
+            <p class="text-xs text-blue-600 font-bold">₦${Number(item.price).toLocaleString()}</p>
+            <p class="text-[10px] text-gray-400 uppercase">${item.category}</p>
+          </div>
+          <button onclick="deleteItem('${item.id}')" class="text-red-500 p-2"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    document.getElementById('menu-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const msg = document.getElementById('message');
+      const file = document.getElementById('item-image').files[0];
+
+      btn.innerText = "Uploading Image...";
+      btn.disabled = true;
+
+      try {
+        // 1. Upload Image to Supabase Storage
+        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '')}`;
+        const { error: uploadError } = await db.storage.from('menu_images').upload(fileName, file);
+        if (uploadError) throw uploadError;
+
+        // 2. Get Public URL
+        const { data: urlData } = db.storage.from('menu_images').getPublicUrl(fileName);
+
+        // 3. Save to Database
+        btn.innerText = "Saving Item...";
+        const { error: dbError } = await db.from('menu_items').insert({
+          name: document.getElementById('item-name').value,
+          price: document.getElementById('item-price').value,
+          category: document.getElementById('item-category').value,
+          description: document.getElementById('item-desc').value,
+          image_url: urlData.publicUrl
+        });
+        if (dbError) throw dbError;
+
+        msg.textContent = "✅ Item Added Successfully!";
+        msg.className = "mt-3 text-center text-sm font-bold text-green-600";
+        document.getElementById('menu-form').reset();
+        loadMenu();
+
+      } catch (err) {
+        msg.textContent = "Error: " + err.message;
+        msg.className = "mt-3 text-center text-sm font-bold text-red-600";
+      } finally {
+        btn.innerText = "Upload to Menu";
+        btn.disabled = false;
+      }
+    });
+
+    async function deleteItem(id) {
+      if(!confirm("Remove this item from the menu?")) return;
+      await db.from('menu_items').delete().eq('id', id);
+      loadMenu();
+    }
+
+    loadMenu();
+  </script>
+</body>
+</html>

@@ -97,7 +97,7 @@
       let buttons = '';
 
       const btn = (href, icon, color, label) => `
-        <a href="${href}" class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+        <a href="${href}" class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
           <i data-lucide="${icon}" class="w-6 h-6 ${color}"></i>
           <span class="text-[10px] font-medium text-gray-700 text-center">${label}</span>
         </a>
@@ -106,12 +106,13 @@
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-600', 'Clock In/Out');
       const maintBtn = btn('maintenance.html', 'wrench', 'text-red-600', 'Maintenance');
 
-      // 1. MD, ADMIN, MANAGER, & ACCOUNTANT: See Everything
+      // 1. MD, ADMIN, MANAGER, & ACCOUNTANT
       if (['md', 'admin', 'manager', 'accountant'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
-        buttons += btn('finance.html', 'bar-chart-2', 'text-green-600', 'Finance & Reports');
+        buttons += btn('admin-menu.html', 'coffee', 'text-orange-600', 'Menu Manager'); // NEW BUTTON
+        buttons += btn('finance.html', 'bar-chart-2', 'text-green-600', 'Finance');
         buttons += btn('manager-settings.html', 'settings', 'text-purple-600', 'Manage Rooms');
         buttons += btn('staff.html', 'users', 'text-teal-600', 'Staff');
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
@@ -119,9 +120,6 @@
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance');
         buttons += maintBtn;
         buttons += clockBtn;
-        
-        // TEMPORARY BUTTON TO TEST GUEST PORTAL
-        buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-600', 'Test Guest Portal');
       } 
       // 2. SUPERVISOR
       else if (role === 'supervisor') {
