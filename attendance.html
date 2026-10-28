@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-4 font-sans flex items-center justify-center">
   <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 w-full max-w-md text-center">
@@ -23,11 +25,14 @@
       <p id="time-display" class="text-3xl font-extrabold text-blue-600 mt-2">--:--</p>
     </div>
 
-    <!-- The Selfie Camera Input (Hidden) -->
+    <!-- Hidden File Input for Selfie -->
     <input type="file" id="selfie-camera" accept="image/*" capture="user" class="hidden" onchange="processClockIn(this)">
 
-    <button id="clock-btn" onclick="triggerCamera()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition hidden">
-      Clock In
+    <!-- Hidden Div for QR Scanner -->
+    <div id="reader" class="hidden w-full mb-4 rounded-xl overflow-hidden border-2 border-blue-500"></div>
+
+    <button id="clock-btn" onclick="startScan()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition hidden">
+      Scan Gate Code to Clock In
     </button>
     
     <a href="dashboard.html" class="block mt-6 text-sm text-gray-500 hover:text-gray-800">Back to Dashboard</a>
@@ -42,7 +47,11 @@
 
     let currentUser = null;
     let currentRecord = null;
-    let hotelWorkTime = "08:00"; // Default fallback
+    let hotelWorkTime = "08:00"; 
+    let qrScanner = null;
+
+    // The secret code printed on the paper at the gate
+    const SECRET_GATE_CODE = "VICNOS_GATE_2026";
 
     setInterval(() => {
       document.getElementById('time-display').innerText = new Date().toLocaleTimeString();
@@ -56,7 +65,6 @@
       const { data: profile } = await db.from('profiles').select('full_name').eq('id', user.id).single();
       if (profile) document.getElementById('staff-name').innerText = profile.full_name;
 
-      // Get the hotel's official resumption time
       const { data: settings } = await db.from('settings').select('work_start_time').single();
       if (settings) hotelWorkTime = settings.work_start_time;
 
@@ -72,31 +80,56 @@
         currentRecord = records[0];
         if (currentRecord.clock_out === null) {
           statusText.innerHTML = `Clocked In at <br><span class="text-blue-600">${new Date(currentRecord.clock_in).toLocaleTimeString()}</span>`;
-          btn.innerText = "Clock Out";
+          btn.innerText = "Clock Out (No Scan Needed)";
           btn.className = "w-full bg-red-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-red-500/30 active:scale-95 transition";
           btn.classList.remove('hidden');
+          // Change button action for Clock Out
+          btn.onclick = clockOut; 
         } else {
           statusText.innerHTML = `Shift Completed. <br><span class="text-green-600">Out at ${new Date(currentRecord.clock_out).toLocaleTimeString()}</span>`;
           btn.classList.add('hidden');
         }
       } else {
-        statusText.innerText = "You have not clocked in yet.";
-        btn.innerText = "Take Selfie & Clock In";
+        statusText.innerText = "You must scan the Gate QR code to clock in.";
+        btn.innerText = "Scan Gate Code to Clock In";
         btn.className = "w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition";
         btn.classList.remove('hidden');
+        btn.onclick = startScan; // Reset to Scan action
       }
     }
 
-    function triggerCamera() {
-      if (currentRecord && currentRecord.clock_out === null) {
-        // If they are clocking out, just do it instantly (no selfie needed for leaving)
-        clockOut();
-      } else {
-        // If clocking in, open the camera
-        document.getElementById('selfie-camera').click();
-      }
+    // --- QR SCANNER LOGIC ---
+    function startScan() {
+      document.getElementById('reader').classList.remove('hidden');
+      document.getElementById('clock-btn').innerText = "Scanning... Point camera at Gate Code";
+      
+      qrScanner = new Html5Qrcode("reader");
+      
+      qrScanner.start(
+        { facingMode: "environment" }, // Use back camera
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          // When it successfully scans a QR code
+          if (decodedText === SECRET_GATE_CODE) {
+            qrScanner.stop().then(() => {
+              document.getElementById('reader').classList.add('hidden');
+              // Code is correct! Now open the selfie camera
+              document.getElementById('selfie-camera').click();
+            });
+          } else {
+            // Wrong QR code scanned
+            alert("❌ Invalid QR Code. Please scan the Vicnos Gate Code at the reception.");
+          }
+        },
+        (errorMessage) => {
+          // Ignore scanning errors (happens constantly while focusing)
+        }
+      ).catch((err) => {
+        alert("Camera error: " + err);
+      });
     }
 
+    // --- SELFIE & UPLOAD LOGIC ---
     async function processClockIn(input) {
       if (!input.files || input.files.length === 0) return;
       const file = input.files[0];
@@ -106,7 +139,6 @@
       btn.disabled = true;
 
       try {
-        // 1. Upload photo to Supabase Storage
         const fileName = `${currentUser.id}-${Date.now()}.jpg`;
         const { data: uploadData, error: uploadError } = await db.storage
           .from('attendance_photos')
@@ -114,10 +146,8 @@
 
         if (uploadError) throw uploadError;
 
-        // 2. Get the public URL for the photo
         const { data: urlData } = db.storage.from('attendance_photos').getPublicUrl(fileName);
 
-        // 3. Save the record to the database
         await db.from('attendance').insert({
           user_id: currentUser.id,
           clock_in: new Date().toISOString(),
@@ -125,20 +155,23 @@
           photo_url: urlData.publicUrl
         });
 
-        alert(`Clocked In Successfully!\nHotel Resumption Time: ${hotelWorkTime}`);
-        loadAttendance(); 
+        alert(`Clocked In Successfully!\nResumption Time: ${hotelWorkTime}`);
+        window.location.reload(); 
 
       } catch (err) {
         alert("Upload failed: " + err.message);
         btn.disabled = false;
-        btn.innerText = "Take Selfie & Clock In";
+        btn.innerText = "Scan Gate Code to Clock In";
       }
     }
 
     async function clockOut() {
+        const btn = document.getElementById('clock-btn');
+        btn.innerText = "Processing...";
+        btn.disabled = true;
         await db.from('attendance').update({ clock_out: new Date().toISOString() }).eq('id', currentRecord.id);
         alert("Successfully Clocked Out!");
-        loadAttendance();
+        window.location.reload();
     }
 
     loadAttendance();
