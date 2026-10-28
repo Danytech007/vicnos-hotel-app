@@ -6,25 +6,9 @@
   <title>Vicnos Hotel - Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@latest"></script> 
   <style>
-    /* Sweet Touch CSS - Removes accidental highlighting and tap boxes */
-    body {
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    input, textarea {
-      user-select: text;
-      -webkit-user-select: text;
-    }
-    /* Smooth transitions for buttons */
-    a, button {
-      transition: all 0.2s ease-in-out;
-    }
-    a:active, button:active {
-      transform: scale(0.95);
-    }
+    body { -webkit-tap-highlight-color: transparent; user-select: none; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen pb-24 font-sans">
@@ -127,7 +111,7 @@
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
-        buttons += btn('finance.html', 'bar-chart-2', 'text-green-600', 'Finance & Reports'); // NEW FINANCE BUTTON
+        buttons += btn('finance.html', 'bar-chart-2', 'text-green-600', 'Finance & Reports');
         buttons += btn('manager-settings.html', 'settings', 'text-purple-600', 'Manage Rooms');
         buttons += btn('staff.html', 'users', 'text-teal-600', 'Staff');
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
@@ -135,6 +119,9 @@
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance');
         buttons += maintBtn;
         buttons += clockBtn;
+        
+        // TEMPORARY BUTTON TO TEST GUEST PORTAL
+        buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-600', 'Test Guest Portal');
       } 
       // 2. SUPERVISOR
       else if (role === 'supervisor') {
@@ -163,9 +150,9 @@
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
         buttons += clockBtn;
       }
-      // 6. LAUNDRY (New Role)
+      // 6. LAUNDRY
       else if (role === 'laundry') {
-        buttons += btn('laundry.html', 'shirt', 'text-blue-500', 'Laundry Hub'); // NEW LAUNDRY PAGE
+        buttons += btn('laundry.html', 'shirt', 'text-blue-500', 'Laundry Hub');
         buttons += maintBtn;
         buttons += clockBtn;
       }
