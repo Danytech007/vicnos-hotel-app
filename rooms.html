@@ -20,7 +20,6 @@
   </nav>
 
   <main class="p-4 max-w-2xl mx-auto space-y-5">
-    <!-- Legend -->
     <div class="flex flex-wrap justify-center gap-3 text-xs font-medium text-gray-600 mb-2">
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> Available</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Occupied</span>
@@ -85,9 +84,9 @@
         else if (room.status === 'Pending Inspection') { bgClass = 'bg-purple-100 border-purple-300 text-purple-800'; iconColor = 'text-purple-600'; iconName = 'eye'; }
         else if (room.status === 'Maintenance') { bgClass = 'bg-gray-200 border-gray-400 text-gray-800'; iconColor = 'text-gray-600'; iconName = 'wrench'; }
 
-        // ONLY show the gear icon to Managers/Admins
+        // ONLY show the gear icon to Managers, Admins, Supervisors, and Store Keepers
         let gearIconHtml = '';
-        if (userRole === 'manager' || userRole === 'admin') {
+        if (['manager', 'admin', 'supervisor', 'store_keeper'].includes(userRole)) {
             gearIconHtml = `
               <button onclick="changeStatusPrompt('${room.id}', '${room.room_number}', '${room.status}')" class="absolute top-1 right-1 p-1 opacity-50 hover:opacity-100">
                   <i data-lucide="settings" class="w-4 h-4 ${iconColor}"></i>
@@ -115,22 +114,22 @@
       } else if (status === 'Occupied') {
         window.location.href = `folio.html?room_id=${id}&room_num=${number}&price=${price}`;
       } else if (status === 'Pending Inspection') {
-        // If it's pending inspection, only a manager can approve it
-        if (userRole === 'manager' || userRole === 'admin') {
-           const pin = prompt("Enter Manager PIN to approve cleaning for Room " + number);
-           if (pin === "1234") {
+        // Supervisors, Store Keepers, Managers, Admins can approve
+        if (['manager', 'admin', 'supervisor', 'store_keeper'].includes(userRole)) {
+           const pin = prompt("Enter Supervisor/Manager PIN to approve cleaning for Room " + number);
+           if (pin === "1234") { // Keep the PIN simple for testing
                await db.from('rooms').update({ status: 'Available' }).eq('id', id);
                loadRooms();
            } else if (pin !== null) {
                alert("Invalid PIN!");
            }
         } else {
-           alert("This room is waiting for the Manager to inspect and approve it.");
+           alert("This room is waiting for a Supervisor to inspect and approve it.");
         }
       } else if (status === 'Dirty') {
-         // If it's dirty, a cleaner can mark it as Pending Inspection
-         if (userRole === 'housekeeping' || userRole === 'manager' || userRole === 'admin') {
-             const confirmClean = confirm("Have you finished cleaning Room " + number + "? Submit for Manager Inspection?");
+         // Housekeepers submit for inspection
+         if (['housekeeping', 'manager', 'admin', 'supervisor'].includes(userRole)) {
+             const confirmClean = confirm("Have you finished cleaning Room " + number + "? Submit for Inspection?");
              if (confirmClean) {
                  await db.from('rooms').update({ status: 'Pending Inspection' }).eq('id', id);
                  loadRooms();
@@ -139,12 +138,12 @@
              alert(`Room ${number} is Dirty. Please contact Housekeeping.`);
          }
       } else {
-        alert(`Room ${number} is ${status}. Change status via the gear icon.`);
+        alert(`Room ${number} is ${status}.`);
       }
     }
 
     async function changeStatusPrompt(id, number, currentStatus) {
-      if (userRole !== 'manager' && userRole !== 'admin') return;
+      if (!['manager', 'admin', 'supervisor', 'store_keeper'].includes(userRole)) return;
 
       const newStatus = prompt(`Change status for Room ${number} (Current: ${currentStatus}):\n\nType:\n1 - Available\n2 - Dirty\n3 - Maintenance\n4 - Occupied`);
       let statusToSet = null;
