@@ -18,13 +18,13 @@
       <div class="bg-red-100 p-2 rounded-xl text-red-600 animate-pulse"><i data-lucide="bell" class="w-6 h-6"></i></div>
       <div>
         <h1 class="font-bold text-gray-800 text-lg">Kitchen Order Board</h1>
-        <p class="text-xs text-gray-500">Manage and track guest orders</p>
+        <p class="text-xs text-gray-500">Voice alerts are active</p>
       </div>
     </div>
     
     <div class="flex gap-2">
         <button id="sound-btn" onclick="enableSound()" class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm animate-bounce">
-            🔊 Enable Sound
+            🔊 Enable Voice Alerts
         </button>
         <button onclick="window.location.href='dashboard.html'" class="bg-gray-100 px-4 py-2 rounded-xl text-sm font-bold text-gray-600">Back</button>
     </div>
@@ -33,8 +33,6 @@
   <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     <p class="text-gray-500 col-span-full text-center py-10">No active orders right now.</p>
   </div>
-
-  <audio id="notification-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
 
   <script>
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -47,9 +45,36 @@
 
     function enableSound() {
         soundEnabled = true;
-        document.getElementById('sound-btn').innerText = "✅ Sound Enabled";
+        document.getElementById('sound-btn').innerText = "✅ Voice Alerts Active";
         document.getElementById('sound-btn').className = "bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm";
-        document.getElementById('notification-sound').play();
+        
+        // Play a test voice to prove it works
+        announceOrder("Test", [{qty: 1, name: "System Check"}]);
+    }
+
+    // --- THE TEXT-TO-SPEECH ENGINE ---
+    function announceOrder(roomNum, items) {
+        if (!soundEnabled) return;
+
+        // 1. Create the text string
+        let itemList = items.map(i => `${i.qty} ${i.name}`).join(", ");
+        let text = `Attention Kitchen. New order from Room ${roomNum}. ${itemList}. Please check the screen.`;
+
+        // 2. Set up the voice
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Find an English voice (usually works best)
+        const voices = window.speechSynthesis.getVoices();
+        const englishVoice = voices.find(voice => voice.lang.includes('en'));
+        if (englishVoice) utterance.voice = englishVoice;
+
+        // 3. Make it sound urgent
+        utterance.rate = 0.9; // Slightly slower
+        utterance.pitch = 1.1; // Slightly higher pitch
+        utterance.volume = 1.0; // Max volume
+
+        // 4. Speak!
+        window.speechSynthesis.speak(utterance);
     }
 
     async function loadOrders() {
@@ -57,7 +82,7 @@
       
       const { data: orders, error } = await db.from('guest_orders')
         .select(`*, bookings ( guests ( full_name ) )`)
-        .neq('status', 'Delivered') // Show everything except delivered orders
+        .neq('status', 'Delivered')
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -100,7 +125,6 @@
             <div class="p-4 flex-1">
               <ul class="mb-4">${itemsHtml}</ul>
               
-              <!-- Action Area -->
               <div class="bg-gray-50 p-2 rounded-xl border">
                 <label class="block text-[10px] font-bold text-gray-500 mb-1">Update Status & ETA</label>
                 <div class="flex gap-2">
@@ -132,14 +156,18 @@
       loadOrders(); 
     }
 
+    // Realtime Listener with Voice Announcement
     db.channel('custom-insert-channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_orders' }, payload => {
-        if (payload.eventType === 'INSERT' && soundEnabled) {
-            document.getElementById('notification-sound').play().catch(e => console.log("Audio block"));
-        }
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
+        const newOrder = payload.new;
+        // Trigger the voice announcement
+        announceOrder(newOrder.room_number || 'Unknown', newOrder.items);
         loadOrders();
       })
       .subscribe();
+
+    // Pre-load voices so they are ready when the order comes in
+    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 
     loadOrders();
   </script>
