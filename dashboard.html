@@ -30,7 +30,7 @@
       <span id="role-badge" class="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border">ROLE</span>
     </div>
 
-    <!-- Stats Grid (Only visible to Managers/Admins/Receptionists) -->
+    <!-- Stats Grid (Only visible to MDs, Managers, Admins, Receptionists) -->
     <div id="stats-section">
       <h3 class="font-bold text-gray-800 mb-3">Hotel Overview</h3>
       <div class="grid grid-cols-2 gap-3">
@@ -81,8 +81,11 @@
         // Style the role badge
         const badge = document.getElementById('role-badge');
         badge.textContent = profile.role.toUpperCase();
-        if(profile.role === 'admin' || profile.role === 'manager') badge.className = 'bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full border border-purple-200';
-        else badge.className = 'bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200';
+        if(profile.role === 'admin' || profile.role === 'manager' || profile.role === 'md') {
+            badge.className = 'bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full border border-purple-200';
+        } else {
+            badge.className = 'bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200';
+        }
 
         renderOperations(profile.role);
         loadStats(profile.role);
@@ -101,8 +104,11 @@
         </a>
       `;
 
-      // ADMIN & MANAGER: See Everything
-      if (role === 'admin' || role === 'manager') {
+      // EVERYONE gets the Clock In/Out button
+      const clockBtn = btn('attendance.html', 'clock', 'text-indigo-600', 'Clock In/Out');
+
+      // MD, ADMIN & MANAGER: See Everything
+      if (['md', 'admin', 'manager'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
@@ -110,30 +116,41 @@
         buttons += btn('staff.html', 'users', 'text-teal-600', 'Staff');
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
+        buttons += clockBtn;
       } 
-      // RECEPTIONIST: Check In, Check Out, POS, Rooms
+      // RECEPTIONIST: Check In, Check Out, POS, Rooms, Clock
       else if (role === 'receptionist') {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
+        buttons += clockBtn;
       }
-      // BARMAN / WAITRESS / CHEF: POS only
-      else if (role === 'barman' || role === 'waitress' || role === 'chef') {
-        buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+      // SUPERVISOR: Rooms (to inspect), Clock
+      else if (role === 'supervisor') {
+        buttons += btn('rooms.html', 'eye', 'text-purple-600', 'Inspect Rooms');
+        buttons += clockBtn;
       }
-      // HOUSEKEEPING: Rooms only (to see what needs cleaning)
+      // HOUSEKEEPING: Rooms (to clean), Clock
       else if (role === 'housekeeping') {
-        buttons += btn('rooms.html', 'sparkles', 'text-orange-600', 'Room Status');
+        buttons += btn('rooms.html', 'sparkles', 'text-orange-600', 'Clean Rooms');
+        buttons += clockBtn;
       }
-      // STORE KEEPER: Store only
+      // STORE KEEPER: Store, Clock
       else if (role === 'store_keeper') {
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
+        buttons += clockBtn;
       }
-      // Fallback (anyone else just sees POS and Rooms)
+      // BARMAN, WAITRESS, CHEF: POS only, Clock
+      else if (['barman', 'waitress', 'chef'].includes(role)) {
+        buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+        buttons += clockBtn;
+      }
+      // Fallback
       else {
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
+        buttons += clockBtn;
       }
 
       grid.innerHTML = buttons;
@@ -141,8 +158,8 @@
     }
 
     async function loadStats(role) {
-      // Only load stats for people who need to see them
-      if (role === 'barman' || role === 'waitress' || role === 'housekeeper' || role === 'store_keeper') {
+      // Hide stats for non-management roles to keep their dashboard clean
+      if (['barman', 'waitress', 'chef', 'housekeeping', 'store_keeper'].includes(role)) {
         document.getElementById('stats-section').style.display = 'none';
         return;
       }
@@ -153,7 +170,7 @@
       ]);
       if (roomsData.data) {
         document.getElementById('stat-available').textContent = roomsData.data.filter(r => r.status === 'Available').length;
-        document.getElementById('stat-dirty').textContent = roomsData.data.filter(r => r.status === 'Dirty').length;
+        document.getElementById('stat-dirty').textContent = roomsData.data.filter(r => r.status === 'Dirty' || r.status === 'Pending Inspection').length;
         document.getElementById('stat-maint').textContent = roomsData.data.filter(r => r.status === 'Maintenance').length;
       }
       if (guestsData.count !== null) document.getElementById('stat-guests').textContent = guestsData.count;

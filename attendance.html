@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos Hotel - Attendance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 font-sans flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 w-full max-w-md text-center">
+    
+    <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i data-lucide="clock" class="w-10 h-10 text-blue-600"></i>
+    </div>
+    
+    <h1 class="text-2xl font-bold text-gray-800 mb-1">Staff Attendance</h1>
+    <p id="staff-name" class="text-gray-500 mb-6">Loading...</p>
+
+    <div id="status-area" class="bg-gray-50 p-4 rounded-xl mb-6 border">
+      <p id="status-text" class="text-lg font-bold text-gray-700">Checking status...</p>
+      <p id="time-display" class="text-3xl font-extrabold text-blue-600 mt-2">--:--</p>
+    </div>
+
+    <button id="clock-btn" onclick="handleClock()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition hidden">
+      Clock In
+    </button>
+    
+    <a href="dashboard.html" class="block mt-6 text-sm text-gray-500 hover:text-gray-800">Back to Dashboard</a>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let currentRecord = null;
+
+    // Live Clock
+    setInterval(() => {
+      document.getElementById('time-display').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+
+    async function loadAttendance() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+
+      const { data: profile } = await db.from('profiles').select('full_name').eq('id', user.id).single();
+      if (profile) document.getElementById('staff-name').innerText = profile.full_name;
+
+      // Check if they have an open shift today
+      const today = new Date().toISOString().split('T')[0];
+      const { data: records } = await db.from('attendance')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .order('clock_in', { ascending: false })
+        .limit(1);
+
+      const btn = document.getElementById('clock-btn');
+      const statusText = document.getElementById('status-text');
+
+      if (records && records.length > 0) {
+        currentRecord = records[0];
+        if (currentRecord.clock_out === null) {
+          // They are currently clocked in
+          statusText.innerHTML = `Clocked In at <br><span class="text-blue-600">${new Date(currentRecord.clock_in).toLocaleTimeString()}</span>`;
+          btn.innerText = "Clock Out";
+          btn.className = "w-full bg-red-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-red-500/30 active:scale-95 transition";
+          btn.classList.remove('hidden');
+        } else {
+          // They already finished their shift
+          statusText.innerHTML = `Shift Completed. <br><span class="text-green-600">Out at ${new Date(currentRecord.clock_out).toLocaleTimeString()}</span>`;
+          btn.classList.add('hidden');
+        }
+      } else {
+        // No record today, ready to clock in
+        statusText.innerText = "You have not clocked in yet.";
+        btn.innerText = "Clock In";
+        btn.className = "w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition";
+        btn.classList.remove('hidden');
+      }
+    }
+
+    async function handleClock() {
+      const btn = document.getElementById('clock-btn');
+      btn.innerText = "Processing...";
+      btn.disabled = true;
+
+      if (currentRecord && currentRecord.clock_out === null) {
+        // Clock OUT
+        await db.from('attendance').update({ clock_out: new Date().toISOString() }).eq('id', currentRecord.id);
+        alert("Successfully Clocked Out!");
+      } else {
+        // Clock IN
+        await db.from('attendance').insert({
+          user_id: currentUser.id,
+          clock_in: new Date().toISOString(),
+          date: new Date().toISOString().split('T')[0]
+        });
+        alert("Successfully Clocked In!");
+      }
+      
+      loadAttendance(); // Refresh UI
+    }
+
+    loadAttendance();
+  </script>
+</body>
+</html>
