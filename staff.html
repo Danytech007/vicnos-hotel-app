@@ -7,6 +7,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; user-select: none; }
+    input, select, textarea { user-select: text; }
+  </style>
 </head>
 <body class="bg-gray-50 min-h-screen pb-24 font-sans">
 
@@ -39,14 +43,15 @@
           <select id="staff-role" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition">
             <option value="md">MD (Managing Director)</option>
             <option value="manager">Manager</option>
+            <option value="accountant">Accountant</option>
             <option value="supervisor">Supervisor</option>
             <option value="receptionist">Receptionist</option>
             <option value="housekeeping">Housekeeping / Porter</option>
+            <option value="laundry">Laundry Staff</option>
             <option value="store_keeper">Store Keeper</option>
             <option value="barman">Barman</option>
             <option value="waitress">Waitress</option>
             <option value="chef">Chef / Kitchen</option>
-            <option value="accountant">Accountant</option>
             <option value="security">Security</option>
           </select>
         </div>
@@ -92,12 +97,10 @@
       if (!user) { window.location.href = 'index.html'; return; }
       
       const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
-      // Only MDs, Managers, and Admins can access Staff Management
-      if (!profile || !['md', 'manager', 'admin'].includes(profile.role)) {
-        // SILENT REDIRECT (No alert)
+      // MDs, Managers, Admins, and Accountants can access Staff Management
+      if (!profile || !['md', 'manager', 'admin', 'accountant'].includes(profile.role)) {
         window.location.href = 'dashboard.html';
       } else {
-        // If they are authorized, load the data
         loadStaff();
       }
     }
@@ -112,7 +115,7 @@
       }
       staff.forEach(s => {
         list.innerHTML += `
-          <div class="flex justify-between items-center p-3 border border-gray-100 rounded-xl bg-gray-50">
+          <div class="flex justify-between items-center p-3 border border-gray-100 rounded-xl bg-gray-50 mb-2">
             <div>
               <p class="font-bold text-gray-800 text-sm">${s.full_name}</p>
               <p class="text-xs text-blue-600 uppercase font-semibold">${s.role.replace('_', ' ')}</p>

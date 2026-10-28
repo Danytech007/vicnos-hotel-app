@@ -6,7 +6,26 @@
   <title>Vicnos Hotel - Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/lucide@latest"></script> 
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Sweet Touch CSS - Removes accidental highlighting and tap boxes */
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    input, textarea {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    /* Smooth transitions for buttons */
+    a, button {
+      transition: all 0.2s ease-in-out;
+    }
+    a:active, button:active {
+      transform: scale(0.95);
+    }
+  </style>
 </head>
 <body class="bg-gray-50 min-h-screen pb-24 font-sans">
   <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
@@ -30,7 +49,7 @@
       <span id="role-badge" class="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border">ROLE</span>
     </div>
 
-    <!-- Stats Grid (Only visible to MDs, Managers, Admins, Receptionists) -->
+    <!-- Stats Grid -->
     <div id="stats-section">
       <h3 class="font-bold text-gray-800 mb-3">Hotel Overview</h3>
       <div class="grid grid-cols-2 gap-3">
@@ -78,7 +97,7 @@
         
         const badge = document.getElementById('role-badge');
         badge.textContent = profile.role.toUpperCase();
-        if(['admin', 'manager', 'md'].includes(profile.role)) {
+        if(['admin', 'manager', 'md', 'accountant'].includes(profile.role)) {
             badge.className = 'bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full border border-purple-200';
         } else {
             badge.className = 'bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200';
@@ -103,27 +122,28 @@
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-600', 'Clock In/Out');
       const maintBtn = btn('maintenance.html', 'wrench', 'text-red-600', 'Maintenance');
 
-      // MD, ADMIN & MANAGER: See Everything
-      if (['md', 'admin', 'manager'].includes(role)) {
+      // 1. MD, ADMIN, MANAGER, & ACCOUNTANT: See Everything
+      if (['md', 'admin', 'manager', 'accountant'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+        buttons += btn('finance.html', 'bar-chart-2', 'text-green-600', 'Finance & Reports'); // NEW FINANCE BUTTON
         buttons += btn('manager-settings.html', 'settings', 'text-purple-600', 'Manage Rooms');
         buttons += btn('staff.html', 'users', 'text-teal-600', 'Staff');
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
-        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance Report');
+        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance');
         buttons += maintBtn;
         buttons += clockBtn;
       } 
-      // SUPERVISOR: Rooms, Attendance Report, Maintenance, Clock
+      // 2. SUPERVISOR
       else if (role === 'supervisor') {
         buttons += btn('rooms.html', 'eye', 'text-purple-600', 'Inspect Rooms');
-        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance Report');
+        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance');
         buttons += maintBtn;
         buttons += clockBtn;
       }
-      // RECEPTIONIST
+      // 3. RECEPTIONIST
       else if (role === 'receptionist') {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
@@ -132,26 +152,34 @@
         buttons += maintBtn;
         buttons += clockBtn;
       }
-      // HOUSEKEEPING: Rooms, Maintenance, Clock
+      // 4. HOUSEKEEPING
       else if (role === 'housekeeping') {
         buttons += btn('rooms.html', 'sparkles', 'text-orange-600', 'Clean Rooms');
         buttons += maintBtn;
         buttons += clockBtn;
       }
-      // STORE KEEPER: Store, Clock
+      // 5. STORE KEEPER
       else if (role === 'store_keeper') {
         buttons += btn('store.html', 'package', 'text-orange-500', 'Store');
         buttons += clockBtn;
       }
-      // BARMAN, WAITRESS, CHEF: POS, Clock
+      // 6. LAUNDRY (New Role)
+      else if (role === 'laundry') {
+        buttons += btn('laundry.html', 'shirt', 'text-blue-500', 'Laundry Hub'); // NEW LAUNDRY PAGE
+        buttons += maintBtn;
+        buttons += clockBtn;
+      }
+      // 7. BARMAN, WAITRESS, CHEF
       else if (['barman', 'waitress', 'chef'].includes(role)) {
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
         buttons += clockBtn;
       }
-      // Fallback
+      // 8. SECURITY
+      else if (role === 'security') {
+        buttons += clockBtn;
+      }
+      // 9. FALLBACK
       else {
-        buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
-        buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
         buttons += clockBtn;
       }
 
@@ -160,7 +188,7 @@
     }
 
     async function loadStats(role) {
-      if (['barman', 'waitress', 'chef', 'housekeeping', 'store_keeper'].includes(role)) {
+      if (['barman', 'waitress', 'chef', 'housekeeping', 'store_keeper', 'security', 'laundry'].includes(role)) {
         document.getElementById('stats-section').style.display = 'none';
         return;
       }

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Laundry Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; user-select: none; }
+    input, textarea { user-select: text; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-24 font-sans">
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Laundry Hub</h1>
+        <p class="text-xs text-gray-500">Staff Dashboard</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-5">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+      <div class="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="shirt" class="w-8 h-8 text-blue-600"></i>
+      </div>
+      <h2 class="text-xl font-bold text-gray-800 mb-2">Welcome to Laundry</h2>
+      <p class="text-sm text-gray-500 mb-6">The full guest laundry tracker (QR tags, washing status) will arrive in the Guest Portal update.</p>
+      
+      <a href="maintenance.html" class="block w-full bg-red-100 text-red-700 py-4 rounded-xl font-bold border border-red-200">
+        ⚠️ Report a Maintenance Challenge
+      </a>
+    </div>
+  </main>
+</body>
+</html>

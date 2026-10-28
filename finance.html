@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Finance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; user-select: none; }
+    input, select, textarea { user-select: text; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-24 font-sans">
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Finance & Reports</h1>
+        <p class="text-xs text-gray-500">Accountant View</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-6">
+    
+    <!-- Daily Sales Breakdown -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-5 h-5 text-green-600"></i> Today's Sales</h2>
+      
+      <div class="space-y-3">
+        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border">
+          <span class="text-sm font-bold text-gray-700">Reception (Rooms)</span>
+          <span id="total-rooms" class="font-bold text-blue-600">₦0</span>
+        </div>
+        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border">
+          <span class="text-sm font-bold text-gray-700">Bar</span>
+          <span id="total-bar" class="font-bold text-teal-600">₦0</span>
+        </div>
+        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border">
+          <span class="text-sm font-bold text-gray-700">Kitchen</span>
+          <span id="total-kitchen" class="font-bold text-orange-600">₦0</span>
+        </div>
+        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border">
+          <span class="text-sm font-bold text-gray-700">Laundry</span>
+          <span id="total-laundry" class="font-bold text-purple-600">₦0</span>
+        </div>
+        <div class="flex justify-between items-center bg-green-50 p-3 rounded-xl border border-green-200 mt-2">
+          <span class="text-md font-extrabold text-green-800">TOTAL REVENUE</span>
+          <span id="total-all" class="font-extrabold text-green-700 text-lg">₦0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staff Credit (Food on Credit) -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="hand-coins" class="w-5 h-5 text-red-600"></i> Staff Credit (Unpaid)</h2>
+      
+      <!-- Form to add credit -->
+      <div class="flex gap-2 mb-4">
+        <select id="credit-staff" class="flex-1 px-3 py-2 border rounded-lg text-sm bg-gray-50 outline-none focus:border-blue-500">
+          <option value="">Select Staff...</option>
+        </select>
+        <input id="credit-desc" type="text" placeholder="Item (e.g. Rice)" class="w-1/3 px-3 py-2 border rounded-lg text-sm bg-gray-50 outline-none focus:border-blue-500">
+        <input id="credit-amt" type="number" placeholder="₦" class="w-24 px-3 py-2 border rounded-lg text-sm bg-gray-50 outline-none focus:border-blue-500">
+        <button onclick="addCredit()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold active:scale-95"><i data-lucide="plus" class="w-4 h-4"></i></button>
+      </div>
+
+      <div id="credit-list" class="space-y-2 max-h-60 overflow-y-auto">
+        <p class="text-center text-gray-400 text-sm">Loading credit records...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function loadFinance() {
+      const today = new Date().toISOString().split('T')[0];
+
+      // 1. Calculate Room Revenue (From Bookings)
+      const { data: bookings } = await db.from('bookings').select('room_id').eq('check_in_date', today).eq('status', 'Checked In');
+      // Note: For accurate room revenue, we'd need the total paid, but for now let's just sum up POS orders for daily sales.
+      
+      // 2. Calculate POS Revenue
+      const { data: orders } = await db.from('pos_orders').select('department, total_amount').eq('created_at', today);
+      
+      let bar = 0, kitchen = 0, laundry = 0, rooms = 0;
+      
+      if (orders) {
+        orders.forEach(o => {
+          if (o.department === 'Bar') bar += Number(o.total_amount);
+          if (o.department === 'Kitchen') kitchen += Number(o.total_amount);
+          if (o.department === 'Laundry') laundry += Number(o.total_amount);
+        });
+      }
+
+      document.getElementById('total-bar').textContent = `₦${bar.toLocaleString()}`;
+      document.getElementById('total-kitchen').textContent = `₦${kitchen.toLocaleString()}`;
+      document.getElementById('total-laundry').textContent = `₦${laundry.toLocaleString()}`;
+      document.getElementById('total-rooms').textContent = `₦${rooms.toLocaleString()}`; 
+      
+      const total = bar + kitchen + laundry + rooms;
+      document.getElementById('total-all').textContent = `₦${total.toLocaleString()}`;
+
+      // Load Staff Dropdown
+      const { data: staff } = await db.from('profiles').select('id, full_name').neq('role', 'md');
+      const select = document.getElementById('credit-staff');
+      if (staff) {
+        staff.forEach(s => select.innerHTML += `<option value="${s.id}">${s.full_name}</option>`);
+      }
+
+      loadCredits();
+    }
+
+    async function loadCredits() {
+      const list = document.getElementById('credit-list');
+      const { data: credits } = await db.from('staff_credits')
+        .select(`*, profiles(full_name)`)
+        .eq('status', 'Unpaid')
+        .order('date', { ascending: false });
+
+      if (!credits || credits.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-2">No unpaid credits.</p>';
+        return;
+      }
+
+      list.innerHTML = credits.map(c => `
+        <div class="flex justify-between items-center bg-red-50 p-2 rounded-lg border border-red-100">
+          <div>
+            <p class="font-bold text-sm text-red-900">${c.profiles.full_name}</p>
+            <p class="text-xs text-red-700">${c.item_description}</p>
+          </div>
+          <div class="text-right">
+            <p class="font-bold text-red-900">₦${Number(c.amount).toLocaleString()}</p>
+            <button onclick="clearCredit('${c.id}')" class="text-[10px] bg-red-600 text-white px-2 py-1 rounded mt-1">Mark Paid</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function addCredit() {
+      const staffId = document.getElementById('credit-staff').value;
+      const desc = document.getElementById('credit-desc').value;
+      const amt = document.getElementById('credit-amt').value;
+
+      if (!staffId || !desc || !amt) return alert("Fill all fields");
+
+      await db.from('staff_credits').insert({
+        staff_id: staffId,
+        item_description: desc,
+        amount: amt
+      });
+
+      document.getElementById('credit-desc').value = '';
+      document.getElementById('credit-amt').value = '';
+      loadCredits();
+    }
+
+    async function clearCredit(id) {
+      if (!confirm("Has this staff member paid?")) return;
+      await db.from('staff_credits').update({ status: 'Paid' }).eq('id', id);
+      loadCredits();
+    }
+
+    loadFinance();
+  </script>
+</body>
+</html>
