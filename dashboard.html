@@ -111,7 +111,7 @@
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
-        buttons += btn('admin-menu.html', 'coffee', 'text-orange-600', 'Menu Manager'); // BUTTON IS HERE
+        buttons += btn('admin-menu.html', 'coffee', 'text-orange-600', 'Menu Manager');
         buttons += btn('finance.html', 'bar-chart-2', 'text-green-600', 'Finance');
         buttons += btn('manager-settings.html', 'settings', 'text-purple-600', 'Manage Rooms');
         buttons += btn('staff.html', 'users', 'text-teal-600', 'Staff');
@@ -120,6 +120,9 @@
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance');
         buttons += maintBtn;
         buttons += clockBtn;
+        
+        // Added Test Guest Portal back for you
+        buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-600', 'Test Guest Portal');
       } 
       // 2. SUPERVISOR
       else if (role === 'supervisor') {
