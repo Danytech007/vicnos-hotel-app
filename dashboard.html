@@ -33,7 +33,6 @@
       <span id="role-badge" class="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border">ROLE</span>
     </div>
 
-    <!-- Stats Grid -->
     <div id="stats-section">
       <h3 class="font-bold text-gray-800 mb-3">Hotel Overview</h3>
       <div class="grid grid-cols-2 gap-3">
@@ -105,12 +104,14 @@
 
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-600', 'Clock In/Out');
       const maintBtn = btn('maintenance.html', 'wrench', 'text-red-600', 'Maintenance');
+      const orderBtn = btn('order-board.html', 'bell', 'text-red-600 animate-pulse', 'Live Orders'); 
 
       // 1. MD, ADMIN, MANAGER, & ACCOUNTANT
       if (['md', 'admin', 'manager', 'accountant'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+        buttons += orderBtn;
         buttons += btn('admin-menu.html', 'coffee', 'text-orange-600', 'Menu Manager');
         buttons += btn('finance.html', 'bar-chart-2', 'text-green-600', 'Finance');
         buttons += btn('manager-settings.html', 'settings', 'text-purple-600', 'Manage Rooms');
@@ -120,8 +121,6 @@
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-600', 'Attendance');
         buttons += maintBtn;
         buttons += clockBtn;
-        
-        // Added Test Guest Portal back for you
         buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-600', 'Test Guest Portal');
       } 
       // 2. SUPERVISOR
@@ -136,6 +135,7 @@
         buttons += btn('checkin.html', 'log-in', 'text-blue-600', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-600', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+        buttons += orderBtn;
         buttons += btn('rooms.html', 'door-closed', 'text-blue-600', 'Rooms');
         buttons += maintBtn;
         buttons += clockBtn;
@@ -160,6 +160,7 @@
       // 7. BARMAN, WAITRESS, CHEF
       else if (['barman', 'waitress', 'chef'].includes(role)) {
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-600', 'POS');
+        buttons += orderBtn;
         buttons += clockBtn;
       }
       // 8. SECURITY
