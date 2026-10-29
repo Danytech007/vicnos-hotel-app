@@ -18,7 +18,7 @@
       <div class="bg-red-100 p-2 rounded-xl text-red-600 animate-pulse"><i data-lucide="bell" class="w-6 h-6"></i></div>
       <div>
         <h1 class="font-bold text-gray-800 text-lg">Kitchen Order Board</h1>
-        <p class="text-xs text-gray-500">Voice alerts are active</p>
+        <p id="status-text" class="text-xs text-gray-500">Click Enable to start listening</p>
       </div>
     </div>
     
@@ -34,6 +34,11 @@
     <p class="text-gray-500 col-span-full text-center py-10">No active orders right now.</p>
   </div>
 
+  <!-- Hidden silent audio to keep the browser awake -->
+  <audio id="silent-audio" loop>
+    <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav">
+  </audio>
+
   <script>
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
@@ -43,37 +48,52 @@
 
     let soundEnabled = false;
 
-    function enableSound() {
+    async function enableSound() {
         soundEnabled = true;
+        
+        // 1. Play the silent audio loop to bypass browser autoplay block
+        const silentAudio = document.getElementById('silent-audio');
+        silentAudio.volume = 0.01; // almost silent
+        silentAudio.play().catch(e => console.log("Silent audio block"));
+
+        // 2. Request Wake Lock so the screen doesn't turn off
+        try {
+            if ('wakeLock' in navigator) {
+                await navigator.wakeLock.request('screen');
+                document.getElementById('status-text').innerText = "Screen Lock Active. Listening for orders...";
+            }
+        } catch (err) {
+            console.log("Wake Lock failed", err);
+            document.getElementById('status-text').innerText = "Listening for orders (Keep screen on)";
+        }
+
+        // 3. Update UI
         document.getElementById('sound-btn').innerText = "✅ Voice Alerts Active";
         document.getElementById('sound-btn').className = "bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm";
         
-        // Play a test voice to prove it works
+        // 4. Test voice
         announceOrder("Test", [{qty: 1, name: "System Check"}]);
     }
 
-    // --- THE TEXT-TO-SPEECH ENGINE ---
     function announceOrder(roomNum, items) {
         if (!soundEnabled) return;
 
-        // 1. Create the text string
+        // Cancel any ongoing speech so they don't overlap
+        window.speechSynthesis.cancel();
+
         let itemList = items.map(i => `${i.qty} ${i.name}`).join(", ");
         let text = `Attention Kitchen. New order from Room ${roomNum}. ${itemList}. Please check the screen.`;
 
-        // 2. Set up the voice
         const utterance = new SpeechSynthesisUtterance(text);
         
-        // Find an English voice (usually works best)
         const voices = window.speechSynthesis.getVoices();
         const englishVoice = voices.find(voice => voice.lang.includes('en'));
         if (englishVoice) utterance.voice = englishVoice;
 
-        // 3. Make it sound urgent
-        utterance.rate = 0.9; // Slightly slower
-        utterance.pitch = 1.1; // Slightly higher pitch
-        utterance.volume = 1.0; // Max volume
+        utterance.rate = 0.9;  
+        utterance.pitch = 1.1; 
+        utterance.volume = 1.0; 
 
-        // 4. Speak!
         window.speechSynthesis.speak(utterance);
     }
 
@@ -156,17 +176,14 @@
       loadOrders(); 
     }
 
-    // Realtime Listener with Voice Announcement
     db.channel('custom-insert-channel')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
         const newOrder = payload.new;
-        // Trigger the voice announcement
         announceOrder(newOrder.room_number || 'Unknown', newOrder.items);
         loadOrders();
       })
       .subscribe();
 
-    // Pre-load voices so they are ready when the order comes in
     window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 
     loadOrders();
