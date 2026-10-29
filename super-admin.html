@@ -30,11 +30,11 @@
   </nav>
 
   <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[68px] z-40">
-    <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">Overview</button>
-    <button onclick="switchTab('manage-vendors')" id="tab-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Manage Vendors</button>
-    <button onclick="switchTab('vendor')" id="tab-vendor" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Vendor</button>
-    <button onclick="switchTab('guide')" id="tab-guide" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Guide</button>
-    <button onclick="switchTab('ad')" id="tab-ad" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Ad</button>
+    <button id="btn-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">Overview</button>
+    <button id="btn-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Manage Vendors</button>
+    <button id="btn-vendor" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Vendor</button>
+    <button id="btn-guide" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Guide</button>
+    <button id="btn-ad" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Ad</button>
   </div>
 
   <main class="p-4 max-w-4xl mx-auto mt-4">
@@ -67,7 +67,7 @@
       </div>
     </div>
 
-    <!-- ADD VENDOR (Manual) -->
+    <!-- ADD VENDOR -->
     <div id="section-vendor" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Manually Add Vendor</h2>
       <form id="vendor-form" class="space-y-4">
@@ -103,8 +103,6 @@
           <label class="block text-xs text-slate-400 mb-1">WhatsApp Number</label>
           <input id="v-whatsapp" type="text" required placeholder="2348012345678" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
-        
-        <!-- NEW LOGIN FIELDS -->
         <div class="border-t border-slate-700/50 pt-4 mt-4">
             <p class="text-xs text-yellow-400 font-bold mb-3">Create Vendor Login Account</p>
             <div class="space-y-3">
@@ -118,7 +116,6 @@
                 </div>
             </div>
         </div>
-
         <button type="submit" id="v-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Save Vendor & Create Login</button>
       </form>
       <p id="v-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
@@ -173,6 +170,11 @@
   </main>
 
   <script>
+    // --- ERROR CATCHER ---
+    window.onerror = function(message, source, lineno, colno, error) {
+        alert("A JavaScript error occurred: " + message + "\nPlease take a screenshot of this.");
+    };
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
@@ -190,75 +192,99 @@
         return data.publicUrl;
     }
 
+    // --- TAB SWITCHING LOGIC ---
     function switchTab(tabId) {
+        // Hide all sections
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        // Show target section
         document.getElementById(`section-${tabId}`).classList.remove('hidden');
         
+        // Reset all buttons
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
         });
-        document.getElementById(`tab-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
+        // Highlight active button
+        document.getElementById(`btn-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
         
+        // Load data for specific tabs
         if(tabId === 'overview') loadOverview();
         if(tabId === 'manage-vendors') loadAdminVendors();
     }
 
-    async function loadOverview() {
-        const { data: vendors } = await db.from('vendors').select('*');
-        const { data: inquiries } = await db.from('vendor_inquiries').select('vendor_id');
-        const { data: orders } = await db.from('vendor_orders').select('commission_amount').eq('status', 'Released');
+    // Attach event listeners to buttons
+    document.getElementById('btn-overview').addEventListener('click', () => switchTab('overview'));
+    document.getElementById('btn-manage-vendors').addEventListener('click', () => switchTab('manage-vendors'));
+    document.getElementById('btn-vendor').addEventListener('click', () => switchTab('vendor'));
+    document.getElementById('btn-guide').addEventListener('click', () => switchTab('guide'));
+    document.getElementById('btn-ad').addEventListener('click', () => switchTab('ad'));
 
-        document.getElementById('stat-vendors').textContent = vendors ? vendors.length : 0;
-        document.getElementById('stat-inquiries').textContent = inquiries ? inquiries.length : 0;
-        
-        let totalComm = 0;
-        if(orders) orders.forEach(o => totalComm += Number(o.commission_amount));
-        document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
+    async function loadOverview() {
+        try {
+            const { data: vendors } = await db.from('vendors').select('*');
+            const { data: inquiries } = await db.from('vendor_inquiries').select('vendor_id');
+            const { data: orders } = await db.from('vendor_orders').select('commission_amount').eq('status', 'Released');
+
+            document.getElementById('stat-vendors').textContent = vendors ? vendors.length : 0;
+            document.getElementById('stat-inquiries').textContent = inquiries ? inquiries.length : 0;
+            
+            let totalComm = 0;
+            if(orders) orders.forEach(o => totalComm += Number(o.commission_amount));
+            document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
+        } catch (e) {
+            console.log("Overview error:", e);
+        }
     }
 
     async function loadAdminVendors() {
         const list = document.getElementById('vendor-list-admin');
+        list.innerHTML = '<p class="text-center text-slate-500">Loading vendors...</p>';
         
-        const { data: vendors } = await db.from('vendors').select(`
-            *,
-            profiles (id)
-        `).order('created_at', { ascending: false });
+        try {
+            const { data: vendors, error } = await db.from('vendors').select(`
+                *,
+                profiles (id)
+            `).order('created_at', { ascending: false });
 
-        if (!vendors || vendors.length === 0) {
-            list.innerHTML = '<p class="text-center text-slate-500">No vendors registered yet.</p>';
-            return;
-        }
+            if (error) throw error;
 
-        list.innerHTML = vendors.map(v => {
-            const isActive = v.is_active;
-            const profileId = v.profiles && v.profiles.length > 0 ? v.profiles[0].id : null;
-            
-            return `
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <img src="${v.image_url || 'https://via.placeholder.com/150'}" class="w-12 h-12 rounded-full object-cover border border-slate-600">
-                            <div>
-                                <h3 class="font-bold text-white text-sm">${v.business_name}</h3>
-                                <p class="text-[10px] text-yellow-400 uppercase">${v.category}</p>
-                                <p class="text-[10px] text-slate-400 mt-1">${v.address || 'No address provided'}</p>
+            if (!vendors || vendors.length === 0) {
+                list.innerHTML = '<p class="text-center text-slate-500">No vendors registered yet.</p>';
+                return;
+            }
+
+            list.innerHTML = vendors.map(v => {
+                const isActive = v.is_active;
+                const profileId = v.profiles && v.profiles.length > 0 ? v.profiles[0].id : null;
+                
+                return `
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <img src="${v.image_url || 'https://via.placeholder.com/150'}" class="w-12 h-12 rounded-full object-cover border border-slate-600">
+                                <div>
+                                    <h3 class="font-bold text-white text-sm">${v.business_name}</h3>
+                                    <p class="text-[10px] text-yellow-400 uppercase">${v.category}</p>
+                                    <p class="text-[10px] text-slate-400 mt-1">${v.address || 'No address provided'}</p>
+                                </div>
                             </div>
+                            <span class="${isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold px-2 py-1 rounded">
+                                ${isActive ? 'ACTIVE' : 'INACTIVE'}
+                            </span>
                         </div>
-                        <span class="${isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold px-2 py-1 rounded">
-                            ${isActive ? 'ACTIVE' : 'INACTIVE'}
-                        </span>
+                        
+                        ${profileId ? `
+                        <div class="flex gap-2">
+                            <button onclick="resetVendorPassword('${profileId}', '${v.business_name}')" class="flex-1 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold border border-slate-700">Reset PW</button>
+                            <button onclick="toggleVendorStatus('${profileId}', '${v.id}', ${isActive})" class="flex-1 ${isActive ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} py-2 rounded-lg text-xs font-bold">
+                                ${isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </div>` : `<p class="text-xs text-slate-500 text-center">No login linked</p>`}
                     </div>
-                    
-                    ${profileId ? `
-                    <div class="flex gap-2">
-                        <button onclick="resetVendorPassword('${profileId}', '${v.business_name}')" class="flex-1 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold border border-slate-700">Reset PW</button>
-                        <button onclick="toggleVendorStatus('${profileId}', '${v.id}', ${isActive})" class="flex-1 ${isActive ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} py-2 rounded-lg text-xs font-bold">
-                            ${isActive ? 'Deactivate' : 'Activate'}
-                        </button>
-                    </div>` : `<p class="text-xs text-slate-500 text-center">No login linked</p>`}
-                </div>
-            `;
-        }).join('');
+                `;
+            }).join('');
+        } catch (err) {
+            list.innerHTML = `<p class="text-red-500 text-center">Error: ${err.message}</p>`;
+        }
     }
 
     async function resetVendorPassword(userId, name) {
@@ -315,35 +341,4 @@
             document.getElementById('vendor-form').reset();
             loadAdminVendors();
         } catch (err) {
-            msg.textContent = "Error: " + err.message;
-        } finally {
-            btn.innerText = "Save Vendor & Create Login"; btn.disabled = false;
-            setTimeout(() => msg.textContent = '', 3000);
-        }
-    });
-
-    document.getElementById('guide-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('g-btn');
-        const msg = document.getElementById('g-msg');
-        btn.innerText = "Saving..."; btn.disabled = true;
-
-        try {
-            const file = document.getElementById('g-image').files[0];
-            const imageUrl = await uploadImage(file, 'vendor_images');
-
-            await db.from('vip_guides').insert({
-                full_name: document.getElementById('g-name').value,
-                bio: document.getElementById('g-bio').value,
-                image_url: imageUrl,
-                whatsapp_number: document.getElementById('g-whatsapp').value,
-                is_active: true
-            });
-
-            msg.textContent = "✅ Guide Added!";
-            document.getElementById('guide-form').reset();
-        } catch (err) {
-            msg.textContent = "Error: " + err.message;
-        } finally {
-            btn.innerText = "Save Guide"; btn.disabled = false;
-            setTimeout(() => msg.textCon
+            msg.textContent = "Erro
