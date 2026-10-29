@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Image Compression Library -->
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
@@ -30,7 +32,7 @@
 
   <!-- Tabs -->
   <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[68px] z-40">
-    <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Overview</button>
+    <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">Overview</button>
     <button onclick="switchTab('vendor')" id="tab-vendor" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Vendor</button>
     <button onclick="switchTab('guide')" id="tab-guide" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Guide</button>
     <button onclick="switchTab('ad')" id="tab-ad" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Ad</button>
@@ -100,10 +102,14 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">WhatsApp Number (with country code, e.g., 2348012345678)</label>
+          <label class="block text-xs text-slate-400 mb-1">Photo of Goods/Services</label>
+          <input id="v-image" type="file" accept="image/*" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white outline-none focus:border-yellow-500 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">WhatsApp Number (e.g., 2348012345678)</label>
           <input id="v-whatsapp" type="text" required placeholder="2348012345678" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
-        <button type="submit" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95">Save Vendor</button>
+        <button type="submit" id="v-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Save Vendor</button>
       </form>
       <p id="v-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
@@ -121,14 +127,14 @@
           <textarea id="g-bio" required placeholder="Fluent in English & French. Expert in Benin City history..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500"></textarea>
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Image URL (Link to their photo)</label>
-          <input id="g-image" type="text" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+          <label class="block text-xs text-slate-400 mb-1">Profile Picture</label>
+          <input id="g-image" type="file" accept="image/*" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white outline-none focus:border-yellow-500 text-sm">
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">WhatsApp Number</label>
           <input id="g-whatsapp" type="text" required placeholder="2348012345678" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
-        <button type="submit" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95">Save Guide</button>
+        <button type="submit" id="g-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Save Guide</button>
       </form>
       <p id="g-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
@@ -146,10 +152,10 @@
           <input id="a-desc" type="text" required placeholder="e.g. XYZ Motors - 10% off for guests" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Image URL (Optional)</label>
-          <input id="a-image" type="text" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+          <label class="block text-xs text-slate-400 mb-1">Ad Banner Image (Optional)</label>
+          <input id="a-image" type="file" accept="image/*" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white outline-none focus:border-yellow-500 text-sm">
         </div>
-        <button type="submit" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95">Publish Ad</button>
+        <button type="submit" id="a-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Publish Ad</button>
       </form>
       <p id="a-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
@@ -163,6 +169,18 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
+    // Helper function to handle image uploads
+    async function uploadImage(file, bucketName) {
+        if (!file) return null;
+        const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true };
+        const compressedFile = await imageCompression(file, options);
+        const fileName = `${bucketName}-${Date.now()}.jpg`;
+        const { error } = await db.storage.from(bucketName).upload(fileName, compressedFile);
+        if (error) throw error;
+        const { data } = db.storage.from(bucketName).getPublicUrl(fileName);
+        return data.publicUrl;
+    }
+
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
         document.getElementById(`section-${tabId}`).classList.remove('hidden');
@@ -170,7 +188,7 @@
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
         });
-        document.getElementById(`tab-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
+        document.getElementById(`tab-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
         
         if(tabId === 'overview') loadOverview();
     }
@@ -197,12 +215,15 @@
 
         tbody.innerHTML = vendors.map(v => {
             const vInq = inquiries ? inquiries.filter(i => i.vendor_id === v.id).length : 0;
-            let badge = v.is_active ? '<span class="text-green-400">Active</span>' : '<span class="text-red-400">Suspended</span>';
-            if (v.is_active && vInq >= 5) badge = '<span class="text-yellow-400">Ghosting Warning</span>';
+            let badge = v.is_active ? '<span class="text-green-400 text-xs font-bold">Active</span>' : '<span class="text-red-400 text-xs font-bold">Suspended</span>';
+            if (v.is_active && vInq >= 5) badge = '<span class="text-yellow-400 text-xs font-bold">Ghosting Warning</span>';
             
             return `
-                <tr class="border-b border-slate-700/50">
-                    <td class="p-3 text-sm text-white font-bold">${v.business_name}</td>
+                <tr class="border-b border-slate-700/50 hover:bg-slate-800/30">
+                    <td class="p-3 text-sm text-white font-bold flex items-center gap-2">
+                        ${v.image_url ? `<img src="${v.image_url}" class="w-8 h-8 rounded-full object-cover">` : ''}
+                        ${v.business_name}
+                    </td>
                     <td class="p-3 text-sm text-slate-300">${v.category}</td>
                     <td class="p-3 text-sm text-center text-slate-300">${vInq}</td>
                     <td class="p-3 text-sm text-center text-slate-300">0</td>
@@ -215,48 +236,94 @@
     // Form: Add Vendor
     document.getElementById('vendor-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('v-btn');
         const msg = document.getElementById('v-msg');
-        msg.textContent = "Saving...";
-        const { error } = await db.from('vendors').insert({
-            business_name: document.getElementById('v-name').value,
-            category: document.getElementById('v-category').value,
-            whatsapp_number: document.getElementById('v-whatsapp').value,
-            phone_number: document.getElementById('v-whatsapp').value,
-            is_active: true
-        });
-        if(error) { msg.textContent = error.message; msg.className = "mt-2 text-center text-sm text-red-400"; }
-        else { msg.textContent = "✅ Vendor Added!"; msg.className = "mt-2 text-center text-sm text-green-400"; document.getElementById('vendor-form').reset(); }
+        btn.innerText = "Saving..."; btn.disabled = true;
+
+        try {
+            const file = document.getElementById('v-image').files[0];
+            const imageUrl = await uploadImage(file, 'vendor_images');
+
+            const { error } = await db.from('vendors').insert({
+                business_name: document.getElementById('v-name').value,
+                category: document.getElementById('v-category').value,
+                whatsapp_number: document.getElementById('v-whatsapp').value,
+                phone_number: document.getElementById('v-whatsapp').value,
+                image_url: imageUrl,
+                is_active: true
+            });
+            if(error) throw error;
+
+            msg.textContent = "✅ Vendor Added!";
+            msg.className = "mt-2 text-center text-sm font-bold text-green-400";
+            document.getElementById('vendor-form').reset();
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+            msg.className = "mt-2 text-center text-sm font-bold text-red-400";
+        } finally {
+            btn.innerText = "Save Vendor"; btn.disabled = false;
+        }
     });
 
     // Form: Add Guide
     document.getElementById('guide-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('g-btn');
         const msg = document.getElementById('g-msg');
-        msg.textContent = "Saving...";
-        const { error } = await db.from('vip_guides').insert({
-            full_name: document.getElementById('g-name').value,
-            bio: document.getElementById('g-bio').value,
-            image_url: document.getElementById('g-image').value,
-            whatsapp_number: document.getElementById('g-whatsapp').value,
-            is_active: true
-        });
-        if(error) { msg.textContent = error.message; msg.className = "mt-2 text-center text-sm text-red-400"; }
-        else { msg.textContent = "✅ Guide Added!"; msg.className = "mt-2 text-center text-sm text-green-400"; document.getElementById('guide-form').reset(); }
+        btn.innerText = "Saving..."; btn.disabled = true;
+
+        try {
+            const file = document.getElementById('g-image').files[0];
+            const imageUrl = await uploadImage(file, 'vendor_images');
+
+            const { error } = await db.from('vip_guides').insert({
+                full_name: document.getElementById('g-name').value,
+                bio: document.getElementById('g-bio').value,
+                image_url: imageUrl,
+                whatsapp_number: document.getElementById('g-whatsapp').value,
+                is_active: true
+            });
+            if(error) throw error;
+
+            msg.textContent = "✅ Guide Added!";
+            msg.className = "mt-2 text-center text-sm font-bold text-green-400";
+            document.getElementById('guide-form').reset();
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+            msg.className = "mt-2 text-center text-sm font-bold text-red-400";
+        } finally {
+            btn.innerText = "Save Guide"; btn.disabled = false;
+        }
     });
 
     // Form: Add Ad
     document.getElementById('ad-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('a-btn');
         const msg = document.getElementById('a-msg');
-        msg.textContent = "Saving...";
-        const { error } = await db.from('ads').insert({
-            title: document.getElementById('a-title').value,
-            description: document.getElementById('a-desc').value,
-            image_url: document.getElementById('a-image').value,
-            is_active: true
-        });
-        if(error) { msg.textContent = error.message; msg.className = "mt-2 text-center text-sm text-red-400"; }
-        else { msg.textContent = "✅ Ad Published!"; msg.className = "mt-2 text-center text-sm text-green-400"; document.getElementById('ad-form').reset(); }
+        btn.innerText = "Publishing..."; btn.disabled = true;
+
+        try {
+            const file = document.getElementById('a-image').files[0];
+            const imageUrl = await uploadImage(file, 'ad_images');
+
+            const { error } = await db.from('ads').insert({
+                title: document.getElementById('a-title').value,
+                description: document.getElementById('a-desc').value,
+                image_url: imageUrl,
+                is_active: true
+            });
+            if(error) throw error;
+
+            msg.textContent = "✅ Ad Published!";
+            msg.className = "mt-2 text-center text-sm font-bold text-green-400";
+            document.getElementById('ad-form').reset();
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+            msg.className = "mt-2 text-center text-sm font-bold text-red-400";
+        } finally {
+            btn.innerText = "Publish Ad"; btn.disabled = false;
+        }
     });
 
     loadOverview();
