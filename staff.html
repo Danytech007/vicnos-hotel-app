@@ -54,6 +54,7 @@
             <option value="chef">Chef / Kitchen</option>
             <option value="security">Security</option>
             <option value="vendor">Vendor (External)</option>
+            <option value="blogger">Vicnos Blogger</option>
           </select>
         </div>
 
@@ -110,7 +111,6 @@
 
     async function loadStaff() {
       const list = document.getElementById('staff-list');
-      // Now fetching all staff (RLS was updated in Step 1)
       const { data: staff } = await db.from('profiles').select('*').order('created_at');
       list.innerHTML = '';
       
