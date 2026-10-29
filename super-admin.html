@@ -29,7 +29,6 @@
     <a href="dashboard.html" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5"></i></a>
   </nav>
 
-  <!-- Tabs -->
   <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[68px] z-40">
     <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">Overview</button>
     <button onclick="switchTab('manage-vendors')" id="tab-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Manage Vendors</button>
@@ -40,7 +39,7 @@
 
   <main class="p-4 max-w-4xl mx-auto mt-4">
     
-    <!-- TAB 1: OVERVIEW -->
+    <!-- OVERVIEW -->
     <div id="section-overview" class="tab-content block">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
@@ -56,10 +55,9 @@
               <p id="stat-commission" class="text-2xl font-bold text-yellow-400">₦0</p>
           </div>
       </div>
-      <!-- Table removed here, moved to Manage Vendors -->
     </div>
 
-    <!-- TAB 2: MANAGE VENDORS -->
+    <!-- MANAGE VENDORS -->
     <div id="section-manage-vendors" class="tab-content hidden">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4">Registered Vendors</h2>
@@ -69,7 +67,7 @@
       </div>
     </div>
 
-    <!-- TAB 3: ADD VENDOR (Manual) -->
+    <!-- ADD VENDOR (Manual) -->
     <div id="section-vendor" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Manually Add Vendor</h2>
       <form id="vendor-form" class="space-y-4">
@@ -94,6 +92,10 @@
           </select>
         </div>
         <div>
+          <label class="block text-xs text-slate-400 mb-1">Physical Business Address</label>
+          <input id="v-address" type="text" required placeholder="e.g. 12 Airport Road, Benin City" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+        </div>
+        <div>
           <label class="block text-xs text-slate-400 mb-1">Passport Photograph</label>
           <input id="v-image" type="file" accept="image/*" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white text-sm outline-none">
         </div>
@@ -106,7 +108,7 @@
       <p id="v-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
 
-    <!-- TAB 4: ADD GUIDE -->
+    <!-- ADD GUIDE -->
     <div id="section-guide" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Add Elite Guide (₦50k Fee)</h2>
       <form id="guide-form" class="space-y-4">
@@ -131,7 +133,7 @@
       <p id="g-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
 
-    <!-- TAB 5: ADD AD -->
+    <!-- ADD AD -->
     <div id="section-ad" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Add Sponsored Ad</h2>
       <form id="ad-form" class="space-y-4">
@@ -198,11 +200,9 @@
         document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
     }
 
-    // --- MANAGE VENDORS TAB ---
     async function loadAdminVendors() {
         const list = document.getElementById('vendor-list-admin');
         
-        // Fetch vendors AND their linked profile IDs (for password resets)
         const { data: vendors } = await db.from('vendors').select(`
             *,
             profiles (id)
@@ -225,6 +225,7 @@
                             <div>
                                 <h3 class="font-bold text-white text-sm">${v.business_name}</h3>
                                 <p class="text-[10px] text-yellow-400 uppercase">${v.category}</p>
+                                <p class="text-[10px] text-slate-400 mt-1">${v.address || 'No address provided'}</p>
                             </div>
                         </div>
                         <span class="${isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold px-2 py-1 rounded">
@@ -260,20 +261,16 @@
         const newStatus = !currentStatus;
         if (!confirm(`Are you sure you want to ${newStatus ? 'activate' : 'deactivate'} this vendor?`)) return;
 
-        // 1. Update Auth/Profile status (using manage-staff function)
         const { data, error } = await db.functions.invoke('manage-staff', {
             body: { action: 'toggle_active', user_id: userId, is_active: newStatus }
         });
         
         if (error || data.error) return alert("Error: " + (error?.message || data.error));
 
-        // 2. Update Vendor table status
         await db.from('vendors').update({ is_active: newStatus }).eq('id', vendorId);
-        
         loadAdminVendors();
     }
 
-    // --- FORMS (Add Vendor, Guide, Ad) ---
     document.getElementById('vendor-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('v-btn');
@@ -287,6 +284,7 @@
             await db.from('vendors').insert({
                 business_name: document.getElementById('v-name').value,
                 category: document.getElementById('v-category').value,
+                address: document.getElementById('v-address').value,
                 whatsapp_number: document.getElementById('v-whatsapp').value,
                 phone_number: document.getElementById('v-whatsapp').value,
                 image_url: imageUrl,
@@ -345,7 +343,7 @@
                 title: document.getElementById('a-title').value,
                 description: document.getElementById('a-desc').value,
                 image_url: imageUrl,
-                payment_status: 'paid', // Admin-created ads are auto-paid
+                payment_status: 'paid',
                 moderation_status: 'approved',
                 is_active: true
             });

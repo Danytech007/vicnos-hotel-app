@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { email, password, business_name, category, whatsapp_number, image_url } = await req.json();
+    const { email, password, business_name, category, whatsapp_number, image_url, address } = await req.json();
 
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -32,6 +32,7 @@ serve(async (req) => {
       whatsapp_number,
       phone_number: whatsapp_number,
       image_url,
+      address,
       is_active: true
     }).select().single();
     if (vendorError) throw vendorError;
