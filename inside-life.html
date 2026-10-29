@@ -38,7 +38,7 @@
       <p class="text-sm text-gray-500">Everything you need, curated for your stay.</p>
     </div>
 
-    <!-- ULTRA-VIP GUIDES (The Premium ₦50k Section) -->
+    <!-- ULTRA-VIP GUIDES -->
     <div class="px-4 mb-8">
       <div class="bg-slate-900 rounded-3xl p-5 shadow-2xl relative overflow-hidden">
         <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500/20 rounded-full blur-2xl"></div>
@@ -110,7 +110,6 @@
       </div>
     </div>
 
-    <!-- DEKY Footer -->
     <div class="mt-auto pt-10 pb-6 text-center">
       <div class="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
       <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
@@ -132,7 +131,6 @@
     document.getElementById('nav-room-num').textContent = roomNum;
     document.getElementById('back-btn').href = `guest-portal.html?room=${roomNum}`;
 
-    // Link the category buttons to the new vendor-list page
     document.getElementById('btn-food').onclick = () => window.location.href = `vendor-list.html?category=Food&room=${roomNum}`;
     document.getElementById('btn-taxi').onclick = () => window.location.href = `vendor-list.html?category=Taxi&room=${roomNum}`;
     document.getElementById('btn-spa').onclick = () => window.location.href = `vendor-list.html?category=Spa&room=${roomNum}`;
@@ -149,7 +147,7 @@
 
         list.innerHTML = guides.map(guide => `
             <div class="min-w-[200px] bg-slate-800 rounded-2xl p-3 border border-slate-700 flex-shrink-0">
-                <img src="${guide.image_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'}" class="w-full h-24 object-cover rounded-xl mb-2">
+                <img src="${guide.image_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'}" class="w-full h-28 object-cover rounded-xl mb-2">
                 <h4 class="text-white font-bold text-sm">${guide.full_name}</h4>
                 <p class="text-slate-400 text-[10px] line-clamp-2 mt-1 mb-2">${guide.bio}</p>
                 <button onclick="payForGuide('${guide.id}', '${guide.full_name}')" class="w-full bg-yellow-500 text-black font-bold text-xs py-2 rounded-lg active:scale-95 transition">Book - ₦50k</button>
@@ -159,7 +157,6 @@
 
     function payForGuide(id, name) {
         alert(`Initiating ₦50,000 Paystack Checkout for ${name}...`);
-        // Paystack logic will go here
     }
 
     loadVIPGuides();

@@ -9,35 +9,13 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
-    
-    body { 
-        font-family: 'Inter', sans-serif; 
-        -webkit-tap-highlight-color: transparent; 
-        user-select: none; 
-        background-color: #f8fafc; 
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
     h1, h2, h3 { font-family: 'Playfair Display', serif; }
-    
     .hide-scroll::-webkit-scrollbar { display: none; }
     .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-    
     .fade-in { animation: fadeIn 0.5s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-
-    @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-    .shimmer-bg {
-      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
-      background-size: 200% 100%;
-      animation: shimmer 3s infinite;
-    }
   </style>
 </head>
 <body class="pb-24">
@@ -79,22 +57,20 @@
       </div>
     </div>
 
-    <div class="px-4 mt-5">
-      <a href="#" class="block relative rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform">
+    <!-- DYNAMIC SPONSORED AD BANNER -->
+    <div id="ad-banner-container" class="px-4 mt-5 hidden">
+      <a id="ad-link" href="#" class="block relative rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform">
         <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
           <div class="bg-black/20 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between relative overflow-hidden">
-            <div class="absolute inset-0 shimmer-bg"></div>
             <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg z-20">SPONSORED</div>
-            
             <div class="flex items-center gap-3 z-10">
-              <div class="bg-white/20 p-2.5 rounded-full border border-white/30 shadow-inner">
+              <img id="ad-image" src="" class="w-12 h-12 rounded-full object-cover border-2 border-white/30 hidden">
+              <div id="ad-icon-container" class="bg-white/20 p-2.5 rounded-full border border-white/30 shadow-inner">
                 <i data-lucide="sparkles" class="w-6 h-6 text-yellow-300 animate-pulse"></i>
               </div>
               <div>
-                <div class="flex items-center gap-2">
-                  <p class="text-white text-sm font-extrabold uppercase tracking-wide">Want an Upgrade?</p>
-                </div>
-                <p class="text-indigo-100 text-[11px] font-medium mt-0.5">Move to our Executive Suite for just ₦15k!</p>
+                <p id="ad-title" class="text-white text-sm font-extrabold uppercase tracking-wide">Ad Title</p>
+                <p id="ad-desc" class="text-indigo-100 text-[11px] font-medium mt-0.5">Ad Description</p>
               </div>
             </div>
             <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg">
@@ -141,7 +117,6 @@
           <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Inside<br>Life</span>
         </a>
 
-        <!-- LINKED TO BLOG -->
         <a href="guest-blog.html" id="link-blog" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
           <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center">
             <i data-lucide="newspaper" class="w-6 h-6 text-purple-600"></i>
@@ -149,7 +124,6 @@
           <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Vicnos<br>Insider</span>
         </a>
 
-        <!-- LINKED TO UPGRADES -->
         <a href="upgrade-room.html" id="link-upgrade" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
           <div class="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center">
             <i data-lucide="bed-double" class="w-6 h-6 text-pink-600"></i>
@@ -256,34 +230,23 @@
     document.getElementById('link-room-service').href = `room-service.html?room=${roomNum}`;
     document.getElementById('nav-link-food').href = `room-service.html?room=${roomNum}`;
     document.getElementById('nav-link-bill').href = `guest-profile.html?room=${roomNum}`;
-    
-    // Link the new pages
     document.getElementById('link-blog').href = `guest-blog.html?room=${roomNum}`;
     document.getElementById('link-upgrade').href = `upgrade-room.html?room=${roomNum}`;
 
-    async function loadGuest() {
+    async function loadGuestData() {
       try {
+        // Load Guest Profile
         const { data: roomData } = await db.from('rooms').select('id').eq('room_number', roomNum).maybeSingle();
-        
         if (roomData) {
           currentRoomId = roomData.id;
           const { data: booking } = await db.from('bookings')
             .select('guests(full_name), expected_check_out, check_in_date')
-            .eq('room_id', currentRoomId)
-            .eq('status', 'Checked In')
-            .limit(1)
-            .maybeSingle();
+            .eq('room_id', currentRoomId).eq('status', 'Checked In').limit(1).maybeSingle();
 
           if (booking && booking.guests) {
-            const firstName = booking.guests.full_name.split(' ')[0];
-            document.getElementById('guest-name').textContent = firstName;
-            
-            if(booking.check_in_date) {
-                document.getElementById('check-in-date').textContent = new Date(booking.check_in_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-            }
-            if(booking.expected_check_out) {
-                document.getElementById('check-out-date').textContent = new Date(booking.expected_check_out).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-            }
+            document.getElementById('guest-name').textContent = booking.guests.full_name.split(' ')[0];
+            if(booking.check_in_date) document.getElementById('check-in-date').textContent = new Date(booking.check_in_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            if(booking.expected_check_out) document.getElementById('check-out-date').textContent = new Date(booking.expected_check_out).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
           } else {
             document.getElementById('guest-name').textContent = "Valued Guest";
           }
@@ -293,11 +256,28 @@
       }
     }
 
-    function requestHousekeeping() {
-      alert("Housekeeping request sent! Someone will be at your door shortly.");
+    async function loadAd() {
+      // Fetch the most recent active ad
+      const { data: ads } = await db.from('ads').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(1);
+      
+      if (ads && ads.length > 0) {
+        const ad = ads[0];
+        document.getElementById('ad-banner-container').classList.remove('hidden');
+        document.getElementById('ad-title').textContent = ad.title;
+        document.getElementById('ad-desc').textContent = ad.description;
+        
+        if (ad.image_url) {
+            document.getElementById('ad-image').src = ad.image_url;
+            document.getElementById('ad-image').classList.remove('hidden');
+            document.getElementById('ad-icon-container').classList.add('hidden');
+        }
+      }
     }
 
-    loadGuest();
+    function requestHousekeeping() { alert("Housekeeping request sent! Someone will be at your door shortly."); }
+
+    loadGuestData();
+    loadAd();
   </script>
 </body>
 </html>
