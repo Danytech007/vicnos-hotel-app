@@ -9,14 +9,16 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
-    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; }
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
     h1, h2, h3 { font-family: 'Playfair Display', serif; }
     .hide-scroll::-webkit-scrollbar { display: none; }
     .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="min-h-screen pb-24 flex flex-col">
+<body class="pb-10">
 
   <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
     <div class="flex items-center gap-2">
@@ -29,7 +31,7 @@
     </div>
   </nav>
 
-  <main class="flex-grow max-w-md mx-auto w-full fade-in">
+  <main class="flex-grow max-w-md mx-auto w-full fade-in flex flex-col">
     
     <div class="px-5 pt-6 pb-4">
       <h1 class="text-3xl font-bold text-gray-800 mb-1">The VIP Marketplace</h1>
@@ -59,7 +61,7 @@
       
       <div class="grid grid-cols-2 gap-4">
         <!-- Category: Food -->
-        <div onclick="openVendorCategory('Food')" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-32 relative overflow-hidden">
+        <div id="btn-food" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-32 relative overflow-hidden">
           <div class="absolute inset-0 bg-orange-50 opacity-50"></div>
           <div class="relative z-10">
             <div class="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -71,7 +73,7 @@
         </div>
 
         <!-- Category: Taxi -->
-        <div onclick="openVendorCategory('Taxi')" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-32 relative overflow-hidden">
+        <div id="btn-taxi" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-32 relative overflow-hidden">
           <div class="absolute inset-0 bg-blue-50 opacity-50"></div>
           <div class="relative z-10">
             <div class="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -83,7 +85,7 @@
         </div>
 
         <!-- Category: Spa -->
-        <div onclick="openVendorCategory('Spa')" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-32 relative overflow-hidden">
+        <div id="btn-spa" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-32 relative overflow-hidden">
           <div class="absolute inset-0 bg-pink-50 opacity-50"></div>
           <div class="relative z-10">
             <div class="bg-pink-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -95,7 +97,7 @@
         </div>
 
         <!-- Category: Artisans -->
-        <div onclick="openVendorCategory('Artisan')" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-32 relative overflow-hidden">
+        <div id="btn-artisan" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-32 relative overflow-hidden">
           <div class="absolute inset-0 bg-purple-50 opacity-50"></div>
           <div class="relative z-10">
             <div class="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -108,9 +110,11 @@
       </div>
     </div>
 
-    <div class="text-center pt-10 pb-4">
+    <!-- DEKY Footer -->
+    <div class="mt-auto pt-10 pb-6 text-center">
+      <div class="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
       <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
-      <p class="text-xs font-bold text-gray-400 tracking-widest mt-1">POWERED BY DEKY</p>
+      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
     </div>
 
   </main>
@@ -127,6 +131,12 @@
     
     document.getElementById('nav-room-num').textContent = roomNum;
     document.getElementById('back-btn').href = `guest-portal.html?room=${roomNum}`;
+
+    // Link the category buttons to the new vendor-list page
+    document.getElementById('btn-food').onclick = () => window.location.href = `vendor-list.html?category=Food&room=${roomNum}`;
+    document.getElementById('btn-taxi').onclick = () => window.location.href = `vendor-list.html?category=Taxi&room=${roomNum}`;
+    document.getElementById('btn-spa').onclick = () => window.location.href = `vendor-list.html?category=Spa&room=${roomNum}`;
+    document.getElementById('btn-artisan').onclick = () => window.location.href = `vendor-list.html?category=Artisan&room=${roomNum}`;
 
     async function loadVIPGuides() {
         const list = document.getElementById('vip-guides-list');
@@ -147,12 +157,9 @@
         `).join('');
     }
 
-    function openVendorCategory(category) {
-        alert(`Opening ${category} vendors... (We will build this page next!)`);
-    }
-
     function payForGuide(id, name) {
         alert(`Initiating ₦50,000 Paystack Checkout for ${name}...`);
+        // Paystack logic will go here
     }
 
     loadVIPGuides();

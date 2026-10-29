@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Vendors</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body class="pb-10">
+
+  <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+    <div class="flex items-center gap-2">
+      <a href="inside-life.html" id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
+      <span id="category-title" class="font-bold text-gray-900 tracking-widest text-sm ml-2">VENDORS</span>
+    </div>
+    <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
+      <p class="text-[9px] uppercase text-blue-500 font-bold tracking-wider">Room</p>
+      <p id="nav-room-num" class="font-bold text-blue-700 leading-none text-lg">---</p>
+    </div>
+  </nav>
+
+  <main class="flex-grow max-w-md mx-auto w-full p-4 fade-in">
+    
+    <div class="mb-4">
+        <h2 id="page-heading" class="text-2xl font-bold text-gray-800">Available Vendors</h2>
+        <p class="text-sm text-gray-500">Tap a vendor to chat and negotiate directly.</p>
+    </div>
+
+    <div id="vendor-list" class="space-y-4">
+        <p class="text-center text-gray-500 py-10">Loading vendors...</p>
+    </div>
+
+    <!-- DEKY Footer -->
+    <div class="mt-12 pt-6 text-center border-t border-gray-200">
+      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomNum = urlParams.get('room') || '101'; 
+    const category = urlParams.get('category') || 'Food';
+
+    document.getElementById('nav-room-num').textContent = roomNum;
+    document.getElementById('back-btn').href = `inside-life.html?room=${roomNum}`;
+    document.getElementById('category-title').textContent = category.toUpperCase();
+    document.getElementById('page-heading').textContent = `${category} Vendors`;
+
+    // Map categories to nice icons
+    const iconMap = {
+        'Food': 'pizza',
+        'Taxi': 'car',
+        'Spa': 'heart-pulse',
+        'Artisan': 'shopping-bag'
+    };
+    const currentIcon = iconMap[category] || 'store';
+
+    async function loadVendors() {
+        const list = document.getElementById('vendor-list');
+        
+        // Fetch active vendors for this category
+        const { data: vendors, error } = await db.from('vendors')
+            .select('*')
+            .eq('category', category)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            list.innerHTML = `<p class="text-red-500 text-center">Error loading vendors.</p>`;
+            return;
+        }
+
+        if (!vendors || vendors.length === 0) {
+            list.innerHTML = `<p class="text-center text-gray-500 py-10">No ${category} vendors available right now.</p>`;
+            return;
+        }
+
+        list.innerHTML = vendors.map(vendor => `
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                        <i data-lucide="${currentIcon}" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800">${vendor.business_name}</h3>
+                        <p class="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded inline-block mt-1">Vetted & Approved</p>
+                    </div>
+                </div>
+                <button onclick="contactVendor('${vendor.id}', '${vendor.whatsapp_number}', '${vendor.business_name}')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition flex items-center gap-1">
+                    <i data-lucide="message-circle" class="w-3 h-3"></i> Chat
+                </button>
+            </div>
+        `).join('');
+        
+        lucide.createIcons();
+    }
+
+    async function contactVendor(vendorId, whatsappNumber, businessName) {
+        // 1. Log the inquiry in the database to track ghosting
+        const { error } = await db.from('vendor_inquiries').insert({
+            vendor_id: vendorId,
+            guest_room: roomNum,
+            status: 'Unconverted'
+        });
+
+        if (error) {
+            console.error("Failed to log inquiry", error);
+        }
+
+        // 2. Open WhatsApp Deep Link
+        const message = encodeURIComponent(`Hello ${businessName}, I am a guest in Room ${roomNum} at Vicnos Hotel. I would like to make an inquiry.`);
+        const waLink = `https://wa.me/${whatsappNumber}?text=${message}`;
+        
+        window.open(waLink, '_blank');
+    }
+
+    loadVendors();
+  </script>
+</body>
+</html>
