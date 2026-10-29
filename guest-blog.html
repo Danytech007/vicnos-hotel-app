@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - The Insider</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body class="pb-24">
+
+  <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+    <div class="flex items-center gap-2">
+      <a href="guest-portal.html" id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
+      <span class="font-bold text-gray-900 tracking-widest text-sm ml-2">THE INSIDER</span>
+    </div>
+    <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
+      <p class="text-[9px] uppercase text-blue-500 font-bold tracking-wider">Room</p>
+      <p id="nav-room-num" class="font-bold text-blue-700 leading-none text-lg">---</p>
+    </div>
+  </nav>
+
+  <main class="flex-grow max-w-md mx-auto w-full p-4 fade-in">
+    
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800 mb-1">Vicnos Insider</h1>
+      <p class="text-sm text-gray-500">Discover the best of Benin City, news, and exclusive offers.</p>
+    </div>
+
+    <div id="blog-list" class="space-y-6">
+        <p class="text-center text-gray-500 py-10">Loading articles...</p>
+    </div>
+
+    <div class="mt-12 pt-6 text-center border-t border-gray-200">
+      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomNum = urlParams.get('room') || '101'; 
+    
+    document.getElementById('nav-room-num').textContent = roomNum;
+    document.getElementById('back-btn').href = `guest-portal.html?room=${roomNum}`;
+
+    async function loadBlog() {
+        const list = document.getElementById('blog-list');
+        const { data: posts, error } = await db.from('blog_posts').select('*').order('created_at', { ascending: false });
+
+        if (error) {
+            list.innerHTML = '<p class="text-center text-red-500">Failed to load articles.</p>';
+            return;
+        }
+
+        if (!posts || posts.length === 0) {
+            list.innerHTML = '<p class="text-center text-gray-500">No articles have been published yet. Check back soon!</p>';
+            return;
+        }
+
+        list.innerHTML = posts.map(post => `
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                ${post.image_url ? `<img src="${post.image_url}" class="w-full h-48 object-cover">` : ''}
+                <div class="p-5">
+                    <p class="text-[10px] text-blue-600 font-bold tracking-widest uppercase mb-2">${new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2 leading-tight">${post.title}</h2>
+                    <p class="text-sm text-gray-600 leading-relaxed mb-4">${post.content}</p>
+                    
+                    ${post.video_link ? `
+                        <a href="${post.video_link}" target="_blank" class="inline-flex items-center gap-2 bg-green-50 text-green-700 font-bold text-xs px-4 py-2 rounded-xl border border-green-200 active:scale-95 transition">
+                            <i data-lucide="play-circle" class="w-4 h-4"></i> Watch Video on WhatsApp
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    loadBlog();
+  </script>
+</body>
+</html>
