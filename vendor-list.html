@@ -40,7 +40,6 @@
         <p class="text-center text-gray-500 py-10">Loading vendors...</p>
     </div>
 
-    <!-- DEKY Footer -->
     <div class="mt-12 pt-6 text-center border-t border-gray-200">
       <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
       <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
@@ -64,7 +63,6 @@
     document.getElementById('category-title').textContent = category.toUpperCase();
     document.getElementById('page-heading').textContent = `${category} Vendors`;
 
-    // Map categories to nice icons
     const iconMap = {
         'Food': 'pizza',
         'Taxi': 'car',
@@ -76,7 +74,6 @@
     async function loadVendors() {
         const list = document.getElementById('vendor-list');
         
-        // Fetch active vendors for this category
         const { data: vendors, error } = await db.from('vendors')
             .select('*')
             .eq('category', category)
@@ -89,7 +86,7 @@
         }
 
         if (!vendors || vendors.length === 0) {
-            list.innerHTML = `<p class="text-center text-gray-500 py-10">No ${category} vendors available right now.</p>`;
+            list.innerHTML = `<p class="text-center text-gray-500 py-10">No external ${category} vendors available right now.</p>`;
             return;
         }
 
@@ -114,18 +111,16 @@
     }
 
     async function contactVendor(vendorId, whatsappNumber, businessName) {
-        // 1. Log the inquiry in the database to track ghosting
+        // 1. Log the inquiry in the database
         const { error } = await db.from('vendor_inquiries').insert({
             vendor_id: vendorId,
             guest_room: roomNum,
             status: 'Unconverted'
         });
 
-        if (error) {
-            console.error("Failed to log inquiry", error);
-        }
+        if (error) console.error("Failed to log inquiry", error);
 
-        // 2. Open WhatsApp Deep Link
+        // 2. Open WhatsApp
         const message = encodeURIComponent(`Hello ${businessName}, I am a guest in Room ${roomNum} at Vicnos Hotel. I would like to make an inquiry.`);
         const waLink = `https://wa.me/${whatsappNumber}?text=${message}`;
         
