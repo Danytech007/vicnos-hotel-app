@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DEKY - Super Admin Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-slate-900 border-b border-slate-700/50 p-5 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="bg-yellow-500/20 p-2 rounded-xl border border-yellow-500/30">
+        <i data-lucide="shield-check" class="w-6 h-6 text-yellow-400"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-white text-lg leading-tight">DEKY Network</h1>
+        <p class="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">Super Admin Portal</p>
+      </div>
+    </div>
+    <button onclick="logout()" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+  </nav>
+
+  <main class="p-4 max-w-4xl mx-auto space-y-6 mt-4">
+    
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+            <p class="text-xs text-slate-400 font-medium mb-1">Total Vendors</p>
+            <p id="stat-vendors" class="text-2xl font-bold text-white">0</p>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+            <p class="text-xs text-slate-400 font-medium mb-1">Total Inquiries</p>
+            <p id="stat-inquiries" class="text-2xl font-bold text-white">0</p>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+            <p class="text-xs text-slate-400 font-medium mb-1">Total Sales</p>
+            <p id="stat-sales" class="text-2xl font-bold text-white">0</p>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 bg-gradient-to-br from-yellow-500/10 to-transparent">
+            <p class="text-xs text-yellow-400 font-bold mb-1">DEKY Commission</p>
+            <p id="stat-commission" class="text-2xl font-bold text-yellow-400">₦0</p>
+        </div>
+    </div>
+
+    <!-- Vendor Management Table -->
+    <div class="bg-slate-800/40 rounded-2xl border border-slate-700/50 overflow-hidden">
+      <div class="p-4 border-b border-slate-700/50 flex justify-between items-center">
+        <h2 class="font-bold text-white">Vendor Network</h2>
+        <span class="text-[10px] bg-slate-700 text-slate-300 px-2 py-1 rounded">Auto-Blacklist: 5 Inquiries, 0 Sales</span>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-900/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700/50">
+              <th class="p-3 font-bold">Vendor</th>
+              <th class="p-3 font-bold">Category</th>
+              <th class="p-3 font-bold text-center">Inquiries</th>
+              <th class="p-3 font-bold text-center">Sales</th>
+              <th class="p-3 font-bold text-center">Status</th>
+              <th class="p-3 font-bold text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="vendor-table-body">
+            <tr><td colspan="6" class="p-6 text-center text-slate-500">Loading vendors...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="text-center pt-8 pb-4">
+      <p class="text-[10px] text-slate-500 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+      <p class="text-xs font-bold text-slate-400 tracking-widest mt-1">POWERED BY DEKY</p>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function loadNetwork() {
+        // 1. Fetch Vendors
+        const { data: vendors, error } = await db.from('vendors').select('*').order('created_at', { ascending: false });
+        if (error) return;
+
+        // 2. Fetch Inquiries to calculate ghosting
+        const { data: inquiries } = await db.from('vendor_inquiries').select('vendor_id, status');
+        
+        // 3. Fetch Released Orders to calculate commissions
+        const { data: orders } = await db.from('vendor_orders').select('commission_amount, status').eq('status', 'Released');
+
+        // Update Stats
+        document.getElementById('stat-vendors').textContent = vendors.length;
+        document.getElementById('stat-inquiries').textContent = inquiries.length;
+        document.getElementById('stat-sales').textContent = orders.length;
+        
+        const totalCommission = orders.reduce((sum, order) => sum + Number(order.commission_amount), 0);
+        document.getElementById('stat-commission').textContent = `₦${totalCommission.toLocaleString()}`;
+
+        // Build Table
+        const tbody = document.getElementById('vendor-table-body');
+        tbody.innerHTML = vendors.map(vendor => {
+            const vInquiries = inquiries.filter(i => i.vendor_id === vendor.id).length;
+            const vSales = orders.filter(o => o.vendor_id === vendor.id).length; // Simplified for now
+            
+            let statusBadge = vendor.is_active 
+                ? '<span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-1 rounded">Active</span>'
+                : '<span class="bg-red-500/20 text-red-400 text-[10px] font-bold px-2 py-1 rounded">Suspended</span>';
+
+            // Auto-Blacklist Logic
+            let actionBtn = vendor.is_active
+                ? `<button onclick="toggleVendor('${vendor.id}', false)" class="bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs font-bold hover:bg-red-500/30">Suspend</button>`
+                : `<button onclick="toggleVendor('${vendor.id}', true)" class="bg-green-500/20 text-green-400 px-3 py-1 rounded text-xs font-bold hover:bg-green-500/30">Activate</button>`;
+
+            if (vendor.is_active && vInquiries >= 5 && vSales === 0) {
+                statusBadge = '<span class="bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-2 py-1 rounded">Ghosting Warning</span>';
+            }
+
+            return `
+                <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
+                    <td class="p-3">
+                        <p class="font-bold text-white text-sm">${vendor.business_name}</p>
+                        <p class="text-[10px] text-slate-400">${vendor.whatsapp_number}</p>
+                    </td>
+                    <td class="p-3 text-sm text-slate-300">${vendor.category}</td>
+                    <td class="p-3 text-center text-sm font-bold text-white">${vInquiries}</td>
+                    <td class="p-3 text-center text-sm font-bold text-white">${vSales}</td>
+                    <td class="p-3 text-center">${statusBadge}</td>
+                    <td class="p-3 text-center">${actionBtn}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function toggleVendor(id, activate) {
+        await db.from('vendors').update({ is_active: activate }).eq('id', id);
+        loadNetwork();
+    }
+
+    async function logout() { await db.auth.signOut(); window.location.href = 'index.html'; }
+
+    loadNetwork();
+  </script>
+</body>
+</html>

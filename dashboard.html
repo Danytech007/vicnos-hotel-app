@@ -35,10 +35,8 @@
     <button onclick="logout()" class="bg-slate-700/50 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
   </nav>
 
-  <!-- Main content area: flex-grow pushes the footer down -->
   <main class="flex-grow p-4 w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-6xl mx-auto flex flex-col mt-4">
     
-    <!-- Profile Card -->
     <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden mb-8">
       <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
       <div class="relative z-10">
@@ -49,42 +47,33 @@
       <span id="role-badge" class="relative z-10 bg-blue-500/20 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-500/30 tracking-wide">ROLE</span>
     </div>
 
-    <!-- Stats Grid -->
     <div id="stats-section" class="mb-8">
       <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">Hotel Overview</h3>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        
         <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
           <div class="bg-blue-500/20 p-3 rounded-xl"><i data-lucide="bed-double" class="w-6 h-6 text-blue-400"></i></div>
           <div><p class="text-[11px] text-slate-400 font-medium">Available Rooms</p><p id="stat-available" class="text-2xl font-bold text-white">0</p></div>
         </div>
-
         <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
           <div class="bg-teal-500/20 p-3 rounded-xl"><i data-lucide="users" class="w-6 h-6 text-teal-400"></i></div>
           <div><p class="text-[11px] text-slate-400 font-medium">Guests Inside</p><p id="stat-guests" class="text-2xl font-bold text-white">0</p></div>
         </div>
-
         <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
           <div class="bg-orange-500/20 p-3 rounded-xl"><i data-lucide="sparkles" class="w-6 h-6 text-orange-400"></i></div>
           <div><p class="text-[11px] text-slate-400 font-medium">Dirty Rooms</p><p id="stat-dirty" class="text-2xl font-bold text-white">0</p></div>
         </div>
-
         <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
           <div class="bg-red-500/20 p-3 rounded-xl"><i data-lucide="alert-triangle" class="w-6 h-6 text-red-400"></i></div>
           <div><p class="text-[11px] text-slate-400 font-medium">Maintenance</p><p id="stat-maint" class="text-2xl font-bold text-white">0</p></div>
         </div>
-
       </div>
     </div>
 
-    <!-- Core Operations Grid (Responsive) -->
     <div class="flex-grow">
       <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">Core Operations</h3>
-      <!-- Grid expands on larger screens to look premium -->
       <div id="operations-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 pb-8"></div>
     </div>
 
-    <!-- DEKY Branding (Pushed to absolute bottom) -->
     <div class="mt-auto pt-8 pb-6 text-center">
       <p class="text-[10px] text-slate-500 tracking-wider">Vicnos HotelStack &copy; 2026</p>
       <p class="text-xs font-bold text-slate-400 tracking-widest mt-1">POWERED BY DEKY</p>
@@ -121,7 +110,6 @@
       const grid = document.getElementById('operations-grid');
       let buttons = '';
 
-      // Refined button styling for a premium, uniform look
       const btn = (href, icon, color, bg, label) => `
         <a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-700/50 active:scale-95 transition-all shadow-sm group">
           <div class="${bg} p-2.5 sm:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
@@ -135,8 +123,13 @@
       const maintBtn = btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
       const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); 
 
+      // SUPER ADMIN (DEKY) - Only Daniel sees this
+      if (role === 'super_admin') {
+          buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network');
+      }
+
       // 1. MD, ADMIN, MANAGER, & ACCOUNTANT
-      if (['md', 'admin', 'manager', 'accountant'].includes(role)) {
+      if (['md', 'admin', 'manager', 'accountant', 'super_admin'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
@@ -197,7 +190,12 @@
       else if (role === 'security') {
         buttons += clockBtn;
       }
-      // 9. FALLBACK
+      // 9. VENDOR (Redirects to their dashboard)
+      else if (role === 'vendor') {
+        window.location.href = 'vendor-dashboard.html';
+        return;
+      }
+      // 10. FALLBACK
       else {
         buttons += clockBtn;
       }
@@ -207,7 +205,7 @@
     }
 
     async function loadStats(role) {
-      if (['barman', 'waitress', 'chef', 'housekeeping', 'store_keeper', 'security', 'laundry'].includes(role)) {
+      if (['barman', 'waitress', 'chef', 'housekeeping', 'store_keeper', 'security', 'laundry', 'vendor'].includes(role)) {
         document.getElementById('stats-section').style.display = 'none';
         return;
       }
