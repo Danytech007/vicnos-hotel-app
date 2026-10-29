@@ -10,7 +10,15 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
     
-    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; }
+    body { 
+        font-family: 'Inter', sans-serif; 
+        -webkit-tap-highlight-color: transparent; 
+        user-select: none; 
+        background-color: #f8fafc; 
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
     h1, h2, h3 { font-family: 'Playfair Display', serif; }
     
     .hide-scroll::-webkit-scrollbar { display: none; }
@@ -21,7 +29,6 @@
     
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 
-    /* Shimmer Effect for the Ad */
     @keyframes shimmer {
       0% { background-position: -200% 0; }
       100% { background-position: 200% 0; }
@@ -33,7 +40,8 @@
     }
   </style>
 </head>
-<body class="min-h-screen pb-24">
+<!-- pb-24 ensures content doesn't hide behind the fixed bottom nav -->
+<body class="pb-24">
 
   <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
     <div class="flex items-center gap-2">
@@ -46,9 +54,10 @@
     </div>
   </nav>
 
-  <main class="max-w-md mx-auto fade-in pb-6">
+  <!-- flex-grow ensures this section stretches to fill the screen -->
+  <main class="flex-grow max-w-md mx-auto w-full fade-in flex flex-col">
     
-    <!-- HERO SECTION (Slightly reduced height to bring content up) -->
+    <!-- HERO SECTION -->
     <div class="relative h-52 w-full">
       <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="w-full h-full object-cover">
       <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
@@ -74,7 +83,7 @@
       </div>
     </div>
 
-    <!-- MOVED TO TOP: CATCHY AD BANNER -->
+    <!-- CATCHY AD BANNER -->
     <div class="px-4 mt-5">
       <a href="#" class="block relative rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform">
         <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
@@ -101,7 +110,7 @@
       </a>
     </div>
 
-    <!-- MOVED TO TOP: ADVERTISE HERE (Made more premium) -->
+    <!-- ADVERTISE HERE -->
     <div class="px-4 mt-3">
       <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE?text=Hello,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
         <div class="flex items-center gap-2">
@@ -114,7 +123,7 @@
       </a>
     </div>
 
-    <!-- 4x2 ICON GRID (Moved slightly down) -->
+    <!-- 4x2 ICON GRID -->
     <div class="p-4 mt-2">
       <div class="grid grid-cols-4 gap-y-6 gap-x-2">
         
@@ -203,6 +212,13 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- PREMIUM DEKY BRANDING FOOTER (Pushed to absolute bottom) -->
+    <div class="mt-auto pt-10 pb-6 text-center">
+      <div class="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
+      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
     </div>
 
   </main>
