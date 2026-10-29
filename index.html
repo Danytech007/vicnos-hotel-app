@@ -6,12 +6,14 @@
   <title>Vicnos HotelStack - Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     body { 
       font-family: 'Outfit', sans-serif; 
       background-color: #0f172a; 
       background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.2) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.2) 0, transparent 50%);
+      -webkit-tap-highlight-color: transparent;
     }
   </style>
 </head>
@@ -54,6 +56,11 @@
       <p id="message" class="mt-4 text-center text-sm font-medium"></p>
     </div>
 
+    <!-- Vendor Signup Link Added Here -->
+    <div class="text-center mt-6">
+        <a href="vendor-signup.html" class="text-xs text-blue-300 hover:text-white transition">Are you a local vendor? Join the DEKY Network here.</a>
+    </div>
+
     <!-- DEKY Branding -->
     <p class="text-center text-slate-500 text-xs mt-8 tracking-wide">
       Vicnos HotelStack App &copy; 2026<br>
@@ -66,6 +73,7 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
 
     async function login() {
       const email = document.getElementById('email').value;
@@ -97,7 +105,7 @@
 
       if (!profile || profile.is_active === false) {
         await db.auth.signOut();
-        message.textContent = 'Account deactivated. Contact Manager.';
+        message.textContent = 'Account deactivated. Contact Admin.';
         message.className = 'mt-4 text-center text-sm font-medium text-red-400';
         btn.textContent = 'Sign In';
         btn.disabled = false;
@@ -107,8 +115,11 @@
       message.textContent = 'Login successful!';
       message.className = 'mt-4 text-center text-sm font-medium text-green-400';
       
+      // ROLE ROUTING LOGIC
       setTimeout(() => {
-        if (profile.role === 'manager' || profile.role === 'admin' || profile.role === 'receptionist' || profile.role === 'md' || profile.role === 'accountant') {
+        if (profile.role === 'vendor') {
+          window.location.href = 'vendor-dashboard.html';
+        } else if (profile.role === 'super_admin' || profile.role === 'admin' || profile.role === 'manager' || profile.role === 'md' || profile.role === 'accountant' || profile.role === 'receptionist') {
           window.location.href = 'dashboard.html';
         } else if (profile.role === 'barman' || profile.role === 'waitress' || profile.role === 'chef') {
           window.location.href = 'pos.html'; 
@@ -116,6 +127,8 @@
           window.location.href = 'rooms.html'; 
         } else if (profile.role === 'store_keeper') {
           window.location.href = 'store.html'; 
+        } else if (profile.role === 'blogger') {
+          window.location.href = 'blog-manager.html'; 
         } else {
           window.location.href = 'dashboard.html'; 
         }

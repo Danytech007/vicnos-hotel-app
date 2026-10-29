@@ -3,67 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vicnos - Vendor Portal</title>
+  <title>Vicnos - Vendor Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
 <body class="min-h-screen pb-10">
 
-  <nav class="bg-slate-900 p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
     <div class="flex items-center gap-3">
-      <div class="bg-blue-500/20 p-2 rounded-xl text-blue-400">
-        <i data-lucide="store" class="w-6 h-6"></i>
+      <div class="bg-slate-900 p-2 rounded-xl text-white">
+        <i data-lucide="store" class="w-5 h-5"></i>
       </div>
       <div>
-        <h1 id="vendor-name" class="font-bold text-white text-lg leading-tight">Vendor Name</h1>
-        <p class="text-[10px] text-blue-400 uppercase tracking-widest font-bold">Partner Portal</p>
+        <h1 id="vendor-name" class="font-bold text-gray-800 text-lg leading-tight">Vendor Name</h1>
+        <p class="text-[10px] text-blue-600 uppercase tracking-widest font-bold">Partner Portal</p>
       </div>
     </div>
-    <button onclick="logout()" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+    <button onclick="logout()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-gray-200"><i data-lucide="log-out" class="w-5 h-5"></i></button>
   </nav>
 
-  <main class="p-4 max-w-2xl mx-auto space-y-5 mt-4">
+  <main class="p-4 max-w-2xl mx-auto space-y-6 mt-4">
     
+    <!-- Edit Store Details -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <i data-lucide="bell" class="w-5 h-5 text-orange-500"></i> Incoming Inquiries (Ghosting Tracker)
-      </h2>
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="edit" class="w-5 h-5 text-blue-600"></i> Store Details</h2>
+      
+      <form id="store-form" class="space-y-4">
+        <div class="flex items-center gap-4 mb-4">
+            <img id="current-store-img" src="" class="w-16 h-16 rounded-xl object-cover border">
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Update Photo</label>
+                <input id="store-img" type="file" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Business Name</label>
+              <input id="store-name" type="text" required class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">WhatsApp Number</label>
+              <input id="store-whatsapp" type="text" required class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
+            </div>
+        </div>
+        
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Store Description (What do you sell?)</label>
+          <textarea id="store-desc" rows="2" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500"></textarea>
+        </div>
+
+        <button type="submit" id="save-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Save Changes</button>
+      </form>
+      <p id="msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
+    </div>
+
+    <!-- Create Promo Ad -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="megaphone" class="w-5 h-5 text-orange-500"></i> Create a Promo Ad</h2>
+      <p class="text-xs text-gray-500 mb-3">Boost your sales! Your ad will appear on the Guest Portal.</p>
+      
+      <form id="ad-form" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Ad Title</label>
+          <input id="ad-title" type="text" required placeholder="e.g. 10% off all Suya today!" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-orange-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Promo Image</label>
+          <input id="ad-image" type="file" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+        </div>
+        <button type="submit" id="ad-btn" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Publish Ad</button>
+      </form>
+      <p id="ad-msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
+    </div>
+
+    <!-- Inquiries & Orders -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-red-500"></i> Guest Inquiries</h2>
       <div id="inquiry-list" class="space-y-3">
         <p class="text-center text-gray-500 text-sm">No new inquiries.</p>
       </div>
-    </div>
-
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <i data-lucide="receipt" class="w-5 h-5 text-green-600"></i> Create Custom Invoice
-      </h2>
-      <p class="text-xs text-gray-500 mb-3">If a guest negotiated on WhatsApp, enter the agreed price here.</p>
-      
-      <form id="invoice-form" class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Select Inquiry</label>
-          <select id="invoice-inquiry" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500">
-            <option value="">-- Select a guest inquiry --</option>
-          </select>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-gray-500 mb-1">Item/Service</label>
-              <input id="invoice-item" type="text" required placeholder="e.g. Taxi to Airport" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-500 mb-1">Agreed Price (₦)</label>
-              <input id="invoice-price" type="number" required placeholder="e.g. 15000" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500">
-            </div>
-        </div>
-        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Send Invoice to Guest</button>
-      </form>
-      <p id="msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
     </div>
 
     <div class="mt-10 pt-6 text-center border-t border-gray-200">
@@ -86,84 +110,120 @@
         const { data: { user } } = await db.auth.getUser();
         if (!user) { window.location.href = 'index.html'; return; }
 
-        // Get the vendor profile linked to this user
-        const { data: profile } = await db.from('profiles').select('vendor_id, full_name').eq('id', user.id).single();
+        const { data: profile } = await db.from('profiles').select('vendor_id').eq('id', user.id).single();
         
         if (!profile || !profile.vendor_id) {
-            alert("Your account is not linked to a vendor profile. Contact Super Admin.");
+            alert("Account not linked to a vendor profile.");
             return;
         }
 
         currentVendorId = profile.vendor_id;
-        document.getElementById('vendor-name').textContent = profile.full_name;
+
+        // Fetch Vendor Details
+        const { data: vendor } = await db.from('vendors').select('*').eq('id', currentVendorId).single();
+        if (vendor) {
+            document.getElementById('vendor-name').textContent = vendor.business_name;
+            document.getElementById('store-name').value = vendor.business_name;
+            document.getElementById('store-whatsapp').value = vendor.whatsapp_number;
+            document.getElementById('store-desc').value = vendor.description || '';
+            if(vendor.image_url) document.getElementById('current-store-img').src = vendor.image_url;
+        }
 
         loadInquiries();
     }
 
     async function loadInquiries() {
         const list = document.getElementById('inquiry-list');
-        const select = document.getElementById('invoice-inquiry');
-
         const { data: inquiries } = await db.from('vendor_inquiries')
-            .select('*')
-            .eq('vendor_id', currentVendorId)
-            .eq('status', 'Unconverted')
+            .select('*').eq('vendor_id', currentVendorId).eq('status', 'Unconverted')
             .order('created_at', { ascending: false });
 
         if (!inquiries || inquiries.length === 0) {
-            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending inquiries. Keep up the good work!</p>';
-            select.innerHTML = '<option value="">No pending inquiries</option>';
+            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending inquiries.</p>';
             return;
         }
 
-        // Populate List
         list.innerHTML = inquiries.map(inq => `
             <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border">
                 <div>
                     <p class="font-bold text-gray-800 text-sm">Room ${inq.guest_room}</p>
                     <p class="text-[10px] text-gray-500">${new Date(inq.created_at).toLocaleString()}</p>
                 </div>
-                <span class="bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded">Waiting for Reply</span>
+                <span class="bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded">Waiting</span>
             </div>
         `).join('');
-
-        // Populate Dropdown
-        select.innerHTML = '<option value="">-- Select a guest inquiry --</option>';
-        inquiries.forEach(inq => {
-            select.innerHTML += `<option value="${inq.id}">Room ${inq.guest_room} - ${new Date(inq.created_at).toLocaleTimeString()}</option>`;
-        });
     }
 
-    document.getElementById('invoice-form').addEventListener('submit', async (e) => {
+    // Save Store Details
+    document.getElementById('store-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('save-btn');
         const msg = document.getElementById('msg');
-        msg.textContent = "Sending...";
+        btn.innerText = "Saving..."; btn.disabled = true;
 
-        const inquiryId = document.getElementById('invoice-inquiry').value;
-        const item = document.getElementById('invoice-item').value;
-        const price = parseFloat(document.getElementById('invoice-price').value);
+        try {
+            const file = document.getElementById('store-img').files[0];
+            let imageUrl = document.getElementById('current-store-img').src;
 
-        // 1. Create the order (Escrow status)
-        const { error: orderError } = await db.from('vendor_orders').insert({
-            vendor_id: currentVendorId,
-            inquiry_id: inquiryId,
-            order_details: item,
-            total_amount: price,
-            commission_amount: price * 0.15, // 15% commission
-            status: 'Pending Payment'
-        });
+            if (file) {
+                const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800 };
+                const compressedFile = await imageCompression(file, options);
+                const fileName = `vendor-${Date.now()}.jpg`;
+                await db.storage.from('vendor_images').upload(fileName, compressedFile);
+                const { data } = db.storage.from('vendor_images').getPublicUrl(fileName);
+                imageUrl = data.publicUrl;
+            }
 
-        if (orderError) {
-            msg.textContent = "Error: " + orderError.message;
-            return;
+            await db.from('vendors').update({
+                business_name: document.getElementById('store-name').value,
+                whatsapp_number: document.getElementById('store-whatsapp').value,
+                description: document.getElementById('store-desc').value,
+                image_url: imageUrl
+            }).eq('id', currentVendorId);
+
+            msg.textContent = "✅ Store Updated!";
+            setTimeout(() => msg.textContent = '', 3000);
+            loadVendorData();
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+        } finally {
+            btn.innerText = "Save Changes"; btn.disabled = false;
         }
+    });
 
-        // 2. Mark inquiry as converted
-        await db.from('vendor_inquiries').update({ status: 'Converted' }).eq('id', inquiryId);
+    // Publish Ad
+    document.getElementById('ad-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('ad-btn');
+        const msg = document.getElementById('ad-msg');
+        btn.innerText = "Publishing..."; btn.disabled = true;
 
-        msg.textContent = "✅ Invoice Sent to Guest! They will receive a prompt to pay.";
-        document.getElementById('invoice-form').reset();
-        loadInquiries();
+        try {
+            const file = document.getElementById('ad-image').files[0];
+            if (!file) throw new Error("Image is required.");
+
+            const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800 };
+            const compressedFile = await imageCompression(file, options);
+            const fileName = `ad-${Date.now()}.jpg`;
+            await db.storage.from('ad_images').upload(fileName, compressedFile);
+            const { data } = db.storage.from('ad_images').getPublicUrl(fileName);
+
+            await db.from('ads').insert({
+                title: document.getElementById('ad-title').value,
+                description: document.getElementById('ad-title').value, // Using title as desc for simplicity
+                image_url: data.publicUrl,
+                vendor_id: currentVendorId,
+                is_active: true
+            });
+
+            msg.textContent = "✅ Ad Published!";
+            document.getElementById('ad-form').reset();
+            setTimeout(() => msg.textContent = '', 3000);
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+        } finally {
+            btn.innerText = "Publish Ad"; btn.disabled = false;
+        }
     });
 
     async function logout() { await db.auth.signOut(); window.location.href = 'index.html'; }
