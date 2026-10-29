@@ -297,7 +297,6 @@
             const file = document.getElementById('v-image').files[0];
             const imageUrl = await uploadImage(file, 'vendor_images');
 
-            // Use the Edge function to create the Login and Vendor profile simultaneously
             const { data, error } = await db.functions.invoke('register-vendor', {
                 body: {
                     email: document.getElementById('v-email').value,
@@ -314,7 +313,7 @@
 
             msg.textContent = "✅ Vendor & Login Created Successfully!";
             document.getElementById('vendor-form').reset();
-            loadAdminVendors(); // Refresh list
+            loadAdminVendors();
         } catch (err) {
             msg.textContent = "Error: " + err.message;
         } finally {
@@ -345,4 +344,6 @@
             document.getElementById('guide-form').reset();
         } catch (err) {
             msg.textContent = "Error: " + err.message;
-        } finally
+        } finally {
+            btn.innerText = "Save Guide"; btn.disabled = false;
+            setTimeout(() => msg.textCon

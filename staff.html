@@ -118,7 +118,13 @@
 
     async function loadStaff() {
       const list = document.getElementById('staff-list');
-      const { data: staff } = await db.from('profiles').select('*').order('created_at');
+      
+      // The .neq('role', 'super_admin') ensures Daniel is NEVER shown here
+      const { data: staff } = await db.from('profiles')
+          .select('*')
+          .neq('role', 'super_admin')
+          .order('created_at');
+          
       list.innerHTML = '';
       
       if (!staff || staff.length === 0) {
