@@ -63,7 +63,20 @@
     document.getElementById('category-title').textContent = category.toUpperCase();
     document.getElementById('page-heading').textContent = `${category} Vendors`;
 
-    const iconMap = { 'Food': 'pizza', 'Taxi': 'car', 'Spa': 'heart-pulse', 'Artisan': 'shopping-bag' };
+    // Expanded Icon Mapping for the new categories
+    const iconMap = { 
+        'Food & Drinks': 'pizza', 
+        'Transport': 'car', 
+        'Fashion & Tailoring': 'scissors',
+        'Spa & Wellness': 'heart-pulse', 
+        'Shopping & Artisans': 'shopping-bag',
+        'Tours & Guides': 'map',
+        'Romance & Gifts': 'gift',
+        'Events': 'calendar',
+        'Tech & Essentials': 'smartphone',
+        'Medical & Health': 'stethoscope',
+        'Financial Services': 'banknote'
+    };
     const currentIcon = iconMap[category] || 'store';
 
     async function loadVendors() {
@@ -73,14 +86,13 @@
             .select('*').eq('category', category).eq('is_active', true).order('created_at', { ascending: false });
 
         if (error || !vendors || vendors.length === 0) {
-            list.innerHTML = `<p class="text-center text-gray-500 py-10">No ${category} vendors available right now.</p>`;
+            list.innerHTML = `<p class="text-center text-gray-500 py-10">No vendors available in ${category} right now.</p>`;
             return;
         }
 
         list.innerHTML = vendors.map(vendor => `
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <!-- DYNAMIC IMAGE DISPLAY -->
                     ${vendor.image_url 
                         ? `<img src="${vendor.image_url}" class="w-14 h-14 rounded-xl object-cover border border-gray-200">` 
                         : `<div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center"><i data-lucide="${currentIcon}" class="w-7 h-7 text-blue-600"></i></div>`

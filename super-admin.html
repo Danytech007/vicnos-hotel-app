@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Image Compression Library -->
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
@@ -95,10 +94,17 @@
         <div>
           <label class="block text-xs text-slate-400 mb-1">Category</label>
           <select id="v-category" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-            <option value="Food">Food (Suya, Pizza, etc.)</option>
-            <option value="Taxi">Taxi / Ride</option>
-            <option value="Spa">Spa / Massage</option>
-            <option value="Artisan">Artisan / Shopping</option>
+            <option value="Food & Drinks">Food & Drinks (Suya, Pizza, Shawarma)</option>
+            <option value="Transport">Transport & Rides (Taxi, Car Rental)</option>
+            <option value="Fashion & Tailoring">Fashion & Tailoring (Ankara, Agbada)</option>
+            <option value="Spa & Wellness">Spa & Wellness (Massage, Barber, Nails)</option>
+            <option value="Shopping & Artisans">Shopping & Artisans (Bronzes, Crafts)</option>
+            <option value="Tours & Guides">Tours & Guides (Excursions, Translators)</option>
+            <option value="Romance & Gifts">Romance & Gifts (Flowers, Cakes, Champagne)</option>
+            <option value="Events">Events (Party Planners, DJs)</option>
+            <option value="Tech & Essentials">Tech & Essentials (Chargers, Repairs, Pharmacy)</option>
+            <option value="Medical & Health">Medical & Health (Doctors on call)</option>
+            <option value="Financial Services">Financial Services (Currency Exchange)</option>
           </select>
         </div>
         <div>
@@ -169,7 +175,6 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    // Helper function to handle image uploads
     async function uploadImage(file, bucketName) {
         if (!file) return null;
         const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true };
@@ -233,7 +238,6 @@
         }).join('');
     }
 
-    // Form: Add Vendor
     document.getElementById('vendor-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('v-btn');
@@ -265,7 +269,6 @@
         }
     });
 
-    // Form: Add Guide
     document.getElementById('guide-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('g-btn');
@@ -296,7 +299,6 @@
         }
     });
 
-    // Form: Add Ad
     document.getElementById('ad-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('a-btn');
