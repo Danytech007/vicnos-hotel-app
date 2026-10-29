@@ -55,15 +55,16 @@
       </div>
     </div>
 
-    <!-- EXPANDED CATEGORY GRID (3 Columns) -->
+    <!-- EXPANDED CATEGORY GRID -->
     <div class="px-4">
       <h2 class="text-xl font-bold text-gray-800 mb-4">All Services</h2>
       
       <div class="grid grid-cols-3 gap-3">
-        <!-- 1. Food & Drinks -->
-        <div onclick="goToCategory('Food & Drinks')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-orange-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="pizza" class="w-5 h-5 text-orange-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Food &<br>Drinks</h3>
+        
+        <!-- 1. Local Street Food (Replaced Food & Drinks) -->
+        <div onclick="goToCategory('Local Street Food')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+            <div class="bg-orange-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="flame" class="w-5 h-5 text-orange-600"></i></div>
+            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Local Street<br>Food</h3>
         </div>
 
         <!-- 2. Transport -->
@@ -84,40 +85,40 @@
             <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Spa &<br>Wellness</h3>
         </div>
 
-        <!-- 5. Shopping & Artisans -->
+        <!-- 5. Pharmacy & Wellness (Manpower) -->
+        <div onclick="goToCategory('Pharmacy & Wellness')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+            <div class="bg-emerald-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="pill" class="w-5 h-5 text-emerald-600"></i></div>
+            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Pharmacy &<br>Wellness</h3>
+        </div>
+
+        <!-- 6. Shopping & Artisans -->
         <div onclick="goToCategory('Shopping & Artisans')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
             <div class="bg-purple-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-purple-600"></i></div>
             <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Shopping &<br>Artisans</h3>
         </div>
 
-        <!-- 6. Tours & Guides -->
+        <!-- 7. Tours & Guides -->
         <div onclick="goToCategory('Tours & Guides')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
             <div class="bg-indigo-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="map" class="w-5 h-5 text-indigo-600"></i></div>
             <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Tours &<br>Guides</h3>
         </div>
 
-        <!-- 7. Romance & Gifts -->
+        <!-- 8. Romance & Gifts -->
         <div onclick="goToCategory('Romance & Gifts')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
             <div class="bg-red-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="gift" class="w-5 h-5 text-red-600"></i></div>
             <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Romance &<br>Gifts</h3>
         </div>
 
-        <!-- 8. Events -->
+        <!-- 9. Events -->
         <div onclick="goToCategory('Events')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
             <div class="bg-yellow-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="calendar" class="w-5 h-5 text-yellow-600"></i></div>
             <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Party &<br>Events</h3>
         </div>
 
-        <!-- 9. Tech & Essentials -->
+        <!-- 10. Tech & Essentials -->
         <div onclick="goToCategory('Tech & Essentials')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
             <div class="bg-slate-200 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="smartphone" class="w-5 h-5 text-slate-700"></i></div>
             <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Tech &<br>Essentials</h3>
-        </div>
-
-        <!-- 10. Medical & Health -->
-        <div onclick="goToCategory('Medical & Health')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-emerald-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="stethoscope" class="w-5 h-5 text-emerald-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Medical &<br>Health</h3>
         </div>
 
         <!-- 11. Financial Services -->
@@ -150,9 +151,7 @@
     document.getElementById('nav-room-num').textContent = roomNum;
     document.getElementById('back-btn').href = `guest-portal.html?room=${roomNum}`;
 
-    // Function to route to vendor list
     function goToCategory(category) {
-        // Encode the category to handle spaces and special characters in the URL
         const encodedCategory = encodeURIComponent(category);
         window.location.href = `vendor-list.html?category=${encodedCategory}&room=${roomNum}`;
     }
