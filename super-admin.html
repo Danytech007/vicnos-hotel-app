@@ -30,16 +30,15 @@
   </nav>
 
   <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[68px] z-40">
-    <button id="btn-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">Overview</button>
-    <button id="btn-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Manage Vendors</button>
-    <button id="btn-vendor" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Vendor</button>
-    <button id="btn-guide" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Guide</button>
-    <button id="btn-ad" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Ad</button>
+    <button onclick="switchTab('overview')" id="btn-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">Overview</button>
+    <button onclick="switchTab('manage-vendors')" id="btn-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Manage Vendors</button>
+    <button onclick="switchTab('vendor')" id="btn-vendor" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Vendor</button>
+    <button onclick="switchTab('guide')" id="btn-guide" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Guide</button>
+    <button onclick="switchTab('ad')" id="btn-ad" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Ad</button>
   </div>
 
   <main class="p-4 max-w-4xl mx-auto mt-4">
     
-    <!-- OVERVIEW -->
     <div id="section-overview" class="tab-content block">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
@@ -57,7 +56,6 @@
       </div>
     </div>
 
-    <!-- MANAGE VENDORS -->
     <div id="section-manage-vendors" class="tab-content hidden">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4">Registered Vendors</h2>
@@ -67,7 +65,6 @@
       </div>
     </div>
 
-    <!-- ADD VENDOR -->
     <div id="section-vendor" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Manually Add Vendor</h2>
       <form id="vendor-form" class="space-y-4">
@@ -121,7 +118,6 @@
       <p id="v-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
 
-    <!-- ADD GUIDE -->
     <div id="section-guide" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Add Elite Guide (₦50k Fee)</h2>
       <form id="guide-form" class="space-y-4">
@@ -146,7 +142,6 @@
       <p id="g-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
 
-    <!-- ADD AD -->
     <div id="section-ad" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Add Sponsored Ad</h2>
       <form id="ad-form" class="space-y-4">
@@ -170,16 +165,35 @@
   </main>
 
   <script>
-    // --- ERROR CATCHER ---
-    window.onerror = function(message, source, lineno, colno, error) {
-        alert("A JavaScript error occurred: " + message + "\nPlease take a screenshot of this.");
+    // ERROR CATCHER - If anything breaks, this will alert us!
+    window.onerror = function(msg, url, line) {
+        alert("CRITICAL ERROR: " + msg + "\nLine: " + line);
+        return false;
     };
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    lucide.createIcons();
+    
+    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+
+    function switchTab(tabId) {
+        try {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`section-${tabId}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
+            });
+            document.getElementById(`btn-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
+            
+            if(tabId === 'overview') loadOverview();
+            if(tabId === 'manage-vendors') loadAdminVendors();
+        } catch (e) {
+            alert("Error switching tabs: " + e.message);
+        }
+    }
 
     async function uploadImage(file, bucketName) {
         if (!file) return null;
@@ -191,32 +205,6 @@
         const { data } = db.storage.from(bucketName).getPublicUrl(fileName);
         return data.publicUrl;
     }
-
-    // --- TAB SWITCHING LOGIC ---
-    function switchTab(tabId) {
-        // Hide all sections
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-        // Show target section
-        document.getElementById(`section-${tabId}`).classList.remove('hidden');
-        
-        // Reset all buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
-        });
-        // Highlight active button
-        document.getElementById(`btn-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
-        
-        // Load data for specific tabs
-        if(tabId === 'overview') loadOverview();
-        if(tabId === 'manage-vendors') loadAdminVendors();
-    }
-
-    // Attach event listeners to buttons
-    document.getElementById('btn-overview').addEventListener('click', () => switchTab('overview'));
-    document.getElementById('btn-manage-vendors').addEventListener('click', () => switchTab('manage-vendors'));
-    document.getElementById('btn-vendor').addEventListener('click', () => switchTab('vendor'));
-    document.getElementById('btn-guide').addEventListener('click', () => switchTab('guide'));
-    document.getElementById('btn-ad').addEventListener('click', () => switchTab('ad'));
 
     async function loadOverview() {
         try {
@@ -231,7 +219,7 @@
             if(orders) orders.forEach(o => totalComm += Number(o.commission_amount));
             document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
         } catch (e) {
-            console.log("Overview error:", e);
+            alert("Error loading overview: " + e.message);
         }
     }
 
@@ -341,4 +329,71 @@
             document.getElementById('vendor-form').reset();
             loadAdminVendors();
         } catch (err) {
-            msg.textContent = "Erro
+            msg.textContent = "Error: " + err.message;
+        } finally {
+            btn.innerText = "Save Vendor & Create Login"; btn.disabled = false;
+            setTimeout(() => msg.textContent = '', 3000);
+        }
+    });
+
+    document.getElementById('guide-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('g-btn');
+        const msg = document.getElementById('g-msg');
+        btn.innerText = "Saving..."; btn.disabled = true;
+
+        try {
+            const file = document.getElementById('g-image').files[0];
+            const imageUrl = await uploadImage(file, 'vendor_images');
+
+            await db.from('vip_guides').insert({
+                full_name: document.getElementById('g-name').value,
+                bio: document.getElementById('g-bio').value,
+                image_url: imageUrl,
+                whatsapp_number: document.getElementById('g-whatsapp').value,
+                is_active: true
+            });
+
+            msg.textContent = "✅ Guide Added!";
+            document.getElementById('guide-form').reset();
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+        } finally {
+            btn.innerText = "Save Guide"; btn.disabled = false;
+            setTimeout(() => msg.textContent = '', 3000);
+        }
+    });
+
+    document.getElementById('ad-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('a-btn');
+        const msg = document.getElementById('a-msg');
+        btn.innerText = "Publishing..."; btn.disabled = true;
+
+        try {
+            const file = document.getElementById('a-image').files[0];
+            const imageUrl = await uploadImage(file, 'ad_images');
+
+            await db.from('ads').insert({
+                title: document.getElementById('a-title').value,
+                description: document.getElementById('a-desc').value,
+                image_url: imageUrl,
+                payment_status: 'paid',
+                moderation_status: 'approved',
+                is_active: true
+            });
+
+            msg.textContent = "✅ Ad Published!";
+            document.getElementById('ad-form').reset();
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+        } finally {
+            btn.innerText = "Publish Ad"; btn.disabled = false;
+            setTimeout(() => msg.textContent = '', 3000);
+        }
+    });
+
+    loadOverview();
+  </script>
+</body>
+</html>
