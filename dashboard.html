@@ -14,10 +14,13 @@
       background-color: #0f172a; 
       background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.1) 0, transparent 50%);
       -webkit-tap-highlight-color: transparent; user-select: none;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
   </style>
 </head>
-<body class="min-h-screen pb-24 text-slate-200">
+<body class="text-slate-200">
   
   <nav class="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 p-5 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center gap-3">
@@ -32,10 +35,11 @@
     <button onclick="logout()" class="bg-slate-700/50 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
   </nav>
 
-  <main class="p-4 max-w-2xl mx-auto space-y-6 mt-4">
+  <!-- Main content area: flex-grow pushes the footer down -->
+  <main class="flex-grow p-4 w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-6xl mx-auto flex flex-col mt-4">
     
     <!-- Profile Card -->
-    <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden">
+    <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden mb-8">
       <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
       <div class="relative z-10">
         <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p>
@@ -46,9 +50,9 @@
     </div>
 
     <!-- Stats Grid -->
-    <div id="stats-section">
-      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Hotel Overview</h3>
-      <div class="grid grid-cols-2 gap-3">
+    <div id="stats-section" class="mb-8">
+      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">Hotel Overview</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         
         <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
           <div class="bg-blue-500/20 p-3 rounded-xl"><i data-lucide="bed-double" class="w-6 h-6 text-blue-400"></i></div>
@@ -73,14 +77,15 @@
       </div>
     </div>
 
-    <!-- Core Operations Grid -->
-    <div>
-      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 mt-6">Core Operations</h3>
-      <div id="operations-grid" class="grid grid-cols-3 gap-3"></div>
+    <!-- Core Operations Grid (Responsive) -->
+    <div class="flex-grow">
+      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">Core Operations</h3>
+      <!-- Grid expands on larger screens to look premium -->
+      <div id="operations-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 pb-8"></div>
     </div>
 
-    <!-- DEKY Branding -->
-    <div class="text-center pt-8 pb-4">
+    <!-- DEKY Branding (Pushed to absolute bottom) -->
+    <div class="mt-auto pt-8 pb-6 text-center">
       <p class="text-[10px] text-slate-500 tracking-wider">Vicnos HotelStack &copy; 2026</p>
       <p class="text-xs font-bold text-slate-400 tracking-widest mt-1">POWERED BY DEKY</p>
     </div>
@@ -116,11 +121,13 @@
       const grid = document.getElementById('operations-grid');
       let buttons = '';
 
-      // New glowing card style for dashboard buttons
+      // Refined button styling for a premium, uniform look
       const btn = (href, icon, color, bg, label) => `
-        <a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-3 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-700/50 active:scale-95 transition-all shadow-sm">
-          <div class="${bg} p-2.5 rounded-xl"><i data-lucide="${icon}" class="w-5 h-5 ${color}"></i></div>
-          <span class="text-[10px] font-medium text-slate-300 text-center leading-tight">${label}</span>
+        <a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-700/50 active:scale-95 transition-all shadow-sm group">
+          <div class="${bg} p-2.5 sm:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="${icon}" class="w-5 h-5 sm:w-6 sm:h-6 ${color}"></i>
+          </div>
+          <span class="text-[10px] sm:text-xs font-medium text-slate-300 text-center leading-tight">${label}</span>
         </a>
       `;
 
