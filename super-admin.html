@@ -73,7 +73,7 @@
       <form id="vendor-form" class="space-y-4">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Business Name</label>
-          <input id="v-name" type="text" required placeholder="e.g. Uyi Suya Spot" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+          <input id="v-name" type="text" required placeholder="e.g. Diamond Fashion" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Category</label>
@@ -93,7 +93,7 @@
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Physical Business Address</label>
-          <input id="v-address" type="text" required placeholder="e.g. 12 Airport Road, Benin City" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+          <input id="v-address" type="text" required placeholder="e.g. 12 Ekewan, Benin City" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Passport Photograph</label>
@@ -103,7 +103,23 @@
           <label class="block text-xs text-slate-400 mb-1">WhatsApp Number</label>
           <input id="v-whatsapp" type="text" required placeholder="2348012345678" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
-        <button type="submit" id="v-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Save Vendor</button>
+        
+        <!-- NEW LOGIN FIELDS -->
+        <div class="border-t border-slate-700/50 pt-4 mt-4">
+            <p class="text-xs text-yellow-400 font-bold mb-3">Create Vendor Login Account</p>
+            <div class="space-y-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Vendor Email</label>
+                  <input id="v-email" type="email" required placeholder="vendor@email.com" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Temporary Password</label>
+                  <input id="v-password" type="text" required placeholder="Min 6 characters" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" id="v-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Save Vendor & Create Login</button>
       </form>
       <p id="v-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
@@ -275,28 +291,34 @@
         e.preventDefault();
         const btn = document.getElementById('v-btn');
         const msg = document.getElementById('v-msg');
-        btn.innerText = "Saving..."; btn.disabled = true;
+        btn.innerText = "Creating Login & Vendor..."; btn.disabled = true;
 
         try {
             const file = document.getElementById('v-image').files[0];
             const imageUrl = await uploadImage(file, 'vendor_images');
 
-            await db.from('vendors').insert({
-                business_name: document.getElementById('v-name').value,
-                category: document.getElementById('v-category').value,
-                address: document.getElementById('v-address').value,
-                whatsapp_number: document.getElementById('v-whatsapp').value,
-                phone_number: document.getElementById('v-whatsapp').value,
-                image_url: imageUrl,
-                is_active: true
+            // Use the Edge function to create the Login and Vendor profile simultaneously
+            const { data, error } = await db.functions.invoke('register-vendor', {
+                body: {
+                    email: document.getElementById('v-email').value,
+                    password: document.getElementById('v-password').value,
+                    business_name: document.getElementById('v-name').value,
+                    category: document.getElementById('v-category').value,
+                    address: document.getElementById('v-address').value,
+                    whatsapp_number: document.getElementById('v-whatsapp').value,
+                    image_url: imageUrl
+                }
             });
 
-            msg.textContent = "✅ Vendor Added!";
+            if (error || data.error) throw new Error(error?.message || data.error);
+
+            msg.textContent = "✅ Vendor & Login Created Successfully!";
             document.getElementById('vendor-form').reset();
+            loadAdminVendors(); // Refresh list
         } catch (err) {
             msg.textContent = "Error: " + err.message;
         } finally {
-            btn.innerText = "Save Vendor"; btn.disabled = false;
+            btn.innerText = "Save Vendor & Create Login"; btn.disabled = false;
             setTimeout(() => msg.textContent = '', 3000);
         }
     });
@@ -323,42 +345,4 @@
             document.getElementById('guide-form').reset();
         } catch (err) {
             msg.textContent = "Error: " + err.message;
-        } finally {
-            btn.innerText = "Save Guide"; btn.disabled = false;
-            setTimeout(() => msg.textContent = '', 3000);
-        }
-    });
-
-    document.getElementById('ad-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('a-btn');
-        const msg = document.getElementById('a-msg');
-        btn.innerText = "Publishing..."; btn.disabled = true;
-
-        try {
-            const file = document.getElementById('a-image').files[0];
-            const imageUrl = await uploadImage(file, 'ad_images');
-
-            await db.from('ads').insert({
-                title: document.getElementById('a-title').value,
-                description: document.getElementById('a-desc').value,
-                image_url: imageUrl,
-                payment_status: 'paid',
-                moderation_status: 'approved',
-                is_active: true
-            });
-
-            msg.textContent = "✅ Ad Published!";
-            document.getElementById('ad-form').reset();
-        } catch (err) {
-            msg.textContent = "Error: " + err.message;
-        } finally {
-            btn.innerText = "Publish Ad"; btn.disabled = false;
-            setTimeout(() => msg.textContent = '', 3000);
-        }
-    });
-
-    loadOverview();
-  </script>
-</body>
-</html>
+        } finally
