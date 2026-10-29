@@ -123,12 +123,12 @@
       const maintBtn = btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
       const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); 
 
-      // SUPER ADMIN (DEKY) - Only Daniel sees this
+      // SUPER ADMIN (DEKY) gets the gold button first
       if (role === 'super_admin') {
           buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network');
       }
 
-      // 1. MD, ADMIN, MANAGER, & ACCOUNTANT
+      // MD, ADMIN, MANAGER, & ACCOUNTANT
       if (['md', 'admin', 'manager', 'accountant', 'super_admin'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
@@ -146,14 +146,12 @@
         buttons += clockBtn;
         buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal');
       } 
-      // 2. SUPERVISOR
       else if (role === 'supervisor') {
         buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms');
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
         buttons += maintBtn;
         buttons += clockBtn;
       }
-      // 3. RECEPTIONIST
       else if (role === 'receptionist') {
         buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
@@ -163,39 +161,32 @@
         buttons += maintBtn;
         buttons += clockBtn;
       }
-      // 4. HOUSEKEEPING
       else if (role === 'housekeeping') {
         buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms');
         buttons += maintBtn;
         buttons += clockBtn;
       }
-      // 5. STORE KEEPER
       else if (role === 'store_keeper') {
         buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store');
         buttons += clockBtn;
       }
-      // 6. LAUNDRY
       else if (role === 'laundry') {
         buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub');
         buttons += maintBtn;
         buttons += clockBtn;
       }
-      // 7. BARMAN, WAITRESS, CHEF
       else if (['barman', 'waitress', 'chef'].includes(role)) {
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
         buttons += orderBtn;
         buttons += clockBtn;
       }
-      // 8. SECURITY
       else if (role === 'security') {
         buttons += clockBtn;
       }
-      // 9. VENDOR (Redirects to their dashboard)
       else if (role === 'vendor') {
         window.location.href = 'vendor-dashboard.html';
         return;
       }
-      // 10. FALLBACK
       else {
         buttons += clockBtn;
       }
