@@ -3,96 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vicnos - Vendor Dashboard</title>
+  <title>Vendor Dashboard - Vicnos</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   <style>
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   </style>
 </head>
 <body class="min-h-screen pb-10">
 
-  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+  <nav class="bg-slate-900 border-b border-slate-700/50 p-4 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center gap-3">
-      <div class="bg-slate-900 p-2 rounded-xl text-white">
-        <i data-lucide="store" class="w-5 h-5"></i>
+      <div class="bg-slate-800 p-2 rounded-xl border border-slate-700">
+        <i data-lucide="store" class="w-6 h-6 text-yellow-400"></i>
       </div>
       <div>
-        <h1 id="vendor-name" class="font-bold text-gray-800 text-lg leading-tight">Vendor Name</h1>
-        <p class="text-[10px] text-blue-600 uppercase tracking-widest font-bold">Partner Portal</p>
+        <h1 id="vendor-name" class="font-bold text-white text-lg leading-tight">Vendor</h1>
+        <p id="vendor-category" class="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">Partner Portal</p>
       </div>
     </div>
-    <button onclick="logout()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-gray-200"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+    <button onclick="logout()" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
   </nav>
 
-  <main class="p-4 max-w-2xl mx-auto space-y-6 mt-4">
+  <!-- Tabs -->
+  <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[68px] z-40">
+    <button onclick="switchTab('inbox')" id="tab-inbox" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">Inbox</button>
+    <button onclick="switchTab('products')" id="tab-products" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Products</button>
+    <button onclick="switchTab('ads')" id="tab-ads" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Ads</button>
+    <button onclick="switchTab('profile')" id="tab-profile" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Profile</button>
+  </div>
+
+  <main class="p-4 max-w-2xl mx-auto mt-4">
     
-    <!-- Edit Store Details -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="edit" class="w-5 h-5 text-blue-600"></i> Store Details</h2>
-      
-      <form id="store-form" class="space-y-4">
-        <div class="flex items-center gap-4 mb-4">
-            <img id="current-store-img" src="" class="w-16 h-16 rounded-xl object-cover border">
-            <div class="flex-1">
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Update Photo</label>
-                <input id="store-img" type="file" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-            </div>
+    <!-- TAB 1: INBOX -->
+    <div id="section-inbox" class="tab-content block">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-yellow-400"></i> Guest Inquiries</h2>
+        <div id="inquiry-list" class="space-y-3">
+          <p class="text-center text-slate-500 text-sm py-4">Loading inquiries...</p>
         </div>
-
-        <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-gray-500 mb-1">Business Name</label>
-              <input id="store-name" type="text" required class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-500 mb-1">WhatsApp Number</label>
-              <input id="store-whatsapp" type="text" required class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
-            </div>
-        </div>
-        
-        <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Store Description (What do you sell?)</label>
-          <textarea id="store-desc" rows="2" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500"></textarea>
-        </div>
-
-        <button type="submit" id="save-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Save Changes</button>
-      </form>
-      <p id="msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
-    </div>
-
-    <!-- Create Promo Ad -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="megaphone" class="w-5 h-5 text-orange-500"></i> Create a Promo Ad</h2>
-      <p class="text-xs text-gray-500 mb-3">Boost your sales! Your ad will appear on the Guest Portal.</p>
-      
-      <form id="ad-form" class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Ad Title</label>
-          <input id="ad-title" type="text" required placeholder="e.g. 10% off all Suya today!" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-orange-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Promo Image</label>
-          <input id="ad-image" type="file" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
-        </div>
-        <button type="submit" id="ad-btn" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Publish Ad</button>
-      </form>
-      <p id="ad-msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
-    </div>
-
-    <!-- Inquiries & Orders -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-red-500"></i> Guest Inquiries</h2>
-      <div id="inquiry-list" class="space-y-3">
-        <p class="text-center text-gray-500 text-sm">No new inquiries.</p>
       </div>
     </div>
 
-    <div class="mt-10 pt-6 text-center border-t border-gray-200">
-      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
-      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+    <!-- TAB 2: PRODUCTS -->
+    <div id="section-products" class="tab-content hidden">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 mb-4">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Add New Product</h2>
+        <form id="product-form" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <input id="p-name" type="text" required placeholder="Product Name" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-blue-500">
+            <input id="p-price" type="number" required placeholder="Price (₦)" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-blue-500">
+          </div>
+          <textarea id="p-desc" placeholder="Short Description" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-blue-500"></textarea>
+          <input id="p-image" type="file" accept="image/*" required class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white text-sm outline-none">
+          <button type="submit" id="p-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Save Product</button>
+        </form>
+        <p id="p-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
+      </div>
+
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="package" class="w-5 h-5 text-blue-400"></i> My Products</h2>
+        <div id="product-list" class="space-y-3">
+          <p class="text-center text-slate-500 text-sm py-4">Loading products...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ADS -->
+    <div id="section-ads" class="tab-content hidden">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 mb-4">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="megaphone" class="w-5 h-5 text-orange-400"></i> Create a Promo Ad</h2>
+        <p class="text-xs text-slate-400 mb-3">Boost your sales! Submit an ad for DEKY to review and publish.</p>
+        
+        <form id="ad-form" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Ad Title</label>
+            <input id="ad-title" type="text" required placeholder="e.g. 10% off all Suya today!" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-orange-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Ad Image</label>
+            <input id="ad-image" type="file" accept="image/*" required class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-500/20 file:text-orange-400 hover:file:bg-orange-500/30">
+          </div>
+          <button type="submit" id="ad-btn" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Submit Ad</button>
+        </form>
+        <p id="ad-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
+      </div>
+
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="tv" class="w-5 h-5 text-orange-400"></i> My Ads</h2>
+        <div id="ad-list" class="space-y-3">
+          <p class="text-center text-slate-500 text-sm py-4">Loading ads...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: PROFILE -->
+    <div id="section-profile" class="tab-content hidden">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="user" class="w-5 h-5 text-emerald-400"></i> Store Details</h2>
+        <form id="profile-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Business Name</label>
+            <input id="prof-name" type="text" required class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">WhatsApp Number</label>
+            <input id="prof-whatsapp" type="text" required class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Store Description</label>
+            <textarea id="prof-desc" rows="3" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-emerald-500"></textarea>
+          </div>
+          <button type="submit" id="prof-btn" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Save Profile</button>
+        </form>
+        <p id="prof-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
+      </div>
     </div>
 
   </main>
@@ -106,129 +136,219 @@
 
     let currentVendorId = null;
 
-    async function loadVendorData() {
+    async function uploadImage(file, bucket) {
+        if (!file) return null;
+        const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true };
+        const compressedFile = await imageCompression(file, options);
+        const fileName = `${Date.now()}.jpg`;
+        const { error } = await db.storage.from(bucket).upload(fileName, compressedFile);
+        if (error) throw error;
+        const { data } = db.storage.from(bucket).getPublicUrl(fileName);
+        return data.publicUrl;
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`section-${tabId}`).classList.remove('hidden');
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
+        });
+        document.getElementById(`tab-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
+        
+        if(tabId === 'products') loadProducts();
+        if(tabId === 'ads') loadAds();
+        if(tabId === 'profile') loadProfile();
+        if(tabId === 'inbox') loadInquiries();
+    }
+
+    async function initDashboard() {
         const { data: { user } } = await db.auth.getUser();
         if (!user) { window.location.href = 'index.html'; return; }
 
         const { data: profile } = await db.from('profiles').select('vendor_id').eq('id', user.id).single();
-        
-        if (!profile || !profile.vendor_id) {
-            alert("Account not linked to a vendor profile.");
-            return;
-        }
+        if (!profile || !profile.vendor_id) return alert("No vendor profile linked.");
 
         currentVendorId = profile.vendor_id;
-
-        // Fetch Vendor Details
+        
         const { data: vendor } = await db.from('vendors').select('*').eq('id', currentVendorId).single();
         if (vendor) {
             document.getElementById('vendor-name').textContent = vendor.business_name;
-            document.getElementById('store-name').value = vendor.business_name;
-            document.getElementById('store-whatsapp').value = vendor.whatsapp_number;
-            document.getElementById('store-desc').value = vendor.description || '';
-            if(vendor.image_url) document.getElementById('current-store-img').src = vendor.image_url;
+            document.getElementById('vendor-category').textContent = vendor.category;
         }
 
         loadInquiries();
     }
 
+    // --- INBOX ---
     async function loadInquiries() {
         const list = document.getElementById('inquiry-list');
         const { data: inquiries } = await db.from('vendor_inquiries')
-            .select('*').eq('vendor_id', currentVendorId).eq('status', 'Unconverted')
-            .order('created_at', { ascending: false });
+            .select('*').eq('vendor_id', currentVendorId).order('created_at', { ascending: false });
 
         if (!inquiries || inquiries.length === 0) {
-            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending inquiries.</p>';
+            list.innerHTML = '<p class="text-center text-slate-500 text-sm py-4">No inquiries yet.</p>';
             return;
         }
-
         list.innerHTML = inquiries.map(inq => `
-            <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border">
+            <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700">
                 <div>
-                    <p class="font-bold text-gray-800 text-sm">Room ${inq.guest_room}</p>
-                    <p class="text-[10px] text-gray-500">${new Date(inq.created_at).toLocaleString()}</p>
+                    <p class="font-bold text-white text-sm">Room ${inq.guest_room}</p>
+                    <p class="text-[10px] text-slate-500">${new Date(inq.created_at).toLocaleString()}</p>
                 </div>
-                <span class="bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded">Waiting</span>
+                <span class="${inq.status === 'Unconverted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'} text-[10px] font-bold px-2 py-1 rounded">${inq.status}</span>
             </div>
         `).join('');
     }
 
-    // Save Store Details
-    document.getElementById('store-form').addEventListener('submit', async (e) => {
+    // --- PRODUCTS ---
+    document.getElementById('product-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = document.getElementById('save-btn');
-        const msg = document.getElementById('msg');
+        const btn = document.getElementById('p-btn');
+        const msg = document.getElementById('p-msg');
         btn.innerText = "Saving..."; btn.disabled = true;
 
         try {
-            const file = document.getElementById('store-img').files[0];
-            let imageUrl = document.getElementById('current-store-img').src;
+            const file = document.getElementById('p-image').files[0];
+            const imageUrl = await uploadImage(file, 'vendor_images');
 
-            if (file) {
-                const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800 };
-                const compressedFile = await imageCompression(file, options);
-                const fileName = `vendor-${Date.now()}.jpg`;
-                await db.storage.from('vendor_images').upload(fileName, compressedFile);
-                const { data } = db.storage.from('vendor_images').getPublicUrl(fileName);
-                imageUrl = data.publicUrl;
-            }
+            await db.from('vendor_products').insert({
+                vendor_id: currentVendorId,
+                name: document.getElementById('p-name').value,
+                price: document.getElementById('p-price').value,
+                description: document.getElementById('p-desc').value,
+                image_url: imageUrl,
+                hotel_id: 'VICNOS-001'
+            });
 
-            await db.from('vendors').update({
-                business_name: document.getElementById('store-name').value,
-                whatsapp_number: document.getElementById('store-whatsapp').value,
-                description: document.getElementById('store-desc').value,
-                image_url: imageUrl
-            }).eq('id', currentVendorId);
-
-            msg.textContent = "✅ Store Updated!";
-            setTimeout(() => msg.textContent = '', 3000);
-            loadVendorData();
+            msg.textContent = "✅ Product Added!";
+            document.getElementById('product-form').reset();
+            loadProducts();
         } catch (err) {
             msg.textContent = "Error: " + err.message;
         } finally {
-            btn.innerText = "Save Changes"; btn.disabled = false;
+            btn.innerText = "Save Product"; btn.disabled = false;
+            setTimeout(() => msg.textContent = '', 3000);
         }
     });
 
-    // Publish Ad
+    async function loadProducts() {
+        const list = document.getElementById('product-list');
+        const { data: products } = await db.from('vendor_products').select('*').eq('vendor_id', currentVendorId).order('created_at', { ascending: false });
+        
+        if (!products || products.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-500 text-sm py-4">No products added yet.</p>';
+            return;
+        }
+        list.innerHTML = products.map(p => `
+            <div class="flex items-center gap-3 bg-slate-900 p-3 rounded-xl border border-slate-700">
+                <img src="${p.image_url}" class="w-12 h-12 rounded-lg object-cover">
+                <div class="flex-1">
+                    <p class="font-bold text-white text-sm">${p.name}</p>
+                    <p class="text-xs text-yellow-400 font-bold">₦${Number(p.price).toLocaleString()}</p>
+                </div>
+                <button onclick="deleteProduct('${p.id}')" class="text-red-400 p-2"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    async function deleteProduct(id) {
+        if(!confirm("Delete this product?")) return;
+        await db.from('vendor_products').delete().eq('id', id);
+        loadProducts();
+    }
+
+    // --- ADS ---
     document.getElementById('ad-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('ad-btn');
         const msg = document.getElementById('ad-msg');
-        btn.innerText = "Publishing..."; btn.disabled = true;
+        btn.innerText = "Submitting..."; btn.disabled = true;
 
         try {
             const file = document.getElementById('ad-image').files[0];
-            if (!file) throw new Error("Image is required.");
+            const imageUrl = await uploadImage(file, 'ad_images');
 
-            const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800 };
-            const compressedFile = await imageCompression(file, options);
-            const fileName = `ad-${Date.now()}.jpg`;
-            await db.storage.from('ad_images').upload(fileName, compressedFile);
-            const { data } = db.storage.from('ad_images').getPublicUrl(fileName);
-
-            await db.from('ads').insert({
+            const { data: newAd, error } = await db.from('ads').insert({
                 title: document.getElementById('ad-title').value,
-                description: document.getElementById('ad-title').value, // Using title as desc for simplicity
-                image_url: data.publicUrl,
+                description: document.getElementById('ad-title').value,
+                image_url: imageUrl,
                 vendor_id: currentVendorId,
-                is_active: true
-            });
+                payment_status: 'unpaid',
+                moderation_status: 'pending',
+                hotel_id: 'VICNOS-001'
+            }).select().single();
 
-            msg.textContent = "✅ Ad Published!";
+            if (error) throw error;
+
+            // WhatsApp Payment Flow
+            const waNumber = "YOUR_PHONE_NUMBER_HERE"; // Replace with your actual number
+            const waText = encodeURIComponent(`Hello DEKY, I want to pay for my Ad. Reference: VIC-AD-${newAd.id.slice(0,6)}`);
+            const waLink = `https://wa.me/${waNumber}?text=${waText}`;
+
+            msg.innerHTML = `✅ Ad Submitted! <br><a href="${waLink}" target="_blank" class="text-yellow-400 underline mt-2 block">Click Here to Pay on WhatsApp (₦5,000)</a>`;
             document.getElementById('ad-form').reset();
-            setTimeout(() => msg.textContent = '', 3000);
+            loadAds();
         } catch (err) {
             msg.textContent = "Error: " + err.message;
         } finally {
-            btn.innerText = "Publish Ad"; btn.disabled = false;
+            btn.innerText = "Submit Ad"; btn.disabled = false;
         }
+    });
+
+    async function loadAds() {
+        const list = document.getElementById('ad-list');
+        const { data: ads } = await db.from('ads').select('*').eq('vendor_id', currentVendorId).order('created_at', { ascending: false });
+        
+        if (!ads || ads.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-500 text-sm py-4">No ads submitted yet.</p>';
+            return;
+        }
+        list.innerHTML = ads.map(ad => `
+            <div class="flex items-center gap-3 bg-slate-900 p-3 rounded-xl border border-slate-700">
+                <img src="${ad.image_url}" class="w-12 h-12 rounded-lg object-cover">
+                <div class="flex-1">
+                    <p class="font-bold text-white text-sm">${ad.title}</p>
+                    <p class="text-[10px] text-slate-400">Ref: VIC-AD-${ad.id.slice(0,6)}</p>
+                </div>
+                <span class="${ad.payment_status === 'paid' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold px-2 py-1 rounded">${ad.payment_status.toUpperCase()}</span>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    // --- PROFILE ---
+    async function loadProfile() {
+        const { data: vendor } = await db.from('vendors').select('*').eq('id', currentVendorId).single();
+        if (vendor) {
+            document.getElementById('prof-name').value = vendor.business_name;
+            document.getElementById('prof-whatsapp').value = vendor.whatsapp_number;
+            document.getElementById('prof-desc').value = vendor.description || '';
+        }
+    }
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('prof-btn');
+        const msg = document.getElementById('prof-msg');
+        btn.innerText = "Saving..."; btn.disabled = true;
+
+        await db.from('vendors').update({
+            business_name: document.getElementById('prof-name').value,
+            whatsapp_number: document.getElementById('prof-whatsapp').value,
+            description: document.getElementById('prof-desc').value
+        }).eq('id', currentVendorId);
+
+        msg.textContent = "✅ Profile Updated!";
+        setTimeout(() => msg.textContent = '', 3000);
+        btn.innerText = "Save Profile"; btn.disabled = false;
+        initDashboard(); // Refresh header name
     });
 
     async function logout() { await db.auth.signOut(); window.location.href = 'index.html'; }
 
-    loadVendorData();
+    initDashboard();
   </script>
 </body>
 </html>
