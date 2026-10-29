@@ -21,6 +21,7 @@
     
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 
+    /* Shimmer Effect for the Ad */
     @keyframes shimmer {
       0% { background-position: -200% 0; }
       100% { background-position: 200% 0; }
@@ -47,15 +48,17 @@
 
   <main class="max-w-md mx-auto fade-in pb-6">
     
-    <div class="relative h-60 w-full">
+    <!-- HERO SECTION (Slightly reduced height to bring content up) -->
+    <div class="relative h-52 w-full">
       <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="w-full h-full object-cover">
       <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-      <div class="absolute bottom-8 left-5 right-5 text-white">
+      <div class="absolute bottom-6 left-5 right-5 text-white">
         <h1 class="text-3xl font-bold mb-1">Welcome, <span id="guest-name" class="text-blue-400">Guest</span>!</h1>
         <p class="text-sm text-gray-200">You're booked to stay with us.</p>
       </div>
     </div>
 
+    <!-- BOOKING WIDGET -->
     <div class="mx-4 -mt-6 relative z-10 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 flex justify-between items-center">
       <div class="text-center flex-1 border-r border-gray-100">
         <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Booking ID</p>
@@ -71,6 +74,47 @@
       </div>
     </div>
 
+    <!-- MOVED TO TOP: CATCHY AD BANNER -->
+    <div class="px-4 mt-5">
+      <a href="#" class="block relative rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform">
+        <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
+          <div class="bg-black/20 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between relative overflow-hidden">
+            <div class="absolute inset-0 shimmer-bg"></div>
+            <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg z-20">SPONSORED</div>
+            
+            <div class="flex items-center gap-3 z-10">
+              <div class="bg-white/20 p-2.5 rounded-full border border-white/30 shadow-inner">
+                <i data-lucide="sparkles" class="w-6 h-6 text-yellow-300 animate-pulse"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <p class="text-white text-sm font-extrabold uppercase tracking-wide">Want an Upgrade?</p>
+                </div>
+                <p class="text-indigo-100 text-[11px] font-medium mt-0.5">Move to our Executive Suite for just ₦15k!</p>
+              </div>
+            </div>
+            <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg">
+              <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- MOVED TO TOP: ADVERTISE HERE (Made more premium) -->
+    <div class="px-4 mt-3">
+      <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE?text=Hello,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
+        <div class="flex items-center gap-2">
+          <div class="bg-gray-100 p-1.5 rounded-lg">
+             <i data-lucide="megaphone" class="w-4 h-4 text-gray-600"></i>
+          </div>
+          <p class="text-[11px] font-bold text-gray-700">Want your business featured here?</p>
+        </div>
+        <span class="text-[10px] font-bold text-white bg-slate-900 px-3 py-1.5 rounded-lg shadow-md">Advertise</span>
+      </a>
+    </div>
+
+    <!-- 4x2 ICON GRID (Moved slightly down) -->
     <div class="p-4 mt-2">
       <div class="grid grid-cols-4 gap-y-6 gap-x-2">
         
@@ -88,7 +132,6 @@
           <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">House<br>Keeping</span>
         </a>
 
-        <!-- LINK UPDATED TO INSIDE LIFE -->
         <a href="inside-life.html" id="link-local-hub" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
           <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
             <i data-lucide="map" class="w-6 h-6 text-blue-600"></i>
@@ -134,43 +177,8 @@
       </div>
     </div>
 
-    <div class="px-4 mt-4">
-      <a href="#" class="block relative rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform">
-        <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
-          <div class="bg-black/20 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between relative overflow-hidden">
-            <div class="absolute inset-0 shimmer-bg"></div>
-            <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg z-20">SPONSORED</div>
-            
-            <div class="flex items-center gap-3 z-10">
-              <div class="bg-white/20 p-2.5 rounded-full border border-white/30 shadow-inner">
-                <i data-lucide="sparkles" class="w-6 h-6 text-yellow-300 animate-pulse"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <p class="text-white text-sm font-extrabold uppercase tracking-wide">Want an Upgrade?</p>
-                </div>
-                <p class="text-indigo-100 text-[11px] font-medium mt-0.5">Move to our Executive Suite for just ₦15k!</p>
-              </div>
-            </div>
-            <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg">
-              <i data-lucide="chevron-right" class="w-5 h-5"></i>
-            </div>
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="px-4 mt-3 mb-6">
-      <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE?text=Hello,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
-        <div class="flex items-center gap-2">
-          <i data-lucide="megaphone" class="w-4 h-4 text-gray-400"></i>
-          <p class="text-[11px] font-semibold text-gray-600">Want your business featured here?</p>
-        </div>
-        <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">Advertise</span>
-      </a>
-    </div>
-
-    <div class="mt-2 pl-4">
+    <!-- HORIZONTAL PROMO CAROUSEL -->
+    <div class="mt-4 pl-4">
       <div class="flex justify-between items-center pr-4 mb-3">
         <h2 class="text-lg font-bold text-gray-800">Hotel Highlights</h2>
         <span class="text-xs font-bold text-blue-600">See All</span>
@@ -199,13 +207,13 @@
 
   </main>
 
+  <!-- FLOATING BOTTOM NAVIGATION BAR -->
   <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
     <div class="flex justify-around items-center h-16 max-w-md mx-auto">
       <a href="#" class="flex flex-col items-center text-blue-600">
         <i data-lucide="home" class="w-6 h-6"></i>
         <span class="text-[10px] font-bold mt-1">Home</span>
       </a>
-      <!-- BOTTOM NAV UPDATED TO INSIDE LIFE -->
       <a href="inside-life.html" id="nav-link-hub" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
         <i data-lucide="map" class="w-6 h-6"></i>
         <span class="text-[10px] font-medium mt-1">Inside Life</span>
@@ -235,6 +243,7 @@
     document.getElementById('nav-room-num').textContent = roomNum;
     document.getElementById('booking-id').textContent = `VIC-${roomNum}`;
 
+    // Dynamically update links to carry the room number
     document.getElementById('link-local-hub').href = `inside-life.html?room=${roomNum}`;
     document.getElementById('nav-link-hub').href = `inside-life.html?room=${roomNum}`;
     document.getElementById('link-room-service').href = `room-service.html?room=${roomNum}`;
