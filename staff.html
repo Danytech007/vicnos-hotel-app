@@ -53,8 +53,9 @@
             <option value="waitress">Waitress</option>
             <option value="chef">Chef / Kitchen</option>
             <option value="security">Security</option>
-            <option value="vendor">Vendor (External)</option>
             <option value="blogger">Vicnos Blogger</option>
+            <!-- Vendor Option hidden by default, ID added for JS targeting -->
+            <option id="vendor-option" value="vendor" style="display: none;">Vendor (External) - DEKY Only</option>
           </select>
         </div>
 
@@ -105,6 +106,12 @@
         window.location.href = 'dashboard.html';
       } else {
         currentUserRole = profile.role;
+        
+        // REVEAL VENDOR OPTION ONLY FOR DEKY SUPER ADMIN
+        if (currentUserRole === 'super_admin') {
+            document.getElementById('vendor-option').style.display = 'block';
+        }
+
         loadStaff();
       }
     }

@@ -45,14 +45,20 @@
 
     async function loadStaff() {
       const list = document.getElementById('staff-list');
-      // Filter only the roles DEKY cares about
+      
+      // ADDED 'admin' TO THE LIST
       const { data: staff, error } = await db.from('profiles')
           .select('*')
-          .in('role', ['md', 'manager', 'accountant', 'supervisor', 'store_keeper', 'blogger'])
+          .in('role', ['md', 'manager', 'admin', 'accountant', 'supervisor', 'store_keeper', 'blogger'])
           .order('role', { ascending: true });
       
       list.innerHTML = '';
       
+      if (error) {
+        list.innerHTML = `<p class="text-center text-red-500 text-sm">Error: ${error.message}</p>`;
+        return;
+      }
+
       if (!staff || staff.length === 0) {
         list.innerHTML = '<p class="text-center text-slate-500 text-sm">No executive staff found.</p>';
         return;
