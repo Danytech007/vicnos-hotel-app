@@ -18,6 +18,8 @@
     ::-webkit-scrollbar-track { background: #1e293b; }
     ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
   </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 font-sans flex flex-col">
 
@@ -630,5 +632,12 @@
 
     init();
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+    });
+  }
+</script>
 </body>
 </html>

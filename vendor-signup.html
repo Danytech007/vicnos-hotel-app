@@ -12,6 +12,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; }
   </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 </head>
 <body class="min-h-screen p-4 flex items-center justify-center">
 
@@ -150,5 +152,12 @@
       }
     });
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+    });
+  }
+</script>
 </body>
 </html>

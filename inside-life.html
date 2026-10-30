@@ -17,6 +17,8 @@
     .fade-in { animation: fadeIn 0.5s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 </head>
 <body class="pb-10">
 
@@ -181,5 +183,12 @@
 
     loadVIPGuides();
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+    });
+  }
+</script>
 </body>
 </html>

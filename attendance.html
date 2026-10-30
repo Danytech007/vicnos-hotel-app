@@ -9,6 +9,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>* { -webkit-tap-highlight-color: transparent; }</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 </head>
 <body class="bg-gray-50 min-h-screen p-4 font-sans flex flex-col items-center justify-center">
   
@@ -164,5 +166,12 @@
 
     loadAttendance();
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+    });
+  }
+</script>
 </body>
 </html>

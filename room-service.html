@@ -16,6 +16,8 @@
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 </head>
 <body class="min-h-screen pb-24">
 
@@ -284,5 +286,12 @@
 
     loadMenu();
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+    });
+  }
+</script>
 </body>
 </html>

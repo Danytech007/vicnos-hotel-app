@@ -13,6 +13,8 @@
     h1, h2, h3 { font-family: 'Playfair Display', serif; }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 </head>
 <body class="min-h-screen pb-24">
 
@@ -171,5 +173,12 @@
 
     loadBill();
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+    });
+  }
+</script>
 </body>
 </html>

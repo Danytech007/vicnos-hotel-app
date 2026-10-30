@@ -10,6 +10,8 @@
   <style>
     body { -webkit-tap-highlight-color: transparent; user-select: none; }
   </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 </head>
 <body class="bg-gray-50 min-h-screen pb-24 font-sans">
   <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
@@ -161,5 +163,12 @@
     }
     loadUserAndRooms();
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+    });
+  }
+</script>
 </body>
 </html>
