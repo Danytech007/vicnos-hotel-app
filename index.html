@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos HotelStack - Login</title>
+  
+  <!-- PWA Setup -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -15,11 +20,13 @@
       background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.2) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.2) 0, transparent 50%);
       -webkit-tap-highlight-color: transparent;
     }
+    .fade-in { animation: fadeIn 0.4s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <div class="w-full max-w-md">
+  <div class="w-full max-w-md fade-in" id="login-container" style="display: none;">
     
     <!-- Logo Area -->
     <div class="text-center mb-8">
@@ -56,7 +63,7 @@
       <p id="message" class="mt-4 text-center text-sm font-medium"></p>
     </div>
 
-    <!-- Vendor Signup Link Added Here -->
+    <!-- Vendor Signup Link -->
     <div class="text-center mt-6">
         <a href="vendor-signup.html" class="text-xs text-blue-300 hover:text-white transition">Are you a local vendor? Join the DEKY Network here.</a>
     </div>
@@ -68,13 +75,83 @@
     </p>
   </div>
 
+  <!-- Loading Screen (Shows while checking session) -->
+  <div id="loading-screen" class="flex flex-col items-center justify-center">
+    <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-slate-400 text-sm font-bold animate-pulse">Loading Vicnos...</p>
+  </div>
+
   <script>
+    // 1. Register Service Worker for Speed Caching
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+      });
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
+    // 2. The Role Routing Logic (Centralized)
+    function routeUser(role) {
+      if (role === 'vendor') {
+        window.location.replace('vendor-dashboard.html');
+      } else if (['super_admin', 'admin', 'manager', 'md', 'accountant', 'receptionist', 'supervisor'].includes(role)) {
+        window.location.replace('dashboard.html');
+      } else if (['barman', 'waitress', 'chef'].includes(role)) {
+        window.location.replace('pos.html'); 
+      } else if (role === 'housekeeping') {
+        window.location.replace('rooms.html'); 
+      } else if (role === 'store_keeper') {
+        window.location.replace('store.html'); 
+      } else if (role === 'blogger') {
+        window.location.replace('blog-manager.html'); 
+      } else if (role === 'security') {
+        window.location.replace('security-dashboard.html');
+      } else if (role === 'laundry') {
+        window.location.replace('laundry.html');
+      } else {
+        window.location.replace('dashboard.html'); 
+      }
+    }
+
+    // 3. Check for Instant Session (Speed)
+    async function checkSession() {
+      const { data: { session } } = await db.auth.getSession();
+      
+      if (session) {
+        // Check local storage first for INSTANT routing
+        const cachedRole = localStorage.getItem('vicnos_role');
+        if (cachedRole) {
+          routeUser(cachedRole);
+          return; // Stop execution, we are redirecting
+        }
+
+        // If no cache, fetch from DB (with a fast timeout)
+        const { data: profile } = await db.from('profiles').select('role, is_active').eq('id', session.user.id).single();
+        
+        if (profile && profile.is_active !== false) {
+          localStorage.setItem('vicnos_role', profile.role); // Cache it for next time
+          routeUser(profile.role);
+        } else {
+          // Invalid or deactivated profile, show login
+          document.getElementById('loading-screen').classList.add('hidden');
+          document.getElementById('login-container').style.display = 'block';
+        }
+      } else {
+        // No session, show login form
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('login-container').style.display = 'block';
+        // Trap the back button so they can't go to a cached dashboard page
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function () { window.history.go(1); };
+      }
+    }
+
+    // 4. Login Function
     async function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
@@ -112,28 +189,17 @@
         return;
       }
 
+      // SUCCESS: Cache role and route
+      localStorage.setItem('vicnos_role', profile.role);
+      
       message.textContent = 'Login successful!';
       message.className = 'mt-4 text-center text-sm font-medium text-green-400';
       
-      // ROLE ROUTING LOGIC
-      setTimeout(() => {
-        if (profile.role === 'vendor') {
-          window.location.href = 'vendor-dashboard.html';
-        } else if (profile.role === 'super_admin' || profile.role === 'admin' || profile.role === 'manager' || profile.role === 'md' || profile.role === 'accountant' || profile.role === 'receptionist') {
-          window.location.href = 'dashboard.html';
-        } else if (profile.role === 'barman' || profile.role === 'waitress' || profile.role === 'chef') {
-          window.location.href = 'pos.html'; 
-        } else if (profile.role === 'housekeeping') {
-          window.location.href = 'rooms.html'; 
-        } else if (profile.role === 'store_keeper') {
-          window.location.href = 'store.html'; 
-        } else if (profile.role === 'blogger') {
-          window.location.href = 'blog-manager.html'; 
-        } else {
-          window.location.href = 'dashboard.html'; 
-        }
-      }, 500);
+      setTimeout(() => routeUser(profile.role), 500);
     }
+
+    // Run session check on load
+    checkSession();
   </script>
 </body>
 </html>
