@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos HotelStack - Dashboard</title>
+  <link rel="manifest" href="manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script> 
@@ -11,8 +12,6 @@
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Outfit', sans-serif; background-color: #0f172a; background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.1) 0, transparent 50%); -webkit-tap-highlight-color: transparent; user-select: none; min-height: 100vh; display: flex; flex-direction: column; }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="text-slate-200">
   
@@ -87,19 +86,36 @@
   </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
+    // --- 1. INSTANT LOAD FROM CACHE ---
+    const cachedRole = localStorage.getItem('vicnos_role');
+    if (cachedRole) {
+      document.getElementById('role-badge').textContent = cachedRole.toUpperCase();
+      document.getElementById('user-role-display').textContent = cachedRole + ' Portal';
+      renderOperations(cachedRole); 
+    }
+
     async function loadDashboard() {
       const { data: { user } } = await db.auth.getUser();
-      if (!user) { window.location.href = 'index.html'; return; }
+      if (!user) { 
+        localStorage.removeItem('vicnos_role');
+        window.location.href = 'index.html'; 
+        return; 
+      }
       
       const { data: profile } = await db.from('profiles').select('full_name, role').eq('id', user.id).single();
       
       if (profile) {
+        localStorage.setItem('vicnos_role', profile.role); // Sync cache
         document.getElementById('admin-name').textContent = profile.full_name + ' 👋';
         document.getElementById('user-role-display').textContent = profile.role + ' Portal';
         document.getElementById('role-badge').textContent = profile.role.toUpperCase();
@@ -154,7 +170,7 @@
         buttons += highlightBtn;
         buttons += btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Finance');
         buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
-        buttons += orderBtn; // Now opens Order Board which has Live Orders + Kitchen Stock
+        buttons += orderBtn; 
         buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List');
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
         buttons += clockBtn;
@@ -212,7 +228,7 @@
         buttons += clockBtn;
       }
       else if (role === 'vendor') {
-        window.location.href = 'vendor-dashboard.html';
+        window.location.replace('vendor-dashboard.html');
         return;
       }
       else {
@@ -223,21 +239,17 @@
       lucide.createIcons();
     }
 
-    // --- HOTEL HIGHLIGHTS LOGIC ---
     async function openHighlights() {
       const modal = document.getElementById('highlights-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
 
-      // 1. Active Guests
       const { count: activeGuests } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'Checked In');
       document.getElementById('hl-active-guests').textContent = activeGuests || 0;
 
-      // 2. Pending Orders
       const { count: pendingOrders } = await db.from('guest_orders').select('*', { count: 'exact', head: true }).in('status', ['Pending', 'Preparing', 'Ready']);
       document.getElementById('hl-pending-orders').textContent = pendingOrders || 0;
 
-      // 3. Low Stock
       const { data: lowStock } = await db.from('inventory').select('id').lte('stock_quantity', 5);
       document.getElementById('hl-low-stock').textContent = lowStock ? lowStock.length : 0;
     }
@@ -248,15 +260,13 @@
       modal.classList.remove('flex');
     }
 
-    async function logout() { await db.auth.signOut(); window.location.href = 'index.html'; }
+    async function logout() { 
+      localStorage.removeItem('vicnos_role'); // Clear cache on logout
+      await db.auth.signOut(); 
+      window.location.replace('index.html'); 
+    }
+    
     loadDashboard();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>

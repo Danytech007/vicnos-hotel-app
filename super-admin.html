@@ -4,17 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>DEKY - Super Admin Portal</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+  
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
     .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="min-h-screen pb-10">
 
@@ -28,49 +33,49 @@
         <p class="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">Command Center</p>
       </div>
     </div>
-    <a href="dashboard.html" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5"></i></a>
+    <button onclick="window.location.href='dashboard.html'" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
   </nav>
 
   <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[68px] z-40">
-    <button onclick="switchTab('overview')" id="btn-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">Overview</button>
-    <button onclick="switchTab('manage-vendors')" id="btn-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Manage Vendors</button>
-    <button onclick="switchTab('vendor')" id="btn-vendor" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Vendor</button>
-    <button onclick="switchTab('guide')" id="btn-guide" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Guide</button>
-    <button onclick="switchTab('ad')" id="btn-ad" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Add Ad</button>
+    <button onclick="switchTab('overview')" id="btn-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition">Overview</button>
+    <button onclick="switchTab('manage-vendors')" id="btn-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Manage Vendors</button>
+    <button onclick="switchTab('vendor')" id="btn-vendor" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Add Vendor</button>
+    <button onclick="switchTab('guide')" id="btn-guide" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Add Guide</button>
+    <button onclick="switchTab('ad')" id="btn-ad" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Add Ad</button>
   </div>
 
   <main class="p-4 max-w-4xl mx-auto mt-4">
     
     <!-- OVERVIEW -->
-    <div id="section-overview" class="tab-content block">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div id="section-overview" class="tab-content block fade-in">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
               <p class="text-xs text-slate-400 font-medium mb-1">Total Vendors</p>
-              <p id="stat-vendors" class="text-2xl font-bold text-white">0</p>
+              <p id="stat-vendors" class="text-2xl font-bold text-white">...</p>
           </div>
           <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
               <p class="text-xs text-slate-400 font-medium mb-1">Total Inquiries</p>
-              <p id="stat-inquiries" class="text-2xl font-bold text-white">0</p>
+              <p id="stat-inquiries" class="text-2xl font-bold text-white">...</p>
           </div>
-          <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 bg-gradient-to-br from-yellow-500/10 to-transparent">
+          <div class="col-span-2 md:col-span-1 bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 bg-gradient-to-br from-yellow-500/10 to-transparent">
               <p class="text-xs text-yellow-400 font-bold mb-1">DEKY Commission</p>
-              <p id="stat-commission" class="text-2xl font-bold text-yellow-400">₦0</p>
+              <p id="stat-commission" class="text-2xl font-bold text-yellow-400">₦...</p>
           </div>
       </div>
     </div>
 
     <!-- MANAGE VENDORS -->
-    <div id="section-manage-vendors" class="tab-content hidden">
+    <div id="section-manage-vendors" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4">Registered Vendors</h2>
         <div id="vendor-list-admin" class="space-y-4">
-            <p class="text-center text-slate-500">Loading vendors...</p>
+            <p class="text-center text-slate-500 animate-pulse">Loading vendors...</p>
         </div>
       </div>
     </div>
 
     <!-- ADD VENDOR -->
-    <div id="section-vendor" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+    <div id="section-vendor" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
       <h2 class="font-bold text-white mb-4 text-lg">Manually Add Vendor</h2>
       <form id="vendor-form" class="space-y-4">
         <div>
@@ -124,7 +129,7 @@
     </div>
 
     <!-- ADD GUIDE -->
-    <div id="section-guide" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+    <div id="section-guide" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
       <h2 class="font-bold text-white mb-4 text-lg">Add Elite Guide (₦50k Fee)</h2>
       <form id="guide-form" class="space-y-4">
         <div>
@@ -149,7 +154,7 @@
     </div>
 
     <!-- ADD AD -->
-    <div id="section-ad" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+    <div id="section-ad" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
       <h2 class="font-bold text-white mb-4 text-lg">Add Sponsored Ad</h2>
       <form id="ad-form" class="space-y-4">
         <div>
@@ -172,11 +177,27 @@
   </main>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
+
+    // Initialize History State for Smart Back Button
+    window.history.replaceState({ tab: 'overview' }, '', '#overview');
+
+    // Handle Phone Back Button
+    window.onpopstate = function(event) {
+      if (event.state && event.state.tab) {
+        switchTab(event.state.tab, false); // false = don't push to history again
+      } else {
+        switchTab('overview', false);
+      }
+    };
 
     async function uploadImage(file, bucketName) {
         if (!file) return null;
@@ -189,30 +210,54 @@
         return data.publicUrl;
     }
 
-    function switchTab(tabId) {
+    function switchTab(tabId, pushHistory = true) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
         document.getElementById(`section-${tabId}`).classList.remove('hidden');
         
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
+            btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition';
         });
-        document.getElementById(`btn-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
+        document.getElementById(`btn-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition';
         
+        // SMART APP: Push state so Back Button works
+        if (pushHistory) {
+            window.history.pushState({ tab: tabId }, '', `#${tabId}`);
+        }
+
         if(tabId === 'overview') loadOverview();
         if(tabId === 'manage-vendors') loadAdminVendors();
     }
 
     async function loadOverview() {
+        // 1. INSTANT CACHE LOAD
+        const cachedStats = localStorage.getItem('vicnos_admin_stats');
+        if (cachedStats) {
+            const s = JSON.parse(cachedStats);
+            document.getElementById('stat-vendors').textContent = s.vendors;
+            document.getElementById('stat-inquiries').textContent = s.inquiries;
+            document.getElementById('stat-commission').textContent = `₦${Number(s.commission).toLocaleString()}`;
+        }
+
+        // 2. BACKGROUND SYNC
         const { data: vendors } = await db.from('vendors').select('*');
         const { data: inquiries } = await db.from('vendor_inquiries').select('vendor_id');
         const { data: orders } = await db.from('vendor_orders').select('commission_amount').eq('status', 'Released');
 
-        document.getElementById('stat-vendors').textContent = vendors ? vendors.length : 0;
-        document.getElementById('stat-inquiries').textContent = inquiries ? inquiries.length : 0;
-        
+        const vCount = vendors ? vendors.length : 0;
+        const iCount = inquiries ? inquiries.length : 0;
         let totalComm = 0;
         if(orders) orders.forEach(o => totalComm += Number(o.commission_amount));
+
+        // 3. UPDATE UI & CACHE
+        document.getElementById('stat-vendors').textContent = vCount;
+        document.getElementById('stat-inquiries').textContent = iCount;
         document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
+        
+        localStorage.setItem('vicnos_admin_stats', JSON.stringify({ 
+            vendors: vCount, 
+            inquiries: iCount, 
+            commission: totalComm 
+        }));
     }
 
     async function loadAdminVendors() {
@@ -233,7 +278,7 @@
             const profileId = v.profiles && v.profiles.length > 0 ? v.profiles[0].id : null;
             
             return `
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3 fade-in">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <img src="${v.image_url || 'https://via.placeholder.com/150'}" class="w-12 h-12 rounded-full object-cover border border-slate-600">
@@ -297,14 +342,12 @@
     async function deleteVendor(userId, vendorId, name) {
         if (!confirm(`⚠️ Are you sure you want to PERMANENTLY delete ${name}?`)) return;
 
-        // 1. Delete Login if it exists
         if (userId) {
             await db.functions.invoke('manage-staff', {
                 body: { action: 'delete_user', user_id: userId }
             });
         }
 
-        // 2. Delete Vendor Row
         await db.from('vendors').delete().eq('id', vendorId);
         loadAdminVendors();
     }
@@ -315,13 +358,9 @@
         const password = prompt(`Enter temporary password for ${name} (min 6 chars):`);
         if (!password || password.length < 6) return alert("Password must be at least 6 characters.");
 
-        // This uses the register-vendor function logic, but we already have the vendor row.
-        // So we just create the auth user and update the vendor row.
         const { data: authData, error: authError } = await db.auth.signUp({ email, password });
-        
         if (authError) return alert("Error: " + authError.message);
 
-        // Link it
         await db.from('profiles').insert({
             id: authData.user.id,
             full_name: name,
@@ -360,6 +399,7 @@
             msg.textContent = "✅ Vendor & Login Created Successfully!";
             document.getElementById('vendor-form').reset();
             loadAdminVendors();
+
         } catch (err) {
             msg.textContent = "Error: " + err.message;
         } finally {
@@ -427,12 +467,5 @@
 
     loadOverview();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
