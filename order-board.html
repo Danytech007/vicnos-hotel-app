@@ -7,12 +7,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-  </style>
+  <style>body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }</style>
 </head>
 <body class="min-h-screen p-4">
-
   <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 gap-4">
     <div class="flex items-center gap-3">
       <div class="bg-red-100 p-2 rounded-xl text-red-600 animate-pulse"><i data-lucide="bell" class="w-6 h-6"></i></div>
@@ -21,11 +18,8 @@
         <p id="status-text" class="text-xs text-gray-500">Click Enable to start listening</p>
       </div>
     </div>
-    
     <div class="flex gap-2">
-        <button id="sound-btn" onclick="enableSound()" class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm animate-bounce">
-            🔊 Enable Voice Alerts
-        </button>
+        <button id="sound-btn" onclick="enableSound()" class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm animate-bounce">🔊 Enable Voice Alerts</button>
         <button onclick="window.location.href='dashboard.html'" class="bg-gray-100 px-4 py-2 rounded-xl text-sm font-bold text-gray-600">Back</button>
     </div>
   </div>
@@ -34,10 +28,7 @@
     <p class="text-gray-500 col-span-full text-center py-10">No active orders right now.</p>
   </div>
 
-  <!-- Hidden silent audio to keep the browser awake -->
-  <audio id="silent-audio" loop>
-    <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav">
-  </audio>
+  <audio id="silent-audio" loop><source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav"></audio>
 
   <script>
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -48,69 +39,53 @@
 
     let soundEnabled = false;
 
+    async function initAuth() {
+        const { data: { user } } = await db.auth.getUser();
+        if (!user) return window.location.href = 'index.html';
+        const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+        
+        const allowedRoles = ['md', 'admin', 'manager', 'accountant', 'supervisor', 'barman', 'waitress', 'chef'];
+        if (!profile || !allowedRoles.includes(profile.role)) {
+            alert("Access Denied."); return window.location.href = 'dashboard.html';
+        }
+        loadOrders();
+    }
+
     async function enableSound() {
         soundEnabled = true;
-        
-        // 1. Play the silent audio loop to bypass browser autoplay block
         const silentAudio = document.getElementById('silent-audio');
-        silentAudio.volume = 0.01; // almost silent
+        silentAudio.volume = 0.01;
         silentAudio.play().catch(e => console.log("Silent audio block"));
 
-        // 2. Request Wake Lock so the screen doesn't turn off
         try {
             if ('wakeLock' in navigator) {
                 await navigator.wakeLock.request('screen');
-                document.getElementById('status-text').innerText = "Screen Lock Active. Listening for orders...";
+                document.getElementById('status-text').innerText = "Screen Lock Active. Listening...";
             }
-        } catch (err) {
-            console.log("Wake Lock failed", err);
-            document.getElementById('status-text').innerText = "Listening for orders (Keep screen on)";
-        }
+        } catch (err) { document.getElementById('status-text').innerText = "Listening..."; }
 
-        // 3. Update UI
         document.getElementById('sound-btn').innerText = "✅ Voice Alerts Active";
         document.getElementById('sound-btn').className = "bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm";
-        
-        // 4. Test voice
         announceOrder("Test", [{qty: 1, name: "System Check"}]);
     }
 
     function announceOrder(roomNum, items) {
         if (!soundEnabled) return;
-
-        // Cancel any ongoing speech so they don't overlap
         window.speechSynthesis.cancel();
-
         let itemList = items.map(i => `${i.qty} ${i.name}`).join(", ");
         let text = `Attention Kitchen. New order from Room ${roomNum}. ${itemList}. Please check the screen.`;
-
         const utterance = new SpeechSynthesisUtterance(text);
-        
-        const voices = window.speechSynthesis.getVoices();
-        const englishVoice = voices.find(voice => voice.lang.includes('en'));
-        if (englishVoice) utterance.voice = englishVoice;
-
-        utterance.rate = 0.9;  
-        utterance.pitch = 1.1; 
-        utterance.volume = 1.0; 
-
+        utterance.rate = 0.9; utterance.pitch = 1.1; utterance.volume = 1.0; 
         window.speechSynthesis.speak(utterance);
     }
 
     async function loadOrders() {
       const grid = document.getElementById('orders-grid');
-      
       const { data: orders, error } = await db.from('guest_orders')
         .select(`*, bookings ( guests ( full_name ) )`)
-        .neq('status', 'Delivered')
-        .order('created_at', { ascending: true });
+        .neq('status', 'Delivered').order('created_at', { ascending: true });
 
-      if (error) {
-        grid.innerHTML = `<p class="text-red-500 col-span-full text-center">Error loading orders.</p>`;
-        return;
-      }
-
-      if (!orders || orders.length === 0) {
+      if (error || !orders || orders.length === 0) {
         grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">No active orders right now. Relax! ☕</p>';
         return;
       }
@@ -118,17 +93,9 @@
       grid.innerHTML = orders.map(order => {
         const time = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         let guestName = order.bookings?.guests?.full_name || "Unknown Guest";
+        let statusColor = order.status === 'Preparing' ? "bg-blue-100 text-blue-800" : order.status === 'On the Way' ? "bg-purple-100 text-purple-800" : "bg-yellow-100 text-yellow-800";
         
-        let statusColor = "bg-yellow-100 text-yellow-800";
-        if(order.status === 'Preparing') statusColor = "bg-blue-100 text-blue-800";
-        if(order.status === 'On the Way') statusColor = "bg-purple-100 text-purple-800";
-
-        let itemsHtml = '';
-        order.items.forEach(item => {
-            itemsHtml += `<li class="flex justify-between border-b border-gray-100 py-1 text-sm">
-                            <span class="font-bold text-gray-800">${item.qty}x ${item.name}</span>
-                          </li>`;
-        });
+        let itemsHtml = order.items.map(item => `<li class="flex justify-between border-b border-gray-100 py-1 text-sm"><span class="font-bold text-gray-800">${item.qty}x ${item.name}</span></li>`).join('');
 
         return `
           <div class="bg-white rounded-2xl shadow-md border-t-4 border-orange-500 overflow-hidden flex flex-col">
@@ -141,10 +108,7 @@
               </div>
               <p class="font-extrabold text-blue-600">₦${Number(order.total_amount).toLocaleString()}</p>
             </div>
-            
-            <div class="p-4 flex-1">
-              <ul class="mb-4">${itemsHtml}</ul>
-              
+            <div class="p-4 flex-1"><ul class="mb-4">${itemsHtml}</ul>
               <div class="bg-gray-50 p-2 rounded-xl border">
                 <label class="block text-[10px] font-bold text-gray-500 mb-1">Update Status & ETA</label>
                 <div class="flex gap-2">
@@ -167,26 +131,16 @@
     async function updateOrder(id) {
       const newStatus = document.getElementById(`status-${id}`).value;
       const newEta = document.getElementById(`eta-${id}`).value;
-      
-      await db.from('guest_orders').update({ 
-          status: newStatus,
-          estimated_minutes: newEta
-      }).eq('id', id);
-      
+      await db.from('guest_orders').update({ status: newStatus, estimated_minutes: newEta }).eq('id', id);
       loadOrders(); 
     }
 
-    db.channel('custom-insert-channel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
-        const newOrder = payload.new;
-        announceOrder(newOrder.room_number || 'Unknown', newOrder.items);
+    db.channel('custom-insert-channel').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
+        announceOrder(payload.new.room_number || 'Unknown', payload.new.items);
         loadOrders();
-      })
-      .subscribe();
+    }).subscribe();
 
-    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
-
-    loadOrders();
+    initAuth();
   </script>
 </body>
 </html>

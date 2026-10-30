@@ -9,27 +9,17 @@
   <script src="https://unpkg.com/lucide@latest"></script> 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    body { 
-      font-family: 'Outfit', sans-serif; 
-      background-color: #0f172a; 
-      background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.1) 0, transparent 50%);
-      -webkit-tap-highlight-color: transparent; user-select: none;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.1) 0, transparent 50%); -webkit-tap-highlight-color: transparent; user-select: none; min-height: 100vh; display: flex; flex-direction: column; }
   </style>
 </head>
 <body class="text-slate-200">
   
   <nav class="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 p-5 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center gap-3">
-      <div class="bg-blue-600/20 p-2 rounded-xl border border-blue-500/30">
-        <i data-lucide="hotel" class="w-6 h-6 text-blue-400"></i>
-      </div>
+      <div class="bg-blue-600/20 p-2 rounded-xl border border-blue-500/30"><i data-lucide="hotel" class="w-6 h-6 text-blue-400"></i></div>
       <div>
         <h1 class="font-bold text-white text-lg leading-tight tracking-wide">Vicnos HotelStack</h1>
-        <p id="user-role-display" class="text-[10px] text-blue-400 uppercase tracking-widest font-bold">Loading Role...</p>
+        <p id="user-role-display" class="text-[10px] text-blue-400 uppercase tracking-widest font-bold">Loading...</p>
       </div>
     </div>
     <button onclick="logout()" class="bg-slate-700/50 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
@@ -42,42 +32,8 @@
       <div class="relative z-10">
         <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p>
         <h2 id="admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2>
-        <p class="text-sm text-slate-400">Welcome back to the portal.</p>
       </div>
       <span id="role-badge" class="relative z-10 bg-blue-500/20 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-500/30 tracking-wide">ROLE</span>
-    </div>
-
-    <!-- Stats Section (Only Guests Inside for Super Admin) -->
-    <div id="stats-section" class="mb-8">
-      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">Live Overview</h3>
-      
-      <!-- Full Stats Grid for Hotel Staff -->
-      <div id="hotel-stats-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
-          <div class="bg-blue-500/20 p-3 rounded-xl"><i data-lucide="bed-double" class="w-6 h-6 text-blue-400"></i></div>
-          <div><p class="text-[11px] text-slate-400 font-medium">Available Rooms</p><p id="stat-available" class="text-2xl font-bold text-white">0</p></div>
-        </div>
-        <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
-          <div class="bg-teal-500/20 p-3 rounded-xl"><i data-lucide="users" class="w-6 h-6 text-teal-400"></i></div>
-          <div><p class="text-[11px] text-slate-400 font-medium">Guests Inside</p><p id="stat-guests" class="text-2xl font-bold text-white">0</p></div>
-        </div>
-        <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
-          <div class="bg-orange-500/20 p-3 rounded-xl"><i data-lucide="sparkles" class="w-6 h-6 text-orange-400"></i></div>
-          <div><p class="text-[11px] text-slate-400 font-medium">Dirty Rooms</p><p id="stat-dirty" class="text-2xl font-bold text-white">0</p></div>
-        </div>
-        <div class="bg-slate-800/40 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3 shadow-md hover:bg-slate-800/60 transition">
-          <div class="bg-red-500/20 p-3 rounded-xl"><i data-lucide="alert-triangle" class="w-6 h-6 text-red-400"></i></div>
-          <div><p class="text-[11px] text-slate-400 font-medium">Maintenance</p><p id="stat-maint" class="text-2xl font-bold text-white">0</p></div>
-        </div>
-      </div>
-
-      <!-- Super Admin Only Stats (Guests Inside only) -->
-      <div id="super-admin-stats-grid" class="hidden grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl border border-slate-700/50 flex items-center gap-4 shadow-md bg-gradient-to-br from-teal-500/10 to-transparent">
-          <div class="bg-teal-500/20 p-4 rounded-xl"><i data-lucide="users" class="w-8 h-8 text-teal-400"></i></div>
-          <div><p class="text-sm text-slate-400 font-medium">Total Guests Inside (All Hotels)</p><p id="stat-guests-deky" class="text-3xl font-bold text-white">0</p></div>
-        </div>
-      </div>
     </div>
 
     <div class="flex-grow">
@@ -102,18 +58,13 @@
     async function loadDashboard() {
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = 'index.html'; return; }
-
       const { data: profile } = await db.from('profiles').select('full_name, role').eq('id', user.id).single();
       
       if (profile) {
         document.getElementById('admin-name').textContent = profile.full_name + ' 👋';
         document.getElementById('user-role-display').textContent = profile.role + ' Portal';
-        
-        const badge = document.getElementById('role-badge');
-        badge.textContent = profile.role.toUpperCase();
-        
+        document.getElementById('role-badge').textContent = profile.role.toUpperCase();
         renderOperations(profile.role);
-        loadStats(profile.role);
       }
     }
 
@@ -131,34 +82,17 @@
       `;
 
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out');
-      const maintBtn = btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
       const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); 
 
-      // 🌟 DEKY SUPER ADMIN SPECIFIC VIEW
       if (role === 'super_admin') {
           buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network');
-          buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); // New Page
-          buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
-          buttons += btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Finance');
-          buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal');
-          
-          grid.innerHTML = buttons;
-          lucide.createIcons();
-          return; // Stop here, don't show standard hotel buttons
+          buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff');
       }
-
-      // 🌟 BLOGGER SPECIFIC VIEW
-      if (role === 'blogger') {
+      else if (role === 'blogger') {
           buttons += btn('blog-manager.html', 'pen-tool', 'text-purple-400', 'bg-purple-500/20', 'Blog Studio');
           buttons += clockBtn;
-          grid.innerHTML = buttons;
-          lucide.createIcons();
-          return;
       }
-
-      // --- STANDARD HOTEL ROLES BELOW ---
-      
-      if (['md', 'admin', 'manager', 'accountant'].includes(role)) {
+      else if (['md', 'admin', 'manager'].includes(role)) {
         buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
@@ -168,17 +102,43 @@
         buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
         buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms');
         buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff');
-        buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store');
         buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms');
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
-        buttons += maintBtn;
+        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
+        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager');
         buttons += clockBtn;
         buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal');
       } 
+      else if (role === 'accountant') {
+        buttons += btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Finance');
+        buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
+        buttons += orderBtn; 
+        buttons += btn('stock-manager.html', 'chef-hat', 'text-orange-400', 'bg-orange-500/20', 'Kitchen Stock'); 
+        buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List');
+        buttons += clockBtn;
+      }
+      else if (role === 'waitress') {
+        buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
+        buttons += orderBtn;
+        buttons += btn('waitress-sales.html', 'line-chart', 'text-blue-400', 'bg-blue-500/20', 'My Sales');
+        buttons += clockBtn;
+      }
+      else if (role === 'chef') {
+        buttons += orderBtn; // Kitchen uses this to see orders
+        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Kitchen Stock');
+        buttons += clockBtn;
+      }
+      else if (role === 'barman') {
+        buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'Bar POS');
+        buttons += orderBtn; // To see drink orders
+        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Bar Stock');
+        buttons += clockBtn;
+      }
       else if (role === 'supervisor') {
         buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms');
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
-        buttons += maintBtn;
+        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock');
+        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
         buttons += clockBtn;
       }
       else if (role === 'receptionist') {
@@ -186,13 +146,13 @@
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
         buttons += orderBtn;
-        buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms');
-        buttons += maintBtn;
+        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Minimart Stock');
+        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
         buttons += clockBtn;
       }
       else if (role === 'housekeeping') {
         buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms');
-        buttons += maintBtn;
+        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
         buttons += clockBtn;
       }
       else if (role === 'store_keeper') {
@@ -201,15 +161,11 @@
       }
       else if (role === 'laundry') {
         buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub');
-        buttons += maintBtn;
-        buttons += clockBtn;
-      }
-      else if (['barman', 'waitress', 'chef'].includes(role)) {
-        buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
-        buttons += orderBtn;
+        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
         buttons += clockBtn;
       }
       else if (role === 'security') {
+        buttons += btn('security-dashboard.html', 'shield', 'text-red-400', 'bg-red-500/20', 'Security Control');
         buttons += clockBtn;
       }
       else if (role === 'vendor') {
@@ -222,41 +178,6 @@
 
       grid.innerHTML = buttons;
       lucide.createIcons();
-    }
-
-    async function loadStats(role) {
-      // Hide stats for roles that don't need it
-      if (['barman', 'waitress', 'chef', 'housekeeping', 'store_keeper', 'security', 'laundry', 'vendor', 'blogger'].includes(role)) {
-        document.getElementById('stats-section').style.display = 'none';
-        return;
-      }
-
-      // Customize stats view for Super Admin
-      if (role === 'super_admin') {
-        document.getElementById('hotel-stats-grid').classList.add('hidden');
-        document.getElementById('hotel-stats-grid').classList.remove('grid');
-        document.getElementById('super-admin-stats-grid').classList.remove('hidden');
-        document.getElementById('super-admin-stats-grid').classList.add('grid');
-      }
-
-      const [roomsData, guestsData] = await Promise.all([
-        db.from('rooms').select('status'),
-        db.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'Checked In')
-      ]);
-
-      if (guestsData.count !== null) {
-          if(role === 'super_admin') {
-              document.getElementById('stat-guests-deky').textContent = guestsData.count;
-          } else {
-              document.getElementById('stat-guests').textContent = guestsData.count;
-          }
-      }
-
-      if (roomsData.data && role !== 'super_admin') {
-        document.getElementById('stat-available').textContent = roomsData.data.filter(r => r.status === 'Available').length;
-        document.getElementById('stat-dirty').textContent = roomsData.data.filter(r => r.status === 'Dirty' || r.status === 'Pending Inspection').length;
-        document.getElementById('stat-maint').textContent = roomsData.data.filter(r => r.status === 'Maintenance').length;
-      }
     }
 
     async function logout() { await db.auth.signOut(); window.location.href = 'index.html'; }

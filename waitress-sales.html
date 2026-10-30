@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos - My Sales & Remittance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f8fafc; }</style>
+</head>
+<body class="min-h-screen pb-24">
+
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Waitress Dashboard</h1>
+        <p class="text-xs text-gray-500">Sales & Remittance</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-5 mt-4">
+    
+    <div class="bg-slate-900 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
+        <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">My Total POS Sales</h2>
+        <p id="total-sales" class="text-4xl font-extrabold text-white">₦0</p>
+    </div>
+
+    <!-- Remittance Form -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="banknote" class="w-5 h-5 text-green-600"></i> Remit Cash to Manager</h2>
+      <form id="remit-form" class="flex gap-2">
+        <input id="remit-amount" type="number" required placeholder="Amount (₦)" class="w-full px-3 py-2 bg-gray-50 border rounded-xl outline-none">
+        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-xl font-bold shadow-md active:scale-95">Remit</button>
+      </form>
+      <p id="remit-msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
+    </div>
+
+    <!-- Room Charges Follow Up -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-orange-500"></i> Pending Room Charges</h2>
+      <div id="followup-list" class="space-y-3">
+        <p class="text-center text-gray-500 text-sm py-4">No pending charges right now.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let myUserId = null;
+
+    async function loadMySales() {
+        const { data: { user } } = await db.auth.getUser();
+        if (!user) return;
+        myUserId = user.id;
+
+        // 1. Calculate total sales
+        const { data: orders } = await db.from('pos_orders').select('total_amount').eq('created_by', myUserId);
+        let total = 0;
+        if(orders) orders.forEach(o => total += Number(o.total_amount));
+        document.getElementById('total-sales').textContent = `₦${total.toLocaleString()}`;
+
+        // 2. Fetch pending room charges
+        const { data: charges } = await db.from('folio_charges')
+            .select(`amount, description, department, bookings ( rooms ( room_number ), guests ( full_name ) )`)
+            .neq('department', 'Room Accommodation');
+
+        const list = document.getElementById('followup-list');
+        if (!charges || charges.length === 0) {
+            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending charges right now.</p>';
+            return;
+        }
+
+        list.innerHTML = charges.map(c => {
+            const room = c.bookings?.rooms?.room_number || 'N/A';
+            const guest = c.bookings?.guests?.full_name || 'Unknown Guest';
+            return `
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <div>
+                        <p class="font-bold text-gray-800 text-sm">Room ${room} - ${guest}</p>
+                        <p class="text-xs text-gray-500">${c.description}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-orange-600">₦${Number(c.amount).toLocaleString()}</p>
+                        <p class="text-[10px] text-gray-400 uppercase">${c.department}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    document.getElementById('remit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const amount = parseFloat(document.getElementById('remit-amount').value);
+        const msg = document.getElementById('remit-msg');
+
+        const { error } = await db.from('remittances').insert({
+            user_id: myUserId,
+            amount: amount,
+            status: 'Pending'
+        });
+
+        if (error) { msg.textContent = "Error: " + error.message; msg.className = "mt-2 text-center text-sm font-bold text-red-600"; }
+        else { msg.textContent = "✅ Remittance submitted for Manager approval."; document.getElementById('remit-form').reset(); }
+        setTimeout(() => msg.textContent = '', 3000);
+    });
+
+    loadMySales();
+  </script>
+</body>
+</html>
