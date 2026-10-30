@@ -30,6 +30,11 @@ serve(async (req) => {
       const { error: profileError } = await adminClient.from('profiles').update({ is_active }).eq('id', user_id);
       if (profileError) throw profileError;
     }
+    else if (action === 'delete_user') {
+      // Deleting the auth user automatically cascades and deletes the profile
+      const { error } = await adminClient.auth.admin.deleteUser(user_id);
+      if (error) throw error;
+    }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (err) {

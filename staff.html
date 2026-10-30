@@ -54,7 +54,6 @@
             <option value="chef">Chef / Kitchen</option>
             <option value="security">Security</option>
             <option value="blogger">Vicnos Blogger</option>
-            <!-- Vendor Option hidden by default, ID added for JS targeting -->
             <option id="vendor-option" value="vendor" style="display: none;">Vendor (External) - DEKY Only</option>
           </select>
         </div>
@@ -95,7 +94,6 @@
 
     let currentUserRole = '';
 
-    // --- SECURITY BOUNCER ---
     async function checkRole() {
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = 'index.html'; return; }
@@ -106,25 +104,17 @@
         window.location.href = 'dashboard.html';
       } else {
         currentUserRole = profile.role;
-        
-        // REVEAL VENDOR OPTION ONLY FOR DEKY SUPER ADMIN
         if (currentUserRole === 'super_admin') {
             document.getElementById('vendor-option').style.display = 'block';
         }
-
         loadStaff();
       }
     }
 
     async function loadStaff() {
       const list = document.getElementById('staff-list');
-      
-      // The .neq('role', 'super_admin') ensures Daniel is NEVER shown here
-      const { data: staff } = await db.from('profiles')
-          .select('*')
-          .neq('role', 'super_admin')
-          .order('created_at');
-          
+      // Exclude super_admin so Daniel doesn't show up in the hotel staff list
+      const { data: staff } = await db.from('profiles').select('*').neq('role', 'super_admin').order('created_at');
       list.innerHTML = '';
       
       if (!staff || staff.length === 0) {
@@ -152,8 +142,11 @@
                 <button onclick="resetPassword('${s.id}', '${s.full_name}')" class="flex-1 bg-white border border-gray-200 text-gray-700 py-1.5 rounded-lg text-xs font-bold active:scale-95 transition flex items-center justify-center gap-1">
                     <i data-lucide="key" class="w-3 h-3"></i> Reset PW
                 </button>
-                <button onclick="toggleActive('${s.id}', ${isActive})" class="flex-1 ${isActive ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'} border py-1.5 rounded-lg text-xs font-bold active:scale-95 transition flex items-center justify-center gap-1">
+                <button onclick="toggleActive('${s.id}', ${isActive})" class="flex-1 ${isActive ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-green-50 text-green-600 border-green-100'} border py-1.5 rounded-lg text-xs font-bold active:scale-95 transition flex items-center justify-center gap-1">
                     <i data-lucide="${isActive ? 'user-x' : 'user-check'}" class="w-3 h-3"></i> ${isActive ? 'Deactivate' : 'Activate'}
+                </button>
+                <button onclick="deleteStaff('${s.id}', '${s.full_name}')" class="bg-red-50 text-red-600 border border-red-100 py-1.5 px-3 rounded-lg text-xs font-bold active:scale-95 transition flex items-center justify-center">
+                    <i data-lucide="trash-2" class="w-3 h-3"></i>
                 </button>
             </div>
           </div>
@@ -206,6 +199,17 @@
 
         const { data, error } = await db.functions.invoke('manage-staff', {
             body: { action: 'toggle_active', user_id: userId, is_active: newStatus }
+        });
+        
+        if (error || data.error) alert("Error: " + (error?.message || data.error));
+        else loadStaff();
+    }
+
+    async function deleteStaff(userId, name) {
+        if (!confirm(`⚠️ Are you sure you want to PERMANENTLY delete ${name}? This cannot be undone.`)) return;
+
+        const { data, error } = await db.functions.invoke('manage-staff', {
+            body: { action: 'delete_user', user_id: userId }
         });
         
         if (error || data.error) alert("Error: " + (error?.message || data.error));

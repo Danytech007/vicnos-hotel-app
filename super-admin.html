@@ -39,6 +39,7 @@
 
   <main class="p-4 max-w-4xl mx-auto mt-4">
     
+    <!-- OVERVIEW -->
     <div id="section-overview" class="tab-content block">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
@@ -56,6 +57,7 @@
       </div>
     </div>
 
+    <!-- MANAGE VENDORS -->
     <div id="section-manage-vendors" class="tab-content hidden">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4">Registered Vendors</h2>
@@ -65,6 +67,7 @@
       </div>
     </div>
 
+    <!-- ADD VENDOR -->
     <div id="section-vendor" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Manually Add Vendor</h2>
       <form id="vendor-form" class="space-y-4">
@@ -118,6 +121,7 @@
       <p id="v-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
 
+    <!-- ADD GUIDE -->
     <div id="section-guide" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Add Elite Guide (₦50k Fee)</h2>
       <form id="guide-form" class="space-y-4">
@@ -142,6 +146,7 @@
       <p id="g-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
 
+    <!-- ADD AD -->
     <div id="section-ad" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
       <h2 class="font-bold text-white mb-4 text-lg">Add Sponsored Ad</h2>
       <form id="ad-form" class="space-y-4">
@@ -165,35 +170,11 @@
   </main>
 
   <script>
-    // ERROR CATCHER - If anything breaks, this will alert us!
-    window.onerror = function(msg, url, line) {
-        alert("CRITICAL ERROR: " + msg + "\nLine: " + line);
-        return false;
-    };
-
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-
-    function switchTab(tabId) {
-        try {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`section-${tabId}`).classList.remove('hidden');
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
-            });
-            document.getElementById(`btn-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
-            
-            if(tabId === 'overview') loadOverview();
-            if(tabId === 'manage-vendors') loadAdminVendors();
-        } catch (e) {
-            alert("Error switching tabs: " + e.message);
-        }
-    }
+    lucide.createIcons();
 
     async function uploadImage(file, bucketName) {
         if (!file) return null;
@@ -206,73 +187,83 @@
         return data.publicUrl;
     }
 
-    async function loadOverview() {
-        try {
-            const { data: vendors } = await db.from('vendors').select('*');
-            const { data: inquiries } = await db.from('vendor_inquiries').select('vendor_id');
-            const { data: orders } = await db.from('vendor_orders').select('commission_amount').eq('status', 'Released');
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`section-${tabId}`).classList.remove('hidden');
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap';
+        });
+        document.getElementById(`btn-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md';
+        
+        if(tabId === 'overview') loadOverview();
+        if(tabId === 'manage-vendors') loadAdminVendors();
+    }
 
-            document.getElementById('stat-vendors').textContent = vendors ? vendors.length : 0;
-            document.getElementById('stat-inquiries').textContent = inquiries ? inquiries.length : 0;
-            
-            let totalComm = 0;
-            if(orders) orders.forEach(o => totalComm += Number(o.commission_amount));
-            document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
-        } catch (e) {
-            alert("Error loading overview: " + e.message);
-        }
+    async function loadOverview() {
+        const { data: vendors } = await db.from('vendors').select('*');
+        const { data: inquiries } = await db.from('vendor_inquiries').select('vendor_id');
+        const { data: orders } = await db.from('vendor_orders').select('commission_amount').eq('status', 'Released');
+
+        document.getElementById('stat-vendors').textContent = vendors ? vendors.length : 0;
+        document.getElementById('stat-inquiries').textContent = inquiries ? inquiries.length : 0;
+        
+        let totalComm = 0;
+        if(orders) orders.forEach(o => totalComm += Number(o.commission_amount));
+        document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
     }
 
     async function loadAdminVendors() {
         const list = document.getElementById('vendor-list-admin');
-        list.innerHTML = '<p class="text-center text-slate-500">Loading vendors...</p>';
         
-        try {
-            const { data: vendors, error } = await db.from('vendors').select(`
-                *,
-                profiles (id)
-            `).order('created_at', { ascending: false });
+        const { data: vendors } = await db.from('vendors').select(`
+            *,
+            profiles (id)
+        `).order('created_at', { ascending: false });
 
-            if (error) throw error;
-
-            if (!vendors || vendors.length === 0) {
-                list.innerHTML = '<p class="text-center text-slate-500">No vendors registered yet.</p>';
-                return;
-            }
-
-            list.innerHTML = vendors.map(v => {
-                const isActive = v.is_active;
-                const profileId = v.profiles && v.profiles.length > 0 ? v.profiles[0].id : null;
-                
-                return `
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-3">
-                                <img src="${v.image_url || 'https://via.placeholder.com/150'}" class="w-12 h-12 rounded-full object-cover border border-slate-600">
-                                <div>
-                                    <h3 class="font-bold text-white text-sm">${v.business_name}</h3>
-                                    <p class="text-[10px] text-yellow-400 uppercase">${v.category}</p>
-                                    <p class="text-[10px] text-slate-400 mt-1">${v.address || 'No address provided'}</p>
-                                </div>
-                            </div>
-                            <span class="${isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold px-2 py-1 rounded">
-                                ${isActive ? 'ACTIVE' : 'INACTIVE'}
-                            </span>
-                        </div>
-                        
-                        ${profileId ? `
-                        <div class="flex gap-2">
-                            <button onclick="resetVendorPassword('${profileId}', '${v.business_name}')" class="flex-1 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold border border-slate-700">Reset PW</button>
-                            <button onclick="toggleVendorStatus('${profileId}', '${v.id}', ${isActive})" class="flex-1 ${isActive ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} py-2 rounded-lg text-xs font-bold">
-                                ${isActive ? 'Deactivate' : 'Activate'}
-                            </button>
-                        </div>` : `<p class="text-xs text-slate-500 text-center">No login linked</p>`}
-                    </div>
-                `;
-            }).join('');
-        } catch (err) {
-            list.innerHTML = `<p class="text-red-500 text-center">Error: ${err.message}</p>`;
+        if (!vendors || vendors.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-500">No vendors registered yet.</p>';
+            return;
         }
+
+        list.innerHTML = vendors.map(v => {
+            const isActive = v.is_active;
+            const profileId = v.profiles && v.profiles.length > 0 ? v.profiles[0].id : null;
+            
+            return `
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <img src="${v.image_url || 'https://via.placeholder.com/150'}" class="w-12 h-12 rounded-full object-cover border border-slate-600">
+                            <div>
+                                <h3 class="font-bold text-white text-sm">${v.business_name}</h3>
+                                <p class="text-[10px] text-yellow-400 uppercase">${v.category}</p>
+                                <p class="text-[10px] text-slate-400 mt-1">${v.address || 'No address provided'}</p>
+                            </div>
+                        </div>
+                        <span class="${isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold px-2 py-1 rounded">
+                            ${isActive ? 'ACTIVE' : 'INACTIVE'}
+                        </span>
+                    </div>
+                    
+                    ${profileId ? `
+                    <div class="flex gap-2">
+                        <button onclick="resetVendorPassword('${profileId}', '${v.business_name}')" class="flex-1 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold border border-slate-700">Reset PW</button>
+                        <button onclick="toggleVendorStatus('${profileId}', '${v.id}', ${isActive})" class="flex-1 ${isActive ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'} py-2 rounded-lg text-xs font-bold">
+                            ${isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button onclick="deleteVendor('${profileId}', '${v.id}', '${v.business_name}')" class="bg-red-500/20 text-red-400 px-3 py-2 rounded-lg text-xs font-bold">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>` : `
+                    <div class="flex gap-2">
+                        <button onclick="createVendorLogin('${v.id}', '${v.business_name}')" class="flex-1 bg-blue-500/20 text-blue-400 py-2 rounded-lg text-xs font-bold">Create Login</button>
+                        <button onclick="deleteVendor(null, '${v.id}', '${v.business_name}')" class="flex-1 bg-red-500/20 text-red-400 py-2 rounded-lg text-xs font-bold">Delete Vendor</button>
+                    </div>`}
+                </div>
+            `;
+        }).join('');
+        lucide.createIcons();
     }
 
     async function resetVendorPassword(userId, name) {
@@ -298,6 +289,45 @@
         if (error || data.error) return alert("Error: " + (error?.message || data.error));
 
         await db.from('vendors').update({ is_active: newStatus }).eq('id', vendorId);
+        loadAdminVendors();
+    }
+
+    async function deleteVendor(userId, vendorId, name) {
+        if (!confirm(`⚠️ Are you sure you want to PERMANENTLY delete ${name}?`)) return;
+
+        // 1. Delete Login if it exists
+        if (userId) {
+            await db.functions.invoke('manage-staff', {
+                body: { action: 'delete_user', user_id: userId }
+            });
+        }
+
+        // 2. Delete Vendor Row
+        await db.from('vendors').delete().eq('id', vendorId);
+        loadAdminVendors();
+    }
+
+    async function createVendorLogin(vendorId, name) {
+        const email = prompt(`Enter email address for ${name}:`);
+        if (!email) return;
+        const password = prompt(`Enter temporary password for ${name} (min 6 chars):`);
+        if (!password || password.length < 6) return alert("Password must be at least 6 characters.");
+
+        // This uses the register-vendor function logic, but we already have the vendor row.
+        // So we just create the auth user and update the vendor row.
+        const { data: authData, error: authError } = await db.auth.signUp({ email, password });
+        
+        if (authError) return alert("Error: " + authError.message);
+
+        // Link it
+        await db.from('profiles').insert({
+            id: authData.user.id,
+            full_name: name,
+            role: 'vendor',
+            vendor_id: vendorId
+        });
+
+        alert(`✅ Login created for ${name}!`);
         loadAdminVendors();
     }
 
