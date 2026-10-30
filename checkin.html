@@ -3,141 +3,232 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vicnos Hotel - Check In</title>
+  <title>Vicnos Hotel - Reception & Check-In</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen p-4 font-sans flex flex-col items-center py-10">
+<body class="min-h-screen flex flex-col">
 
-  <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 w-full max-w-2xl">
-    
-    <!-- Header -->
-    <div class="text-center mb-6 border-b pb-4">
-      <div class="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-        <i data-lucide="key" class="w-8 h-8 text-blue-600"></i>
+  <!-- Top Navigation -->
+  <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="bg-blue-600 p-2 rounded-lg text-white"><i data-lucide="concierge-bell" class="w-5 h-5"></i></div>
+        <div>
+          <h1 class="font-bold text-gray-900 leading-tight">Front Desk</h1>
+          <p class="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Reception</p>
+        </div>
       </div>
-      <h1 class="text-2xl font-bold text-gray-800">Guest Check-In Form</h1>
-      <p class="text-gray-500 text-sm">Room <span id="display-room" class="font-bold text-blue-600 text-lg"></span></p>
+      <div class="flex gap-2">
+        <button onclick="switchTab('checkin')" id="tab-btn-checkin" class="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition">Check-In</button>
+        <button onclick="switchTab('sales')" id="tab-btn-sales" class="px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">Minimart & Sales</button>
+        <a href="dashboard.html" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 ml-2 flex items-center gap-1"><i data-lucide="arrow-left" class="w-4 h-4"></i> Exit</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="flex-grow max-w-5xl w-full mx-auto p-4 pb-12">
+    
+    <!-- ================= TAB 1: CHECK-IN FORM ================= -->
+    <div id="tab-checkin" class="fade-in">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 w-full max-w-3xl mx-auto">
+        
+        <div class="text-center mb-6 border-b pb-4">
+          <div class="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="key" class="w-8 h-8 text-blue-600"></i>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-800">Guest Check-In Form</h1>
+          <p class="text-gray-500 text-sm mt-1">Room <span id="display-room" class="font-bold text-blue-600 text-lg">...</span></p>
+        </div>
+
+        <form id="checkin-form" class="space-y-6">
+          
+          <!-- Room Selection (Only shows if opened from Dashboard without a specific room) -->
+          <div id="room-select-container" class="hidden bg-blue-50 p-4 rounded-xl border border-blue-200">
+            <label class="block text-sm font-bold text-blue-800 mb-1">Select Available Room</label>
+            <select id="room-select" class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl outline-none font-semibold text-gray-700">
+              <option value="">-- Choose an Available Room --</option>
+            </select>
+          </div>
+
+          <!-- SECTION 1: GUEST INFORMATION -->
+          <div>
+            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Guest Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name *</label>
+                <input id="guest-name" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Date of Birth</label>
+                <input id="guest-dob" type="date" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none text-gray-600 transition">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Sex</label>
+                <select id="guest-sex" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none text-gray-600 transition">
+                  <option value="">Select...</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Nationality</label>
+                <input id="guest-nationality" type="text" placeholder="e.g. Nigerian" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">City / State</label>
+                <input id="guest-city" type="text" placeholder="e.g. Benin City" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Home Address</label>
+                <input id="guest-address" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Phone Number *</label>
+                <input id="guest-phone" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Occupation</label>
+                <input id="guest-occupation" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Means of Identity (ID Type & Number)</label>
+                <input id="guest-id" type="text" placeholder="e.g. NIN, Driver's License, Passport" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: ADDITIONAL GUEST -->
+          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Additional Guest (If Applicable)</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="col-span-2">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name</label>
+                <input id="add-name" type="text" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Relation to Primary Guest</label>
+                <input id="add-relation" type="text" placeholder="e.g. Spouse, Child" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Age & Sex</label>
+                <input id="add-age-sex" type="text" placeholder="e.g. 30, Female" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3: STAY DETAILS & PAYMENT -->
+          <div>
+            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Stay Details & Payment</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Expected Checkout Date *</label>
+                <input id="checkout-date" type="date" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Room Rate (₦)</label>
+                <input id="room-rate" type="number" readonly class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Payment Method</label>
+                <select id="payment-method" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
+                  <option value="POS">POS</option>
+                  <option value="Card">Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 4: RULES -->
+          <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input id="agree-rules" type="checkbox" required class="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
+              <span class="text-xs text-red-800 leading-tight">
+                <strong>I agree to the Hotel Rules & Regulations.</strong> Check-in is 2pm, check-out is 11:55am. Failure to check out at the appointed time attracts 50% of the room rate. No smoking, no pets, no cult activities, no parties. Quiet time is 11pm - 6am. Breaking items will amount to fines.
+              </span>
+            </label>
+          </div>
+
+          <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all mt-2 flex justify-center items-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5"></i> Complete Check-In & Assign Key
+          </button>
+        </form>
+        <p id="message" class="mt-4 text-center text-sm font-bold"></p>
+      </div>
     </div>
 
-    <form id="checkin-form" class="space-y-6">
-      
-      <!-- Room Selection (Only shows if opened from Dashboard) -->
-      <div id="room-select-container" class="hidden bg-blue-50 p-4 rounded-xl border border-blue-200">
-        <label class="block text-sm font-bold text-blue-800 mb-1">Select Available Room</label>
-        <select id="room-select" class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl outline-none font-semibold">
-          <option value="">-- Choose an Available Room --</option>
-        </select>
-      </div>
+    <!-- ================= TAB 2: MINIMART & SALES ================= -->
+    <div id="tab-sales" class="hidden fade-in">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Today's Bookings -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+          <div class="flex items-center gap-3 mb-4 border-b pb-4">
+            <div class="bg-indigo-100 p-2 rounded-lg text-indigo-600"><i data-lucide="door-open" class="w-6 h-6"></i></div>
+            <div>
+              <h2 class="font-bold text-gray-800">Booking Revenue</h2>
+              <p class="text-xs text-gray-500">Total collected today</p>
+            </div>
+          </div>
+          <p id="booking-revenue" class="text-4xl font-black text-gray-900">₦0</p>
+          <p id="booking-count" class="text-sm text-gray-500 mt-2 font-medium">0 Check-ins today</p>
+        </div>
 
-      <!-- SECTION 1: GUEST INFORMATION -->
-      <div>
-        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Guest Information</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="md:col-span-2">
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name *</label>
-            <input id="guest-name" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+        <!-- Today's Minimart Sales -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+          <div class="flex items-center gap-3 mb-4 border-b pb-4">
+            <div class="bg-emerald-100 p-2 rounded-lg text-emerald-600"><i data-lucide="shopping-cart" class="w-6 h-6"></i></div>
+            <div>
+              <h2 class="font-bold text-gray-800">Minimart Revenue</h2>
+              <p class="text-xs text-gray-500">Total sales today</p>
+            </div>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Date of Birth</label>
-            <input id="guest-dob" type="date" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none text-gray-600">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Sex</label>
-            <select id="guest-sex" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none text-gray-600">
-              <option value="">Select...</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Nationality</label>
-            <input id="guest-nationality" type="text" placeholder="e.g. Nigerian" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">City / State</label>
-            <input id="guest-city" type="text" placeholder="e.g. Benin City" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Home Address</label>
-            <input id="guest-address" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Phone Number *</label>
-            <input id="guest-phone" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Occupation</label>
-            <input id="guest-occupation" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Means of Identity (ID Type & Number)</label>
-            <input id="guest-id" type="text" placeholder="e.g. NIN, Driver's License, Passport" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
+          <p id="minimart-revenue" class="text-4xl font-black text-gray-900">₦0</p>
+          <div class="flex justify-between text-xs text-gray-500 mt-4 font-medium border-t pt-2">
+            <span>Cash: <span id="mm-cash" class="text-gray-800 font-bold">₦0</span></span>
+            <span>To Room: <span id="mm-credit" class="text-amber-600 font-bold">₦0</span></span>
           </div>
         </div>
+
       </div>
 
-      <!-- SECTION 2: ADDITIONAL GUEST -->
-      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Additional Guest (If Applicable)</h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="col-span-2">
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name</label>
-            <input id="add-name" type="text" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none">
-          </div>
+      <div class="mt-6 flex flex-col md:flex-row gap-4">
+        <a href="pos.html?dept=Minimart" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between transition active:scale-[0.98] group">
           <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Relation to Primary Guest</label>
-            <input id="add-relation" type="text" placeholder="e.g. Spouse, Child" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none">
+            <h3 class="font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">Open Minimart POS</h3>
+            <p class="text-sm text-slate-400">Sell items, manage stock, and log handovers.</p>
           </div>
+          <div class="bg-white/10 p-3 rounded-full group-hover:bg-blue-600 transition-colors">
+            <i data-lucide="arrow-right" class="w-6 h-6"></i>
+          </div>
+        </a>
+        
+        <a href="stock-manager.html" class="flex-1 bg-white border border-gray-200 hover:border-gray-300 p-6 rounded-2xl shadow-sm flex items-center justify-between transition active:scale-[0.98] group">
           <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Age & Sex</label>
-            <input id="add-age-sex" type="text" placeholder="e.g. 30, Female" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none">
+            <h3 class="font-bold text-lg text-gray-800 mb-1">Stock Manager</h3>
+            <p class="text-sm text-gray-500">Submit physical counts for Admin approval.</p>
           </div>
-        </div>
+          <div class="bg-gray-100 p-3 rounded-full group-hover:bg-gray-200 transition-colors">
+            <i data-lucide="package" class="w-6 h-6 text-gray-600"></i>
+          </div>
+        </a>
       </div>
+    </div>
 
-      <!-- SECTION 3: STAY DETAILS & PAYMENT -->
-      <div>
-        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Stay Details & Payment</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Expected Checkout Date *</label>
-            <input id="checkout-date" type="date" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Room Rate (₦)</label>
-            <input id="room-rate" type="number" readonly class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold">
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Payment Method</label>
-            <select id="payment-method" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none">
-              <option value="POS">POS</option>
-              <option value="Card">Card</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Cash">Cash</option>
-            </select>
-          </div>
-        </div>
-      </div>
+  </main>
 
-      <!-- SECTION 4: RULES -->
-      <div class="bg-red-50 p-4 rounded-xl border border-red-200">
-        <label class="flex items-start gap-3 cursor-pointer">
-          <input id="agree-rules" type="checkbox" required class="mt-1 w-5 h-5 text-blue-600 rounded">
-          <span class="text-xs text-red-800 leading-tight">
-            <strong>I agree to the Hotel Rules & Regulations.</strong> Check-in is 2pm, check-out is 11:55am. Failure to check out at the appointed time attracts 50% of the room rate. No smoking, no pets, no cult activities, no parties. Quiet time is 11pm - 6am. Breaking items will amount to fines.
-          </span>
-        </label>
-      </div>
-
-      <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all mt-2">
-        Complete Check-In & Assign Key
-      </button>
-    </form>
-    <p id="message" class="mt-4 text-center text-sm font-medium"></p>
-    <button onclick="window.location.href='rooms.html'" class="w-full mt-3 bg-gray-100 text-gray-600 py-3 rounded-xl font-semibold">Cancel</button>
-  </div>
+  <footer class="text-center text-xs text-gray-500 py-4 mt-auto border-t bg-white">
+    Powered by <strong class="text-gray-700">DEKY</strong>
+  </footer>
 
   <script>
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -149,8 +240,33 @@
     const urlParams = new URLSearchParams(window.location.search);
     let selectedRoomId = urlParams.get('id');
     let selectedRoomNum = urlParams.get('room');
+    let currentUser = null;
 
+    // --- TAB SWITCHING ---
+    function switchTab(tab) {
+      document.getElementById('tab-checkin').classList.add('hidden');
+      document.getElementById('tab-sales').classList.add('hidden');
+      
+      document.getElementById('tab-btn-checkin').className = "px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+      document.getElementById('tab-btn-sales').className = "px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).className = "px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition";
+
+      if (tab === 'sales') loadSalesDashboard();
+    }
+
+    // --- INIT PAGE ---
     async function initPage() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+
+      // Check for ?dept=Minimart in URL to auto-open Sales tab (if coming from POS)
+      if (urlParams.get('dept') === 'Minimart' || window.location.hash === '#sales') {
+        switchTab('sales');
+      }
+
       if (selectedRoomId) {
         document.getElementById('display-room').textContent = selectedRoomNum;
         document.getElementById('room-rate').value = urlParams.get('price');
@@ -165,7 +281,7 @@
             select.innerHTML = '<option value="">No rooms available</option>';
         } else {
             availRooms.forEach(r => {
-                select.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} - ₦${r.price_per_night.toLocaleString()}</option>`;
+                select.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} - ₦${Number(r.price_per_night).toLocaleString()}</option>`;
             });
         }
 
@@ -185,17 +301,18 @@
       }
     }
 
+    // --- CHECK-IN SUBMISSION ---
     document.getElementById('checkin-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!selectedRoomId) return alert("Please select a room first.");
 
       const msg = document.getElementById('message');
-      msg.textContent = 'Processing...';
+      const btn = document.getElementById('submit-btn');
+      msg.textContent = 'Processing Check-in...';
+      msg.className = 'mt-4 text-center text-sm font-bold text-blue-600 animate-pulse';
+      btn.disabled = true;
 
-      const { data: { user } } = await db.auth.getUser();
-      if (!user) { window.location.href = 'index.html'; return; }
-
-      // 1. Create the Guest with all the new fields
+      // 1. Create Guest
       const { data: guest, error: guestErr } = await db.from('guests').insert({
         full_name: document.getElementById('guest-name').value,
         phone: document.getElementById('guest-phone').value,
@@ -208,33 +325,90 @@
         id_type: document.getElementById('guest-id').value
       }).select().single();
 
-      if (guestErr) { msg.textContent = guestErr.message; return; }
+      if (guestErr) { 
+        msg.textContent = guestErr.message; 
+        msg.className = 'mt-4 text-center text-sm font-bold text-red-600';
+        btn.disabled = false;
+        return; 
+      }
 
-      // 2. Create the Booking
+      // 2. Create Booking
       const { error: bookErr } = await db.from('bookings').insert({
         room_id: selectedRoomId,
         guest_id: guest.id,
         expected_check_out: document.getElementById('checkout-date').value,
         status: 'Checked In',
-        created_by: user.id,
+        created_by: currentUser.id,
         payment_method: document.getElementById('payment-method').value,
         additional_guest_name: document.getElementById('add-name').value,
         additional_guest_relation: document.getElementById('add-relation').value,
         agreed_to_rules: document.getElementById('agree-rules').checked
       });
 
-      if (bookErr) { msg.textContent = bookErr.message; return; }
+      if (bookErr) { 
+        msg.textContent = bookErr.message; 
+        msg.className = 'mt-4 text-center text-sm font-bold text-red-600';
+        btn.disabled = false;
+        return; 
+      }
 
       // 3. Update Room Status
       await db.from('rooms').update({ status: 'Occupied' }).eq('id', selectedRoomId);
 
-      msg.innerHTML = '✅ Checked In! <br><br><span class="text-blue-600">Sending signal to Key Encoder...</span>';
+      msg.innerHTML = '✅ Checked In Successfully! <br><br><span class="text-gray-500 text-xs">Sending signal to ARIT Key Encoder...</span>';
+      msg.className = 'mt-4 text-center text-sm font-bold text-green-600';
       
       setTimeout(() => {
         alert("Simulated: Key Card Written for Room " + selectedRoomNum);
-        window.location.href = 'rooms.html';
+        window.location.reload();
       }, 2000);
     });
+
+    // --- SALES DASHBOARD ---
+    async function loadSalesDashboard() {
+      const today = new Date().toISOString().split('T')[0];
+
+      // 1. Fetch Today's Bookings
+      const { data: bookings } = await db.from('bookings')
+        .select('id, rooms(price_per_night)')
+        .gte('created_at', today);
+      
+      let bookTotal = 0;
+      let bookCount = bookings ? bookings.length : 0;
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.rooms && b.rooms.price_per_night) bookTotal += Number(b.rooms.price_per_night);
+        });
+      }
+
+      document.getElementById('booking-revenue').innerText = '₦' + bookTotal.toLocaleString();
+      document.getElementById('booking-count').innerText = `${bookCount} Check-in${bookCount === 1 ? '' : 's'} today`;
+
+      // 2. Fetch Today's Minimart Sales
+      const { data: sales } = await db.from('pos_orders')
+        .select('total_amount, payment_method')
+        .eq('department', 'Minimart')
+        .gte('created_at', today);
+
+      let mmTotal = 0;
+      let mmCash = 0;
+      let mmCredit = 0;
+
+      if (sales) {
+        sales.forEach(s => {
+          mmTotal += Number(s.total_amount);
+          if (s.payment_method === 'Charge_to_Room') {
+            mmCredit += Number(s.total_amount);
+          } else {
+            mmCash += Number(s.total_amount);
+          }
+        });
+      }
+
+      document.getElementById('minimart-revenue').innerText = '₦' + mmTotal.toLocaleString();
+      document.getElementById('mm-cash').innerText = '₦' + mmCash.toLocaleString();
+      document.getElementById('mm-credit').innerText = '₦' + mmCredit.toLocaleString();
+    }
 
     initPage();
   </script>

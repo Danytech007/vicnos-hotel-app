@@ -14,7 +14,6 @@
       #receipt-area, #receipt-area * { visibility: visible; }
       #receipt-area { position: absolute; left: 0; top: 0; width: 80mm; color: black; background: white; }
     }
-    /* Custom Scrollbar for dark mode */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #1e293b; }
     ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
@@ -22,7 +21,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 font-sans flex flex-col">
 
-  <!-- Header -->
   <header class="max-w-6xl w-full mx-auto flex justify-between items-center mb-6">
     <div>
       <h1 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="store" class="text-indigo-400"></i> Vicnos Staff Portal</h1>
@@ -38,7 +36,6 @@
     </div>
   </header>
 
-  <!-- Tabs -->
   <div class="max-w-6xl w-full mx-auto flex gap-2 mb-4 overflow-x-auto pb-2">
     <button id="tab-btn-pos" onclick="switchTab('pos')" class="px-4 py-2 rounded-lg font-bold text-sm bg-indigo-600 text-white whitespace-nowrap">POS / Sell</button>
     <button id="tab-btn-orders" onclick="switchTab('orders')" class="px-4 py-2 rounded-lg font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap flex items-center gap-2">
@@ -51,7 +48,6 @@
 
     <!-- ================= POS / SELL TAB ================= -->
     <div id="tab-pos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Menu Items -->
       <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col h-[75vh]">
         <h2 id="menu-title" class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="utensils"></i> Loading Menu...</h2>
         <div id="menu-grid" class="grid grid-cols-2 gap-3 overflow-y-auto pr-2">
@@ -59,7 +55,6 @@
         </div>
       </div>
 
-      <!-- Cart -->
       <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col h-[75vh]">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="shopping-cart"></i> Current Order</h2>
         <div id="cart-items" class="flex-1 overflow-y-auto space-y-2 pr-2">
@@ -105,7 +100,6 @@
     <!-- ================= STOCK & HANDOVER TAB ================= -->
     <div id="tab-stock" class="hidden space-y-4">
       
-      <!-- Shift Summary -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
           <p class="text-xs text-slate-400 uppercase font-bold">Total Sales Today</p>
@@ -124,7 +118,6 @@
         </div>
       </div>
 
-      <!-- Stock Table -->
       <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
         <div class="p-4 border-b border-slate-700 flex justify-between items-center">
           <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="package"></i> Inventory & Handover</h2>
@@ -152,12 +145,10 @@
 
   </main>
 
-  <!-- Footer -->
   <footer class="text-center text-xs text-slate-500 mt-8 pb-4">
     Powered by <strong class="text-slate-400">DEKY</strong>
   </footer>
 
-  <!-- Add Stock Modal -->
   <div id="add-stock-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl p-6">
       <h3 class="text-lg font-bold text-white mb-4">Add Stock</h3>
@@ -172,7 +163,6 @@
     </div>
   </div>
 
-  <!-- Receipt -->
   <div id="receipt-area" class="hidden text-black font-mono text-xs p-2">
     <div class="text-center mb-4">
       <h1 class="font-bold text-lg uppercase">Vicnos Hotel & Apartment</h1>
@@ -214,10 +204,16 @@
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
 
-      // Default to Kitchen if role is chef
-      const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
-      if (profile && profile.role === 'chef') {
-        document.getElementById('department').value = 'Kitchen';
+      // Check if URL parameter forces a department (e.g., ?dept=Minimart from Reception)
+      const urlDept = new URLSearchParams(window.location.search).get('dept');
+      if (urlDept) {
+        document.getElementById('department').value = urlDept;
+      } else {
+        // Default to Kitchen if role is chef
+        const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+        if (profile && profile.role === 'chef') {
+          document.getElementById('department').value = 'Kitchen';
+        }
       }
 
       changeStation();
@@ -231,7 +227,7 @@
       currentDepartment = document.getElementById('department').value;
       document.getElementById('menu-title').innerHTML = `<i data-lucide="utensils"></i> ${currentDepartment} Menu`;
       
-      // Kitchen doesn't sell, hide POS tab
+      // Kitchen doesn't sell directly, hide POS tab
       if (currentDepartment === 'Kitchen') {
         document.getElementById('tab-btn-pos').classList.add('hidden');
         if (currentTab === 'pos') switchTab('orders');
@@ -446,20 +442,20 @@
           renderCart();
           document.getElementById('room-select').value = '';
           loadPOS(); 
-          loadStockData(); // update stock counts
+          loadStockData(); 
         }, 500);
       }, 100);
     }
 
-    // ================= LIVE ORDERS LOGIC (GUEST APP) =================
+    // ================= LIVE ORDERS LOGIC =================
     async function loadLiveOrders() {
       const list = document.getElementById('live-orders-list');
       
-      // Fetch orders for this department that are not completed
       const { data: orders, error } = await db.from('guest_orders')
         .select('*')
         .eq('department', currentDepartment)
         .neq('status', 'Completed')
+        .neq('status', 'Delivered')
         .order('created_at', { ascending: true });
 
       if (error || !orders) {
@@ -473,16 +469,14 @@
         return;
       }
 
-      // Voice Alarm for new orders
       const pendingOrders = orders.filter(o => o.status === 'Pending');
       if (pendingOrders.length > 0 && !sessionStorage.getItem('alarm_played')) {
         const msg = new SpeechSynthesisUtterance("New order received from room " + pendingOrders[0].room_number);
         window.speechSynthesis.speak(msg);
         sessionStorage.setItem('alarm_played', 'true');
-        setTimeout(() => sessionStorage.removeItem('alarm_played'), 10000); // cooldown
+        setTimeout(() => sessionStorage.removeItem('alarm_played'), 10000);
       }
 
-      // Update Tab Badge
       const badge = document.getElementById('order-badge');
       badge.innerText = orders.length;
       badge.classList.remove('hidden');
@@ -491,7 +485,6 @@
       orders.forEach(order => {
         let statusColor = order.status === 'Pending' ? 'bg-amber-500' : order.status === 'Preparing' ? 'bg-blue-500' : 'bg-emerald-500';
         
-        // Assuming order.items is a JSON array of {name, qty}
         let itemsHtml = '';
         try {
           const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
@@ -528,7 +521,6 @@
 
     // ================= STOCK & HANDOVER LOGIC =================
     async function loadStockData() {
-      // 1. Fetch Inventory
       const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).order('item_name');
       inventory = items || [];
 
@@ -560,11 +552,9 @@
         `;
       });
 
-      // Populate Add Stock Modal
       const select = document.getElementById('add-stock-item');
       select.innerHTML = inventory.map(i => `<option value="${i.id}">${i.item_name} (Currently: ${i.stock_quantity})</option>`).join('');
 
-      // 2. Fetch Today's Sales (Pos Orders)
       const today = new Date().toISOString().split('T')[0];
       const { data: sales } = await db.from('pos_orders')
         .select('total_amount, payment_method')
@@ -591,7 +581,6 @@
       
       const item = inventory.find(i => i.id === itemId);
       
-      // Discrepancy = Expected (stock_quantity) - Physical - Bad
       const expected = item.stock_quantity;
       const discrepancy = expected - phys - bad;
 
@@ -599,7 +588,7 @@
         physical_count: phys,
         bad_stock: bad,
         discrepancy: discrepancy,
-        is_approved: false, // Requires Admin Approval
+        is_approved: false, 
         last_updated_by: currentUser.id
       }).eq('id', itemId);
 
