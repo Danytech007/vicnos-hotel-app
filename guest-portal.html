@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Guest Portal</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,275 +21,309 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="pb-24">
 
-  <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
-    <div class="flex items-center gap-2">
-      <div class="bg-blue-600 p-1.5 rounded-lg text-white"><i data-lucide="hotel" class="w-5 h-5"></i></div>
-      <span class="font-bold text-gray-900 tracking-widest text-sm">VICNOS</span>
+  <!-- CHECKOUT LOCKOUT SCREEN (Hidden by default) -->
+  <div id="checkout-lockout" class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-6 text-center fade-in">
+    <div class="bg-white/10 p-6 rounded-full mb-6">
+      <i data-lucide="door-closed" class="w-16 h-16 text-blue-400"></i>
     </div>
-    <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
-      <p class="text-[9px] uppercase text-blue-500 font-bold tracking-wider">Room</p>
-      <p id="nav-room-num" class="font-bold text-blue-700 leading-none text-lg">---</p>
-    </div>
-  </nav>
+    <h1 class="text-2xl font-bold text-white mb-2">Stay Completed</h1>
+    <p class="text-slate-400 text-sm mb-8">Thank you for staying with Vicnos Hotel. Your guest session has expired securely.</p>
+    <p class="text-xs text-slate-500 font-bold tracking-widest mt-10">POWERED BY DEKY</p>
+  </div>
 
-  <main class="flex-grow max-w-md mx-auto w-full fade-in flex flex-col">
-    
-    <div class="relative h-52 w-full">
-      <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="w-full h-full object-cover">
-      <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-      <div class="absolute bottom-6 left-5 right-5 text-white">
-        <h1 class="text-3xl font-bold mb-1">Welcome, <span id="guest-name" class="text-blue-400">Guest</span>!</h1>
-        <p class="text-sm text-gray-200">You're booked to stay with us.</p>
+  <!-- MAIN APP (Hidden until auth verifies) -->
+  <div id="main-app" class="hidden flex-col flex-grow">
+
+    <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+      <div class="flex items-center gap-2">
+        <div class="bg-blue-600 p-1.5 rounded-lg text-white"><i data-lucide="hotel" class="w-5 h-5"></i></div>
+        <span class="font-bold text-gray-900 tracking-widest text-sm">VICNOS</span>
       </div>
-    </div>
-
-    <div class="mx-4 -mt-6 relative z-10 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 flex justify-between items-center">
-      <div class="text-center flex-1 border-r border-gray-100">
-        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Booking ID</p>
-        <p class="font-bold text-gray-800 text-sm" id="booking-id">VIC-101</p>
+      <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
+        <p class="text-[9px] uppercase text-blue-500 font-bold tracking-wider">Room</p>
+        <p id="nav-room-num" class="font-bold text-blue-700 leading-none text-lg">---</p>
       </div>
-      <div class="text-center flex-1 border-r border-gray-100">
-        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Check-In</p>
-        <p class="font-bold text-gray-800 text-sm" id="check-in-date">Today</p>
-      </div>
-      <div class="text-center flex-1">
-        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Check-Out</p>
-        <p class="font-bold text-gray-800 text-sm" id="check-out-date">Tomorrow</p>
-      </div>
-    </div>
+    </nav>
 
-    <!-- DYNAMIC SPONSORED AD BANNER -->
-    <div id="ad-banner-container" class="px-4 mt-5 hidden">
-      <a id="ad-link" href="#" class="block relative rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform">
-        <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
-          <div class="bg-black/20 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between relative overflow-hidden">
-            <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg z-20">SPONSORED</div>
-            <div class="flex items-center gap-3 z-10">
-              <img id="ad-image" src="" class="w-12 h-12 rounded-full object-cover border-2 border-white/30 hidden">
-              <div id="ad-icon-container" class="bg-white/20 p-2.5 rounded-full border border-white/30 shadow-inner">
-                <i data-lucide="sparkles" class="w-6 h-6 text-yellow-300 animate-pulse"></i>
-              </div>
-              <div>
-                <p id="ad-title" class="text-white text-sm font-extrabold uppercase tracking-wide">Ad Title</p>
-                <p id="ad-desc" class="text-indigo-100 text-[11px] font-medium mt-0.5">Ad Description</p>
-              </div>
-            </div>
-            <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg">
-              <i data-lucide="chevron-right" class="w-5 h-5"></i>
-            </div>
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <!-- SPECIAL LIVE TRACKING BUTTON -->
-    <div class="px-4 mt-5">
-      <a id="link-track-order" href="#" class="block relative rounded-2xl overflow-hidden shadow-lg active:scale-95 transition-transform bg-gradient-to-r from-blue-600 to-indigo-700 p-4 flex items-center justify-between border border-blue-500">
-        <div class="flex items-center gap-3">
-          <div class="bg-white/20 p-2 rounded-full border border-white/30 shadow-inner">
-            <i data-lucide="map-pin" class="w-6 h-6 text-white animate-bounce"></i>
-          </div>
-          <div>
-            <p class="text-white font-bold text-sm tracking-wide">Live Order Tracking</p>
-            <p class="text-blue-100 text-[11px]">See exactly when your food arrives</p>
-          </div>
-        </div>
-        <i data-lucide="chevron-right" class="text-white w-5 h-5"></i>
-      </a>
-    </div>
-
-    <div class="px-4 mt-3">
-      <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE?text=Hello,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
-        <div class="flex items-center gap-2">
-          <div class="bg-gray-100 p-1.5 rounded-lg">
-             <i data-lucide="megaphone" class="w-4 h-4 text-gray-600"></i>
-          </div>
-          <p class="text-[11px] font-bold text-gray-700">Want your business featured here?</p>
-        </div>
-        <span class="text-[10px] font-bold text-white bg-slate-900 px-3 py-1.5 rounded-lg shadow-md">Advertise</span>
-      </a>
-    </div>
-
-    <div class="p-4 mt-2">
-      <div class="grid grid-cols-4 gap-y-6 gap-x-2">
-        
-        <a href="room-service.html" id="link-room-service" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="utensils" class="w-6 h-6 text-orange-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Room<br>Service</span>
-        </a>
-
-        <a href="#" onclick="requestHousekeeping()" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="sparkles" class="w-6 h-6 text-teal-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">House<br>Keeping</span>
-        </a>
-
-        <a href="inside-life.html" id="link-local-hub" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="map" class="w-6 h-6 text-blue-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Inside<br>Life</span>
-        </a>
-
-        <a href="guest-blog.html" id="link-blog" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="newspaper" class="w-6 h-6 text-purple-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Vicnos<br>Insider</span>
-        </a>
-
-        <a href="upgrade-room.html" id="link-upgrade" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="bed-double" class="w-6 h-6 text-pink-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Upgrade<br>Room</span>
-        </a>
-
-        <!-- Track Order in Grid -->
-        <a href="track-order.html" id="link-track-grid" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="activity" class="w-6 h-6 text-indigo-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Track<br>Order</span>
-        </a>
-
-        <!-- Restored WiFi -->
-        <a href="#" onclick="alert('WiFi: Vicnos_Guest | Pass: Welcome2026')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center">
-            <i data-lucide="wifi" class="w-6 h-6 text-gray-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">WiFi<br>Connect</span>
-        </a>
-
-        <a href="#" onclick="alert('WhatsApp Chat coming next!')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="message-circle" class="w-6 h-6 text-green-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Front<br>Desk</span>
-        </a>
-
-        <a href="#" onclick="alert('Silent Panic Button activated! Security is on the way.')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-          <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="shield-alert" class="w-6 h-6 text-red-600"></i>
-          </div>
-          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Emergency<br>Help</span>
-        </a>
-
-      </div>
-    </div>
-
-    <div class="mt-4 pl-4">
-      <div class="flex justify-between items-center pr-4 mb-3">
-        <h2 class="text-lg font-bold text-gray-800">Hotel Highlights</h2>
-        <span class="text-xs font-bold text-blue-600">See All</span>
-      </div>
+    <main class="flex-grow max-w-md mx-auto w-full fade-in flex flex-col">
       
-      <div class="flex gap-3 overflow-x-auto hide-scroll pb-4 pr-4">
-        <div class="min-w-[240px] h-32 rounded-2xl relative overflow-hidden shadow-md flex-shrink-0 active:scale-95 transition-transform">
-          <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-          <div class="absolute bottom-3 left-3 text-white">
-            <p class="font-bold text-sm leading-tight">Today's Specials</p>
-            <p class="text-[10px] text-gray-300">Hot Jollof & Grilled Chicken.</p>
-          </div>
+      <div class="relative h-52 w-full">
+        <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-6 left-5 right-5 text-white">
+          <h1 class="text-3xl font-bold mb-1">Welcome, <span id="guest-name" class="text-blue-400">Guest</span>!</h1>
+          <p class="text-sm text-gray-200">You're booked to stay with us.</p>
         </div>
+      </div>
 
-        <div class="min-w-[240px] h-32 rounded-2xl relative overflow-hidden shadow-md flex-shrink-0 active:scale-95 transition-transform">
-          <img src="https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-          <div class="absolute bottom-3 left-3 text-white">
-            <p class="font-bold text-sm leading-tight">Order Late Night Suya</p>
-            <p class="text-[10px] text-gray-300">Delivered to your room.</p>
-          </div>
+      <div class="mx-4 -mt-6 relative z-10 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 flex justify-between items-center">
+        <div class="text-center flex-1 border-r border-gray-100">
+          <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Booking ID</p>
+          <p class="font-bold text-gray-800 text-sm" id="booking-id">---</p>
         </div>
+        <div class="text-center flex-1 border-r border-gray-100">
+          <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Check-In</p>
+          <p class="font-bold text-gray-800 text-sm" id="check-in-date">---</p>
+        </div>
+        <div class="text-center flex-1">
+          <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Check-Out</p>
+          <p class="font-bold text-gray-800 text-sm" id="check-out-date">---</p>
+        </div>
+      </div>
+
+      <!-- DYNAMIC SPONSORED AD BANNER -->
+      <div id="ad-banner-container" class="px-4 mt-5 hidden">
+        <a id="ad-link" href="#" class="block relative rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform">
+          <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
+            <div class="bg-black/20 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between relative overflow-hidden">
+              <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg z-20">SPONSORED</div>
+              <div class="flex items-center gap-3 z-10">
+                <img id="ad-image" src="" class="w-12 h-12 rounded-full object-cover border-2 border-white/30 hidden">
+                <div id="ad-icon-container" class="bg-white/20 p-2.5 rounded-full border border-white/30 shadow-inner">
+                  <i data-lucide="sparkles" class="w-6 h-6 text-yellow-300 animate-pulse"></i>
+                </div>
+                <div>
+                  <p id="ad-title" class="text-white text-sm font-extrabold uppercase tracking-wide">Ad Title</p>
+                  <p id="ad-desc" class="text-indigo-100 text-[11px] font-medium mt-0.5">Ad Description</p>
+                </div>
+              </div>
+              <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- SPECIAL LIVE TRACKING BUTTON -->
+      <div class="px-4 mt-5">
+        <a id="link-track-order" href="#" class="block relative rounded-2xl overflow-hidden shadow-lg active:scale-95 transition-transform bg-gradient-to-r from-blue-600 to-indigo-700 p-4 flex items-center justify-between border border-blue-500">
+          <div class="flex items-center gap-3">
+            <div class="bg-white/20 p-2 rounded-full border border-white/30 shadow-inner">
+              <i data-lucide="map-pin" class="w-6 h-6 text-white animate-bounce"></i>
+            </div>
+            <div>
+              <p class="text-white font-bold text-sm tracking-wide">Live Order Tracking</p>
+              <p class="text-blue-100 text-[11px]">See exactly when your food arrives</p>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="text-white w-5 h-5"></i>
+        </a>
+      </div>
+
+      <div class="px-4 mt-3">
+        <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE?text=Hello,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
+          <div class="flex items-center gap-2">
+            <div class="bg-gray-100 p-1.5 rounded-lg">
+               <i data-lucide="megaphone" class="w-4 h-4 text-gray-600"></i>
+            </div>
+            <p class="text-[11px] font-bold text-gray-700">Want your business featured here?</p>
+          </div>
+          <span class="text-[10px] font-bold text-white bg-slate-900 px-3 py-1.5 rounded-lg shadow-md">Advertise</span>
+        </a>
+      </div>
+
+      <div class="p-4 mt-2">
+        <div class="grid grid-cols-4 gap-y-6 gap-x-2">
+          
+          <a href="room-service.html" id="link-room-service" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center">
+              <i data-lucide="utensils" class="w-6 h-6 text-orange-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Room<br>Service</span>
+          </a>
+
+          <a href="#" onclick="requestHousekeeping()" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center">
+              <i data-lucide="sparkles" class="w-6 h-6 text-teal-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">House<br>Keeping</span>
+          </a>
+
+          <a href="inside-life.html" id="link-local-hub" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
+              <i data-lucide="map" class="w-6 h-6 text-blue-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Inside<br>Life</span>
+          </a>
+
+          <a href="guest-blog.html" id="link-blog" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center">
+              <i data-lucide="newspaper" class="w-6 h-6 text-purple-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Vicnos<br>Insider</span>
+          </a>
+
+          <a href="upgrade-room.html" id="link-upgrade" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center">
+              <i data-lucide="bed-double" class="w-6 h-6 text-pink-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Upgrade<br>Room</span>
+          </a>
+
+          <!-- Track Order in Grid -->
+          <a href="track-order.html" id="link-track-grid" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center">
+              <i data-lucide="activity" class="w-6 h-6 text-indigo-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Track<br>Order</span>
+          </a>
+
+          <!-- WiFi -->
+          <a href="#" onclick="alert('WiFi: Vicnos_Guest | Pass: Welcome2026')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center">
+              <i data-lucide="wifi" class="w-6 h-6 text-gray-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">WiFi<br>Connect</span>
+          </a>
+
+          <a href="#" onclick="alert('WhatsApp Chat coming next!')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center">
+              <i data-lucide="message-circle" class="w-6 h-6 text-green-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Front<br>Desk</span>
+          </a>
+
+          <a href="#" onclick="alert('Silent Panic Button activated! Security is on the way.')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center">
+              <i data-lucide="shield-alert" class="w-6 h-6 text-red-600"></i>
+            </div>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Emergency<br>Help</span>
+          </a>
+
+        </div>
+      </div>
+
+      <div class="mt-auto pt-10 pb-6 text-center">
+        <div class="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
+        <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+        <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+      </div>
+
+    </main>
+
+    <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+      <div class="flex justify-around items-center h-16 max-w-md mx-auto">
+        <a href="#" class="flex flex-col items-center text-blue-600">
+          <i data-lucide="home" class="w-6 h-6"></i>
+          <span class="text-[10px] font-bold mt-1">Home</span>
+        </a>
+        <a href="inside-life.html" id="nav-link-hub" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+          <i data-lucide="map" class="w-6 h-6"></i>
+          <span class="text-[10px] font-medium mt-1">Inside Life</span>
+        </a>
+        <a href="room-service.html" id="nav-link-food" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+          <i data-lucide="utensils" class="w-6 h-6"></i>
+          <span class="text-[10px] font-medium mt-1">Food</span>
+        </a>
+        <a href="guest-profile.html" id="nav-link-bill" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+          <i data-lucide="user" class="w-6 h-6"></i>
+          <span class="text-[10px] font-medium mt-1">My Bill</span>
+        </a>
       </div>
     </div>
 
-    <div class="mt-auto pt-10 pb-6 text-center">
-      <div class="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
-      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
-      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
-    </div>
-
-  </main>
-
-  <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-    <div class="flex justify-around items-center h-16 max-w-md mx-auto">
-      <a href="#" class="flex flex-col items-center text-blue-600">
-        <i data-lucide="home" class="w-6 h-6"></i>
-        <span class="text-[10px] font-bold mt-1">Home</span>
-      </a>
-      <a href="inside-life.html" id="nav-link-hub" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-        <i data-lucide="map" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium mt-1">Inside Life</span>
-      </a>
-      <a href="room-service.html" id="nav-link-food" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-        <i data-lucide="utensils" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium mt-1">Food</span>
-      </a>
-      <a href="guest-profile.html" id="nav-link-bill" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-        <i data-lucide="user" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium mt-1">My Bill</span>
-      </a>
-    </div>
   </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomNum = urlParams.get('room') || '101'; 
-    let currentRoomId = null;
+    // 1. THE SMART APP GUEST AUTHENTICATION
+    async function authenticateGuest() {
+        // Check for existing saved session
+        let savedGuest = localStorage.getItem('vicnos_guest_session');
+        
+        if (!savedGuest) {
+            // No saved session, they must be scanning a new QR code
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlRoomNum = urlParams.get('room');
+            
+            if (!urlRoomNum) {
+                // No room in URL and no saved session
+                document.getElementById('checkout-lockout').classList.remove('hidden');
+                document.querySelector('#checkout-lockout h1').textContent = "Access Denied";
+                document.querySelector('#checkout-lockout p').textContent = "Please scan the QR code in your room to access the guest portal.";
+                return;
+            }
 
-    document.getElementById('nav-room-num').textContent = roomNum;
-    document.getElementById('booking-id').textContent = `VIC-${roomNum}`;
+            // Handshake: Check if the room is actually Checked In
+            const { data: roomData } = await db.from('rooms').select('id').eq('room_number', urlRoomNum).single();
+            if (!roomData) return showLockout();
 
-    // Dynamic Routing Links
-    document.getElementById('link-local-hub').href = `inside-life.html?room=${roomNum}`;
-    document.getElementById('nav-link-hub').href = `inside-life.html?room=${roomNum}`;
-    document.getElementById('link-room-service').href = `room-service.html?room=${roomNum}`;
-    document.getElementById('nav-link-food').href = `room-service.html?room=${roomNum}`;
-    document.getElementById('nav-link-bill').href = `guest-profile.html?room=${roomNum}`;
-    document.getElementById('link-blog').href = `guest-blog.html?room=${roomNum}`;
-    document.getElementById('link-upgrade').href = `upgrade-room.html?room=${roomNum}`;
-    
-    // Live Tracking Links
-    document.getElementById('link-track-order').href = `track-order.html?room=${roomNum}`;
-    document.getElementById('link-track-grid').href = `track-order.html?room=${roomNum}`;
+            const { data: booking } = await db.from('bookings')
+                .select('id, check_in_date, expected_check_out, guests(full_name)')
+                .eq('room_id', roomData.id).eq('status', 'Checked In').limit(1).single();
 
-    async function loadGuestData() {
-      try {
-        // Load Guest Profile
-        const { data: roomData } = await db.from('rooms').select('id').eq('room_number', roomNum).maybeSingle();
-        if (roomData) {
-          currentRoomId = roomData.id;
-          const { data: booking } = await db.from('bookings')
-            .select('guests(full_name), expected_check_out, check_in_date')
-            .eq('room_id', currentRoomId).eq('status', 'Checked In').limit(1).maybeSingle();
+            if (!booking) return showLockout(); // Room is empty, don't let them in
 
-          if (booking && booking.guests) {
-            document.getElementById('guest-name').textContent = booking.guests.full_name.split(' ')[0];
-            if(booking.check_in_date) document.getElementById('check-in-date').textContent = new Date(booking.check_in_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-            if(booking.expected_check_out) document.getElementById('check-out-date').textContent = new Date(booking.expected_check_out).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-          } else {
-            document.getElementById('guest-name').textContent = "Valued Guest";
-          }
+            // CREATE TOKEN: Save their session securely
+            savedGuest = {
+                booking_id: booking.id,
+                room_number: urlRoomNum,
+                guest_name: booking.guests.full_name,
+                check_in: booking.check_in_date,
+                check_out: booking.expected_check_out
+            };
+            localStorage.setItem('vicnos_guest_session', JSON.stringify(savedGuest));
+        } else {
+            // Verify existing session with DB to ensure they haven't checked out
+            savedGuest = JSON.parse(savedGuest);
+            
+            const { data: booking } = await db.from('bookings')
+                .select('status')
+                .eq('id', savedGuest.booking_id).single();
+
+            // If booking is checked out or deleted, LOCK THEM OUT
+            if (!booking || booking.status !== 'Checked In') {
+                return showLockout();
+            }
         }
-      } catch (err) {
-        document.getElementById('guest-name').textContent = "Valued Guest";
-      }
+
+        // SUCCESS: Load the UI
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('flex');
+        renderGuestUI(savedGuest);
+    }
+
+    function showLockout() {
+        localStorage.removeItem('vicnos_guest_session'); // Clear bad token
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('checkout-lockout').classList.remove('hidden');
+    }
+
+    function renderGuestUI(guest) {
+        // Set Room and Details
+        document.getElementById('nav-room-num').textContent = guest.room_number;
+        document.getElementById('booking-id').textContent = `VIC-${guest.room_number}`;
+        document.getElementById('guest-name').textContent = guest.guest_name.split(' ')[0];
+        
+        if(guest.check_in) document.getElementById('check-in-date').textContent = new Date(guest.check_in).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        if(guest.check_out) document.getElementById('check-out-date').textContent = new Date(guest.check_out).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+        // Dynamic Routing Links (Locked to their room)
+        const r = guest.room_number;
+        document.getElementById('link-local-hub').href = `inside-life.html?room=${r}`;
+        document.getElementById('nav-link-hub').href = `inside-life.html?room=${r}`;
+        document.getElementById('link-room-service').href = `room-service.html?room=${r}`;
+        document.getElementById('nav-link-food').href = `room-service.html?room=${r}`;
+        document.getElementById('nav-link-bill').href = `guest-profile.html?room=${r}`;
+        document.getElementById('link-blog').href = `guest-blog.html?room=${r}`;
+        document.getElementById('link-upgrade').href = `upgrade-room.html?room=${r}`;
+        document.getElementById('link-track-order').href = `track-order.html?room=${r}`;
+        document.getElementById('link-track-grid').href = `track-order.html?room=${r}`;
+
+        loadAd();
     }
 
     async function loadAd() {
@@ -308,15 +346,8 @@
 
     function requestHousekeeping() { alert("Housekeeping request sent! Someone will be at your door shortly."); }
 
-    loadGuestData();
-    loadAd();
+    // Run auth on load
+    authenticateGuest();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
