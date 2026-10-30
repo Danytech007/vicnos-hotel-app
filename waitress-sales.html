@@ -3,51 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vicnos - My Sales & Remittance</title>
+  <title>Vicnos - Waitress Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f8fafc; }</style>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+  </style>
 </head>
 <body class="min-h-screen pb-24">
 
-  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+  <!-- Header -->
+  <nav class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
     <div class="flex items-center gap-3">
-      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </a>
       <div>
-        <h1 class="font-bold text-gray-800 text-lg leading-tight">Waitress Dashboard</h1>
-        <p class="text-xs text-gray-500">Sales & Remittance</p>
+        <h1 class="font-bold text-gray-900 text-lg leading-tight">Waitress Portal</h1>
+        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Sales & Orders</p>
       </div>
+    </div>
+    <div class="bg-indigo-50 p-2 rounded-full text-indigo-600">
+      <i data-lucide="utensils-crossed" class="w-5 h-5"></i>
     </div>
   </nav>
 
-  <main class="p-4 max-w-2xl mx-auto space-y-5 mt-4">
+  <!-- Tabs -->
+  <div class="max-w-2xl mx-auto px-4 mt-4 flex gap-2 overflow-x-auto hide-scroll">
+    <button onclick="switchTab('sales')" id="tab-btn-sales" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md whitespace-nowrap transition">My Sales</button>
+    <button onclick="switchTab('charges')" id="tab-btn-charges" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition">Room Follow-ups</button>
+    <button onclick="switchTab('orders')" id="tab-btn-orders" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition flex items-center justify-center gap-1">
+      Live Orders <span id="order-badge" class="hidden bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span>
+    </button>
+  </div>
+
+  <main class="p-4 max-w-2xl mx-auto mt-2">
     
-    <div class="bg-slate-900 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden">
-        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
-        <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">My Total POS Sales</h2>
+    <!-- ================= TAB 1: SALES & REMITTANCE ================= -->
+    <div id="tab-sales" class="space-y-5 fade-in">
+      
+      <!-- Total Sales Card -->
+      <div class="bg-slate-900 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl"></div>
+        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sales Today</h2>
         <p id="total-sales" class="text-4xl font-extrabold text-white">₦0</p>
+        
+        <div class="grid grid-cols-2 gap-4 mt-6 border-t border-slate-700 pt-4">
+          <div>
+            <p class="text-[10px] text-slate-400 font-bold uppercase">Cash Collected</p>
+            <p id="cash-sales" class="text-lg font-bold text-emerald-400">₦0</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-slate-400 font-bold uppercase">Room Charges</p>
+            <p id="credit-sales" class="text-lg font-bold text-amber-400">₦0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Remittance Form -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="banknote" class="w-5 h-5 text-emerald-600"></i> Remit Cash</h2>
+        <form id="remit-form" class="flex gap-2">
+          <input id="remit-amount" type="number" required placeholder="Amount (₦)" class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 transition">
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Remit</button>
+        </form>
+        <p id="remit-msg" class="mt-2 text-center text-sm font-bold text-emerald-600"></p>
+      </div>
+
     </div>
 
-    <!-- Remittance Form -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="banknote" class="w-5 h-5 text-green-600"></i> Remit Cash to Manager</h2>
-      <form id="remit-form" class="flex gap-2">
-        <input id="remit-amount" type="number" required placeholder="Amount (₦)" class="w-full px-3 py-2 bg-gray-50 border rounded-xl outline-none">
-        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-xl font-bold shadow-md active:scale-95">Remit</button>
-      </form>
-      <p id="remit-msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
+    <!-- ================= TAB 2: ROOM CHARGES ================= -->
+    <div id="tab-charges" class="hidden fade-in">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-orange-500"></i> Active Room Charges</h2>
+          <button onclick="loadRoomCharges()" class="text-gray-400 hover:text-indigo-600"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">These are charges for guests currently checked in. Follow up before they check out.</p>
+        <div id="charges-list" class="space-y-3">
+          <p class="text-center text-gray-500 text-sm py-4">Loading...</p>
+        </div>
+      </div>
     </div>
 
-    <!-- Room Charges Follow Up -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-orange-500"></i> Pending Room Charges</h2>
-      <div id="followup-list" class="space-y-3">
-        <p class="text-center text-gray-500 text-sm py-4">No pending charges right now.</p>
+    <!-- ================= TAB 3: LIVE ORDERS ================= -->
+    <div id="tab-orders" class="hidden fade-in">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-indigo-500"></i> Active Guest Orders</h2>
+          <button onclick="loadLiveOrders()" class="text-gray-400 hover:text-indigo-600"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Track kitchen progress. If the kitchen is slow, you can deliver the food and mark it as Completed here.</p>
+        <div id="orders-list" class="space-y-3">
+          <p class="text-center text-gray-500 text-sm py-4">Loading...</p>
+        </div>
       </div>
     </div>
 
   </main>
+
+  <footer class="text-center text-xs text-gray-400 py-6">
+    Powered by <strong class="text-gray-600">DEKY</strong>
+  </footer>
 
   <script>
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -57,45 +118,72 @@
     lucide.createIcons();
 
     let myUserId = null;
+    let currentTab = 'sales';
 
-    async function loadMySales() {
+    // --- INIT & TABS ---
+    async function init() {
         const { data: { user } } = await db.auth.getUser();
-        if (!user) return;
+        if (!user) { window.location.href = 'index.html'; return; }
         myUserId = user.id;
+        
+        loadSales();
+        loadRoomCharges();
+        loadLiveOrders();
+    }
 
-        // 1. Calculate total sales
-        const { data: orders } = await db.from('pos_orders').select('total_amount').eq('created_by', myUserId);
+    function switchTab(tab) {
+        currentTab = tab;
+        
+        // Hide all tabs
+        document.getElementById('tab-sales').classList.add('hidden');
+        document.getElementById('tab-charges').classList.add('hidden');
+        document.getElementById('tab-orders').classList.add('hidden');
+        
+        // Reset all buttons
+        ['sales', 'charges', 'orders'].forEach(t => {
+            document.getElementById(`tab-btn-${t}`).className = "flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition";
+            if(t === 'orders') document.getElementById(`tab-btn-${t}`).classList.add('flex', 'items-center', 'justify-center', 'gap-1');
+        });
+
+        // Show active tab
+        document.getElementById(`tab-${tab}`).classList.remove('hidden');
+        document.getElementById(`tab-btn-${tab}`).className = "flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md whitespace-nowrap transition";
+        if(tab === 'orders') document.getElementById(`tab-btn-${tab}`).classList.add('flex', 'items-center', 'justify-center', 'gap-1');
+
+        // Reload data on tab switch
+        if (tab === 'sales') loadSales();
+        if (tab === 'charges') loadRoomCharges();
+        if (tab === 'orders') loadLiveOrders();
+    }
+
+    // --- TAB 1: SALES & REMITTANCE ---
+    async function loadSales() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: orders } = await db.from('pos_orders')
+            .select('total_amount, payment_method')
+            .eq('created_by', myUserId)
+            .gte('created_at', today);
+
         let total = 0;
-        if(orders) orders.forEach(o => total += Number(o.total_amount));
-        document.getElementById('total-sales').textContent = `₦${total.toLocaleString()}`;
+        let cash = 0;
+        let credit = 0;
 
-        // 2. Fetch pending room charges
-        const { data: charges } = await db.from('folio_charges')
-            .select(`amount, description, department, bookings ( rooms ( room_number ), guests ( full_name ) )`)
-            .neq('department', 'Room Accommodation');
-
-        const list = document.getElementById('followup-list');
-        if (!charges || charges.length === 0) {
-            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending charges right now.</p>';
-            return;
+        if(orders) {
+            orders.forEach(o => {
+                const amt = Number(o.total_amount);
+                total += amt;
+                if (o.payment_method === 'Charge_to_Room') {
+                    credit += amt;
+                } else {
+                    cash += amt;
+                }
+            });
         }
 
-        list.innerHTML = charges.map(c => {
-            const room = c.bookings?.rooms?.room_number || 'N/A';
-            const guest = c.bookings?.guests?.full_name || 'Unknown Guest';
-            return `
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <div>
-                        <p class="font-bold text-gray-800 text-sm">Room ${room} - ${guest}</p>
-                        <p class="text-xs text-gray-500">${c.description}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-bold text-orange-600">₦${Number(c.amount).toLocaleString()}</p>
-                        <p class="text-[10px] text-gray-400 uppercase">${c.department}</p>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        document.getElementById('total-sales').textContent = `₦${total.toLocaleString()}`;
+        document.getElementById('cash-sales').textContent = `₦${cash.toLocaleString()}`;
+        document.getElementById('credit-sales').textContent = `₦${credit.toLocaleString()}`;
     }
 
     document.getElementById('remit-form').addEventListener('submit', async (e) => {
@@ -109,12 +197,141 @@
             status: 'Pending'
         });
 
-        if (error) { msg.textContent = "Error: " + error.message; msg.className = "mt-2 text-center text-sm font-bold text-red-600"; }
-        else { msg.textContent = "✅ Remittance submitted for Manager approval."; document.getElementById('remit-form').reset(); }
+        if (error) { 
+            msg.textContent = "Error: " + error.message; 
+            msg.className = "mt-2 text-center text-sm font-bold text-red-600"; 
+        } else { 
+            msg.textContent = "✅ Remittance submitted for Manager approval."; 
+            msg.className = "mt-2 text-center text-sm font-bold text-emerald-600";
+            document.getElementById('remit-form').reset(); 
+        }
         setTimeout(() => msg.textContent = '', 3000);
     });
 
-    loadMySales();
+    // --- TAB 2: ROOM CHARGES ---
+    async function loadRoomCharges() {
+        const list = document.getElementById('charges-list');
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4 animate-pulse">Loading charges...</p>';
+
+        // 1. Get all active bookings
+        const { data: bookings } = await db.from('bookings')
+            .select('id, rooms(room_number), guests(full_name)')
+            .eq('status', 'Checked In');
+
+        if (!bookings || bookings.length === 0) {
+            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active check-ins found.</p>';
+            return;
+        }
+
+        const bookingIds = bookings.map(b => b.id);
+
+        // 2. Get folio charges for these active bookings
+        const { data: charges } = await db.from('folio_charges')
+            .select('*')
+            .in('booking_id', bookingIds)
+            .neq('department', 'Room Accommodation')
+            .order('created_at', { ascending: false });
+
+        if (!charges || charges.length === 0) {
+            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending room charges right now.</p>';
+            return;
+        }
+
+        // Group by room
+        const grouped = {};
+        charges.forEach(c => {
+            const booking = bookings.find(b => b.id === c.booking_id);
+            if(booking) {
+                const room = booking.rooms.room_number;
+                if(!grouped[room]) grouped[room] = { guest: booking.guests.full_name, total: 0, items: [] };
+                grouped[room].total += Number(c.amount);
+                grouped[room].items.push(c);
+            }
+        });
+
+        list.innerHTML = Object.keys(grouped).map(room => {
+            const data = grouped[room];
+            const itemsHtml = data.items.map(i => `<li class="flex justify-between text-xs text-gray-600 border-b border-gray-100 py-1 last:border-0"><span>${i.description}</span><span>₦${Number(i.amount).toLocaleString()}</span></li>`).join('');
+            
+            return `
+                <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <p class="font-bold text-gray-900 text-sm">Room ${room} - ${data.guest}</p>
+                            <p class="text-[10px] text-orange-600 font-bold uppercase">Action Needed Before Checkout</p>
+                        </div>
+                        <p class="font-black text-orange-600 text-lg">₦${data.total.toLocaleString()}</p>
+                    </div>
+                    <ul class="bg-white rounded-lg p-2 border border-orange-100">${itemsHtml}</ul>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // --- TAB 3: LIVE ORDERS ---
+    async function loadLiveOrders() {
+        const list = document.getElementById('orders-list');
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4 animate-pulse">Loading orders...</p>';
+
+        const { data: orders } = await db.from('guest_orders')
+            .select('*')
+            .not('status', 'in', '("Delivered","Completed","Cancelled")')
+            .order('created_at', { ascending: true });
+
+        if (!orders || orders.length === 0) {
+            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active orders right now.</p>';
+            document.getElementById('order-badge').classList.add('hidden');
+            return;
+        }
+
+        // Update Badge
+        const badge = document.getElementById('order-badge');
+        badge.innerText = orders.length;
+        badge.classList.remove('hidden');
+
+        list.innerHTML = orders.map(order => {
+            let deptColor = order.department === 'Kitchen' ? 'text-orange-600 bg-orange-50 border-orange-200' : 'text-purple-600 bg-purple-50 border-purple-200';
+            
+            let itemsHtml = '';
+            try {
+                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                itemsHtml = items.map(i => `<li class="flex justify-between text-xs text-gray-600 border-b border-gray-100 py-1 last:border-0"><span>${i.qty}x ${i.name}</span></li>`).join('');
+            } catch(e) { itemsHtml = `<li>Error reading items</li>`; }
+
+            let statusBadge = `<span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-1 rounded">${order.status}</span>`;
+            if (order.status === 'Pending') statusBadge = `<span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded">PENDING</span>`;
+            if (order.status === 'Preparing') statusBadge = `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded animate-pulse">PREPARING</span>`;
+            if (order.status === 'Ready') statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">READY</span>`;
+
+            return `
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="${deptColor} text-[10px] font-bold px-2 py-0.5 rounded border uppercase">${order.department}</span>
+                            <h3 class="text-gray-900 font-bold text-lg mt-1">Room ${order.room_number}</h3>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    <ul class="mb-3">${itemsHtml}</ul>
+                    <div class="flex justify-between items-center border-t pt-3">
+                        <p class="font-black text-gray-900">₦${Number(order.total_amount).toLocaleString()}</p>
+                        <div class="flex gap-2">
+                            ${order.status === 'Ready' ? `<button onclick="updateOrderStatus('${order.id}', 'Delivered')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm">Mark Delivered</button>` : ''}
+                            ${order.status === 'Pending' ? `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm">Tell Kitchen to Start</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+        const { error } = await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+        if (error) return alert("Error updating order: " + error.message);
+        loadLiveOrders();
+    }
+
+    init();
   </script>
 </body>
 </html>
