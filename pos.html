@@ -3,74 +3,176 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vicnos Hotel - POS</title>
+  <title>Vicnos Hotel - Staff Portal (POS & Orders)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
+    * { -webkit-tap-highlight-color: transparent; }
     @media print {
       body * { visibility: hidden; }
       #receipt-area, #receipt-area * { visibility: visible; }
-      #receipt-area { position: absolute; left: 0; top: 0; width: 80mm; }
+      #receipt-area { position: absolute; left: 0; top: 0; width: 80mm; color: black; background: white; }
     }
+    /* Custom Scrollbar for dark mode */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 font-sans flex flex-col">
 
-  <div id="pos-screen" class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
-    
-    <!-- Left: Menu Items -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      
-      <!-- Department Selector -->
-      <div class="mb-5">
-        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Select Your Station</label>
-        <select id="department" onchange="loadPOS()" class="w-full p-3 bg-blue-50 text-blue-900 font-bold border border-blue-200 rounded-xl outline-none">
-          <option value="Bar">🍻 Bar</option>
-          <option value="Kitchen">🍳 Kitchen</option>
-          <option value="Minimart">🛒 Minimart</option>
-        </select>
+  <!-- Header -->
+  <header class="max-w-6xl w-full mx-auto flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="store" class="text-indigo-400"></i> Vicnos Staff Portal</h1>
+      <p class="text-xs text-slate-400 mt-1">Bar, Kitchen, & Minimart</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <select id="department" onchange="changeStation()" class="bg-slate-800 text-white font-bold border border-slate-700 p-2 rounded-lg outline-none">
+        <option value="Bar">🍻 Bar</option>
+        <option value="Kitchen">🍳 Kitchen</option>
+        <option value="Minimart">🛒 Minimart</option>
+      </select>
+      <button onclick="logout()" class="text-slate-400 hover:text-red-400"><i data-lucide="log-out"></i></button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="max-w-6xl w-full mx-auto flex gap-2 mb-4 overflow-x-auto pb-2">
+    <button id="tab-btn-pos" onclick="switchTab('pos')" class="px-4 py-2 rounded-lg font-bold text-sm bg-indigo-600 text-white whitespace-nowrap">POS / Sell</button>
+    <button id="tab-btn-orders" onclick="switchTab('orders')" class="px-4 py-2 rounded-lg font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap flex items-center gap-2">
+      Live Guest Orders <span id="order-badge" class="hidden bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
+    </button>
+    <button id="tab-btn-stock" onclick="switchTab('stock')" class="px-4 py-2 rounded-lg font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Stock & Handover</button>
+  </div>
+
+  <main class="max-w-6xl w-full mx-auto flex-1">
+
+    <!-- ================= POS / SELL TAB ================= -->
+    <div id="tab-pos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Menu Items -->
+      <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col h-[75vh]">
+        <h2 id="menu-title" class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="utensils"></i> Loading Menu...</h2>
+        <div id="menu-grid" class="grid grid-cols-2 gap-3 overflow-y-auto pr-2">
+          <!-- Items load here -->
+        </div>
       </div>
 
-      <h2 id="menu-title" class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="wine"></i> Bar Menu</h2>
-      <div id="menu-grid" class="grid grid-cols-2 gap-3">
-        <!-- Items load here -->
+      <!-- Cart -->
+      <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col h-[75vh]">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="shopping-cart"></i> Current Order</h2>
+        <div id="cart-items" class="flex-1 overflow-y-auto space-y-2 pr-2">
+          <p class="text-slate-500 text-sm text-center mt-10">No items added yet.</p>
+        </div>
+
+        <div class="border-t border-slate-700 pt-4 mt-4">
+          <div class="flex justify-between items-center mb-4">
+            <span class="font-bold text-slate-400">Total:</span>
+            <span id="cart-total" class="text-2xl font-bold text-indigo-400">₦0</span>
+          </div>
+          
+          <div class="grid grid-cols-3 gap-2 mb-3">
+            <button onclick="setPayment('Cash')" class="pay-btn bg-indigo-600 text-white py-2 rounded-lg text-sm font-bold border border-indigo-500">Cash</button>
+            <button onclick="setPayment('POS')" class="pay-btn bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold border border-slate-600 hover:bg-slate-600">POS / Card</button>
+            <button onclick="setPayment('Charge_to_Room')" class="pay-btn bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold border border-slate-600 hover:bg-slate-600">To Room</button>
+          </div>
+
+          <div id="room-select-div" class="hidden mb-3">
+            <select id="room-select" class="w-full px-3 py-2 bg-slate-900 border border-slate-600 text-white rounded-lg outline-none">
+              <option value="">-- Select Occupied Room --</option>
+            </select>
+          </div>
+
+          <button onclick="checkout()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg active:scale-[0.98] transition">Complete & Print</button>
+        </div>
       </div>
     </div>
 
-    <!-- Right: Cart / Checkout -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[80vh]">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="shopping-cart"></i> Current Order</h2>
+    <!-- ================= LIVE ORDERS TAB ================= -->
+    <div id="tab-orders" class="hidden">
+      <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 min-h-[60vh]">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell"></i> Live Guest Orders</h2>
+          <button onclick="loadLiveOrders()" class="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
+        </div>
+        <div id="live-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Orders load here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= STOCK & HANDOVER TAB ================= -->
+    <div id="tab-stock" class="hidden space-y-4">
       
-      <div id="cart-items" class="flex-1 overflow-y-auto space-y-2">
-        <p class="text-gray-400 text-sm text-center mt-10">No items added yet.</p>
+      <!-- Shift Summary -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
+          <p class="text-xs text-slate-400 uppercase font-bold">Total Sales Today</p>
+          <p id="summary-total-sales" class="text-2xl font-bold text-emerald-400 mt-1">₦0</p>
+        </div>
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
+          <p class="text-xs text-slate-400 uppercase font-bold">Credits (To Room)</p>
+          <p id="summary-credits" class="text-2xl font-bold text-amber-400 mt-1">₦0</p>
+        </div>
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg flex justify-between items-center">
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold">Low Stock Alerts</p>
+            <p id="summary-low-stock" class="text-2xl font-bold text-red-400 mt-1">0 Items</p>
+          </div>
+          <i data-lucide="alert-triangle" class="text-red-500 w-8 h-8 opacity-50"></i>
+        </div>
       </div>
 
-      <div class="border-t pt-4 mt-4">
-        <div class="flex justify-between items-center mb-4">
-          <span class="font-bold text-gray-600">Total:</span>
-          <span id="cart-total" class="text-2xl font-bold text-blue-600">₦0</span>
+      <!-- Stock Table -->
+      <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
+        <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+          <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="package"></i> Inventory & Handover</h2>
+          <button onclick="openAddStockModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition"><i data-lucide="plus" class="w-3 h-3"></i> Add Stock</button>
         </div>
-        
-        <div class="grid grid-cols-3 gap-2 mb-3">
-          <button onclick="setPayment('Cash')" class="pay-btn bg-blue-100 border-blue-500 text-blue-700 py-2 rounded-lg text-sm font-medium border">Cash</button>
-          <button onclick="setPayment('POS')" class="pay-btn bg-gray-100 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">POS / Card</button>
-          <button onclick="setPayment('Charge_to_Room')" class="pay-btn bg-gray-100 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">To Room</button>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-900 text-slate-400">
+              <tr>
+                <th class="px-4 py-3">Item Name</th>
+                <th class="px-4 py-3 text-center">Price</th>
+                <th class="px-4 py-3 text-center">In Stock</th>
+                <th class="px-4 py-3 text-center">Physical Count</th>
+                <th class="px-4 py-3 text-center">Bad Stock</th>
+                <th class="px-4 py-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="stock-table-body">
+              <!-- Rows load here -->
+            </tbody>
+          </table>
         </div>
+      </div>
+    </div>
 
-        <div id="room-select-div" class="hidden mb-3">
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Select Occupied Room</label>
-          <select id="room-select" class="w-full px-3 py-2 border rounded-lg outline-none focus:border-blue-500">
-            <option value="">-- Loading rooms... --</option>
-          </select>
-        </div>
+  </main>
 
-        <button onclick="checkout()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-[0.98]">Complete & Print</button>
+  <!-- Footer -->
+  <footer class="text-center text-xs text-slate-500 mt-8 pb-4">
+    Powered by <strong class="text-slate-400">DEKY</strong>
+  </footer>
+
+  <!-- Add Stock Modal -->
+  <div id="add-stock-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4 backdrop-blur-sm">
+    <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl p-6">
+      <h3 class="text-lg font-bold text-white mb-4">Add Stock</h3>
+      <select id="add-stock-item" class="w-full mb-3 p-3 bg-slate-900 border border-slate-600 text-white rounded-lg outline-none">
+        <!-- Items load here -->
+      </select>
+      <input type="number" id="add-stock-qty" placeholder="Quantity received" class="w-full mb-4 p-3 bg-slate-900 border border-slate-600 text-white rounded-lg outline-none" min="1">
+      <div class="flex gap-2">
+        <button onclick="closeAddStockModal()" class="flex-1 py-2 rounded-lg font-bold text-slate-300 bg-slate-700 hover:bg-slate-600">Cancel</button>
+        <button onclick="submitAddStock()" class="flex-1 py-2 rounded-lg font-bold text-white bg-indigo-600 hover:bg-indigo-500">Add</button>
       </div>
     </div>
   </div>
 
-  <!-- Receipt View (Hidden on screen, shows on print) -->
+  <!-- Receipt -->
   <div id="receipt-area" class="hidden text-black font-mono text-xs p-2">
     <div class="text-center mb-4">
       <h1 class="font-bold text-lg uppercase">Vicnos Hotel & Apartment</h1>
@@ -88,7 +190,7 @@
       <p class="flex justify-between"><span>Room</span> <span id="r-room"></span></p>
     </div>
     <p class="text-center mt-6 text-xs">Thank you for staying with us!</p>
-    <p class="text-center text-[10px] mt-1">Powered by Vicnos HMS</p>
+    <p class="text-center text-[10px] mt-1">Powered by DEKY</p>
   </div>
 
   <script>
@@ -103,30 +205,85 @@
     let cart = [];
     let currentPaymentMethod = 'Cash';
     let currentDepartment = 'Bar';
+    let currentTab = 'pos';
+    let ordersInterval = null;
 
-    async function loadPOS() {
+    // Auth & Init
+    async function init() {
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
 
-      currentDepartment = document.getElementById('department').value;
-      document.getElementById('menu-title').innerText = currentDepartment + ' Menu';
+      // Default to Kitchen if role is chef
+      const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+      if (profile && profile.role === 'chef') {
+        document.getElementById('department').value = 'Kitchen';
+      }
 
-      const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).gt('stock_quantity', 0);
+      changeStation();
+    }
+
+    function logout() {
+      db.auth.signOut().then(() => window.location.href = 'index.html');
+    }
+
+    function changeStation() {
+      currentDepartment = document.getElementById('department').value;
+      document.getElementById('menu-title').innerHTML = `<i data-lucide="utensils"></i> ${currentDepartment} Menu`;
+      
+      // Kitchen doesn't sell, hide POS tab
+      if (currentDepartment === 'Kitchen') {
+        document.getElementById('tab-btn-pos').classList.add('hidden');
+        if (currentTab === 'pos') switchTab('orders');
+      } else {
+        document.getElementById('tab-btn-pos').classList.remove('hidden');
+      }
+
+      lucide.createIcons();
+      loadPOS();
+      loadLiveOrders();
+      loadStockData();
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      ['pos', 'orders', 'stock'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`tab-btn-${t}`).classList.remove('bg-indigo-600', 'text-white');
+        document.getElementById(`tab-btn-${t}`).classList.add('bg-slate-800', 'text-slate-300');
+      });
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).classList.remove('bg-slate-800', 'text-slate-300');
+      document.getElementById(`tab-btn-${tab}`).classList.add('bg-indigo-600', 'text-white');
+
+      if (tab === 'stock') loadStockData();
+      if (tab === 'orders') loadLiveOrders();
+    }
+
+    // ================= POS LOGIC =================
+    async function loadPOS() {
+      if (currentDepartment === 'Kitchen') return;
+      
+      const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment);
       inventory = items || [];
 
       const grid = document.getElementById('menu-grid');
       grid.innerHTML = '';
       
       if (inventory.length === 0) {
-        grid.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-4">No items in stock.</p>';
+        grid.innerHTML = '<p class="text-slate-500 col-span-2 text-center py-4">No items in stock.</p>';
       }
 
       inventory.forEach(item => {
+        const isLow = item.stock_quantity <= 5;
+        const isOut = item.stock_quantity <= 0;
+        
         grid.innerHTML += `
-          <button onclick="addToCart('${item.id}')" class="bg-gray-50 text-gray-800 p-3 rounded-xl flex flex-col items-center justify-center border border-gray-200 hover:bg-blue-50 transition active:scale-95">
-            <span class="font-bold text-sm text-center">${item.item_name}</span>
-            <span class="text-xs mt-1 text-blue-600 font-bold">₦${item.price.toLocaleString()}</span>
+          <button onclick="addToCart('${item.id}')" ${isOut ? 'disabled' : ''} class="bg-slate-700 p-3 rounded-xl flex flex-col items-center justify-center border ${isOut ? 'border-red-900 opacity-50' : 'border-slate-600 hover:bg-slate-600'} transition relative">
+            ${isLow && !isOut ? `<span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>` : ''}
+            <span class="font-bold text-sm text-center text-white">${item.item_name}</span>
+            <span class="text-xs mt-1 text-indigo-400 font-bold">₦${item.price.toLocaleString()}</span>
+            <span class="text-[10px] mt-1 ${isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-slate-400'}">${item.stock_quantity} left</span>
           </button>
         `;
       });
@@ -137,8 +294,11 @@
 
     function addToCart(id) {
       const item = inventory.find(i => i.id === id);
+      if(item.stock_quantity <= 0) return alert('Out of stock!');
       const existing = cart.find(c => c.id === id);
+      
       if (existing) {
+        if (existing.qty >= item.stock_quantity) return alert('Cannot add more than available stock.');
         existing.qty++;
       } else {
         cart.push({ ...item, qty: 1 });
@@ -152,18 +312,18 @@
       cartDiv.innerHTML = '';
       
       if (cart.length === 0) {
-        cartDiv.innerHTML = '<p class="text-gray-400 text-sm text-center mt-10">No items added yet.</p>';
+        cartDiv.innerHTML = '<p class="text-slate-500 text-sm text-center mt-10">No items added yet.</p>';
       }
 
       cart.forEach((c, index) => {
         total += c.price * c.qty;
         cartDiv.innerHTML += `
-          <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
+          <div class="flex justify-between items-center bg-slate-900 p-2 rounded-lg border border-slate-700">
             <div>
-              <p class="font-bold text-sm text-gray-800">${c.item_name}</p>
-              <p class="text-xs text-gray-500">${c.qty} x ₦${c.price.toLocaleString()}</p>
+              <p class="font-bold text-sm text-white">${c.item_name}</p>
+              <p class="text-xs text-slate-400">${c.qty} x ₦${c.price.toLocaleString()}</p>
             </div>
-            <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         `;
       });
@@ -180,11 +340,11 @@
       currentPaymentMethod = method;
       
       document.querySelectorAll('.pay-btn').forEach(b => {
-        b.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
-        b.classList.add('bg-gray-100', 'border-gray-300');
+        b.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-500');
+        b.classList.add('bg-slate-700', 'text-slate-300', 'border-slate-600');
       });
-      event.target.classList.remove('bg-gray-100', 'border-gray-300');
-      event.target.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
+      event.target.classList.remove('bg-slate-700', 'text-slate-300', 'border-slate-600');
+      event.target.classList.add('bg-indigo-600', 'text-white', 'border-indigo-500');
       
       if (method === 'Charge_to_Room') {
         document.getElementById('room-select-div').classList.remove('hidden');
@@ -222,7 +382,6 @@
       let total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
       const selectedRoomText = currentPaymentMethod === 'Charge_to_Room' ? document.getElementById('room-select').options[document.getElementById('room-select').selectedIndex].text : 'N/A';
 
-      // 1. If charging to room, add to folio FIRST
       if (currentPaymentMethod === 'Charge_to_Room') {
         const { data: bookings, error: bookingError } = await db.from('bookings')
           .select('id')
@@ -231,7 +390,7 @@
           .limit(1);
 
         if (bookingError || !bookings || bookings.length === 0) {
-          return alert("Error: No active check-in found for this room. Is the guest checked in?");
+          return alert("Error: No active check-in found for this room.");
         }
 
         const bookingId = bookings[0].id;
@@ -244,14 +403,11 @@
             amount: item.price * item.qty
           });
           
-          if (chargeError) {
-            return alert("Database Error: Could not save to room bill. \n\n" + chargeError.message);
-          }
+          if (chargeError) return alert("DB Error: " + chargeError.message);
         }
         alert("✅ Successfully added to Room Folio!");
       }
 
-      // 2. Save Order for POS Audit
       await db.from('pos_orders').insert({
         room_number: currentPaymentMethod === 'Charge_to_Room' ? selectedRoomText : null,
         total_amount: total,
@@ -260,14 +416,13 @@
         created_by: currentUser.id
       });
 
-      // 3. Deduct Stock
       for (const item of cart) {
         await db.from('inventory').update({ 
           stock_quantity: item.stock_quantity - item.qty 
         }).eq('id', item.id);
       }
 
-      // 4. Populate Receipt
+      // Print Logic
       document.getElementById('r-date').innerText = new Date().toLocaleString();
       document.getElementById('r-dept').innerText = currentDepartment;
       document.getElementById('r-total').innerText = '₦' + total.toLocaleString();
@@ -280,7 +435,6 @@
         rItems.innerHTML += `<p>${c.qty}x ${c.item_name} <span class="float-right">₦${(c.price * c.qty).toLocaleString()}</span></p>`;
       });
 
-      // 5. Print
       const receipt = document.getElementById('receipt-area');
       receipt.classList.remove('hidden');
       
@@ -292,11 +446,200 @@
           renderCart();
           document.getElementById('room-select').value = '';
           loadPOS(); 
+          loadStockData(); // update stock counts
         }, 500);
       }, 100);
     }
 
-    loadPOS();
+    // ================= LIVE ORDERS LOGIC (GUEST APP) =================
+    async function loadLiveOrders() {
+      const list = document.getElementById('live-orders-list');
+      
+      // Fetch orders for this department that are not completed
+      const { data: orders, error } = await db.from('guest_orders')
+        .select('*')
+        .eq('department', currentDepartment)
+        .neq('status', 'Completed')
+        .order('created_at', { ascending: true });
+
+      if (error || !orders) {
+        list.innerHTML = '<p class="text-slate-500">No orders found or error loading.</p>';
+        return;
+      }
+
+      if (orders.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 col-span-full text-center py-10">No pending orders right now. 🎉</p>';
+        document.getElementById('order-badge').classList.add('hidden');
+        return;
+      }
+
+      // Voice Alarm for new orders
+      const pendingOrders = orders.filter(o => o.status === 'Pending');
+      if (pendingOrders.length > 0 && !sessionStorage.getItem('alarm_played')) {
+        const msg = new SpeechSynthesisUtterance("New order received from room " + pendingOrders[0].room_number);
+        window.speechSynthesis.speak(msg);
+        sessionStorage.setItem('alarm_played', 'true');
+        setTimeout(() => sessionStorage.removeItem('alarm_played'), 10000); // cooldown
+      }
+
+      // Update Tab Badge
+      const badge = document.getElementById('order-badge');
+      badge.innerText = orders.length;
+      badge.classList.remove('hidden');
+
+      list.innerHTML = '';
+      orders.forEach(order => {
+        let statusColor = order.status === 'Pending' ? 'bg-amber-500' : order.status === 'Preparing' ? 'bg-blue-500' : 'bg-emerald-500';
+        
+        // Assuming order.items is a JSON array of {name, qty}
+        let itemsHtml = '';
+        try {
+          const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+          itemsHtml = items.map(i => `<li>${i.qty}x ${i.name}</li>`).join('');
+        } catch(e) { itemsHtml = `<li>${order.items}</li>`; }
+
+        list.innerHTML += `
+          <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-lg flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start mb-2">
+                <h3 class="text-white font-bold text-lg">Room ${order.room_number}</h3>
+                <span class="${statusColor} text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase">${order.status || 'Pending'}</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-2">${new Date(order.created_at).toLocaleTimeString()}</p>
+              <ul class="text-sm text-slate-300 space-y-1 mb-4 list-disc pl-4">
+                ${itemsHtml}
+              </ul>
+            </div>
+            <div class="flex gap-2 mt-2">
+              ${order.status === 'Pending' || !order.status ? `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 rounded-lg">Accept</button>` : ''}
+              ${order.status === 'Preparing' ? `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="flex-1 bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold py-2 rounded-lg">Mark Ready</button>` : ''}
+              ${order.status === 'Ready' ? `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded-lg">Delivered</button>` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      const { error } = await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+      if (error) return alert("Error updating order: " + error.message);
+      loadLiveOrders();
+    }
+
+    // ================= STOCK & HANDOVER LOGIC =================
+    async function loadStockData() {
+      // 1. Fetch Inventory
+      const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).order('item_name');
+      inventory = items || [];
+
+      const tbody = document.getElementById('stock-table-body');
+      tbody.innerHTML = '';
+      let lowStockCount = 0;
+
+      inventory.forEach(item => {
+        if (item.stock_quantity <= 5) lowStockCount++;
+        
+        const isApproved = item.is_approved ? `<span class="text-emerald-400 text-[10px] bg-emerald-900/50 px-2 py-1 rounded">Approved</span>` : `<span class="text-amber-400 text-[10px] bg-amber-900/50 px-2 py-1 rounded">Pending Admin</span>`;
+
+        tbody.innerHTML += `
+          <tr class="border-b border-slate-700 hover:bg-slate-750">
+            <td class="px-4 py-3 font-bold text-white">${item.item_name}</td>
+            <td class="px-4 py-3 text-center">₦${item.price.toLocaleString()}</td>
+            <td class="px-4 py-3 text-center font-bold ${item.stock_quantity <= 5 ? 'text-red-400' : 'text-slate-300'}">${item.stock_quantity}</td>
+            <td class="px-4 py-3 text-center">
+              <input type="number" id="physical-${item.id}" value="${item.physical_count || item.stock_quantity}" class="w-16 bg-slate-900 border border-slate-600 rounded p-1 text-center text-white outline-none">
+            </td>
+            <td class="px-4 py-3 text-center">
+              <input type="number" id="bad-${item.id}" value="${item.bad_stock || 0}" class="w-16 bg-slate-900 border border-slate-600 rounded p-1 text-center text-white outline-none">
+            </td>
+            <td class="px-4 py-3 text-center flex flex-col items-center gap-2">
+              <button onclick="submitCount('${item.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded w-full transition">Submit Count</button>
+              ${isApproved}
+            </td>
+          </tr>
+        `;
+      });
+
+      // Populate Add Stock Modal
+      const select = document.getElementById('add-stock-item');
+      select.innerHTML = inventory.map(i => `<option value="${i.id}">${i.item_name} (Currently: ${i.stock_quantity})</option>`).join('');
+
+      // 2. Fetch Today's Sales (Pos Orders)
+      const today = new Date().toISOString().split('T')[0];
+      const { data: sales } = await db.from('pos_orders')
+        .select('total_amount, payment_method')
+        .eq('department', currentDepartment)
+        .gte('created_at', today);
+
+      let totalSales = 0;
+      let totalCredits = 0;
+      if(sales) {
+        sales.forEach(s => {
+          totalSales += s.total_amount;
+          if (s.payment_method === 'Charge_to_Room') totalCredits += s.total_amount;
+        });
+      }
+
+      document.getElementById('summary-total-sales').innerText = '₦' + totalSales.toLocaleString();
+      document.getElementById('summary-credits').innerText = '₦' + totalCredits.toLocaleString();
+      document.getElementById('summary-low-stock').innerText = lowStockCount + ' Items';
+    }
+
+    async function submitCount(itemId) {
+      const phys = parseInt(document.getElementById(`physical-${itemId}`).value) || 0;
+      const bad = parseInt(document.getElementById(`bad-${itemId}`).value) || 0;
+      
+      const item = inventory.find(i => i.id === itemId);
+      
+      // Discrepancy = Expected (stock_quantity) - Physical - Bad
+      const expected = item.stock_quantity;
+      const discrepancy = expected - phys - bad;
+
+      const { error } = await db.from('inventory').update({
+        physical_count: phys,
+        bad_stock: bad,
+        discrepancy: discrepancy,
+        is_approved: false, // Requires Admin Approval
+        last_updated_by: currentUser.id
+      }).eq('id', itemId);
+
+      if (error) return alert("Error submitting count: " + error.message);
+      alert("Count submitted! Pending Admin approval.");
+      loadStockData();
+    }
+
+    function openAddStockModal() {
+      document.getElementById('add-stock-modal').classList.remove('hidden');
+      document.getElementById('add-stock-modal').classList.add('flex');
+    }
+
+    function closeAddStockModal() {
+      document.getElementById('add-stock-modal').classList.add('hidden');
+      document.getElementById('add-stock-modal').classList.remove('flex');
+      document.getElementById('add-stock-qty').value = '';
+    }
+
+    async function submitAddStock() {
+      const itemId = document.getElementById('add-stock-item').value;
+      const qty = parseInt(document.getElementById('add-stock-qty').value);
+
+      if (!itemId || !qty || qty <= 0) return alert('Select item and enter valid quantity.');
+
+      const item = inventory.find(i => i.id === itemId);
+      
+      const { error } = await db.from('inventory').update({
+        stock_quantity: item.stock_quantity + qty,
+        opening_stock: (item.opening_stock || 0) + qty
+      }).eq('id', itemId);
+
+      if (error) return alert("Error adding stock: " + error.message);
+      
+      closeAddStockModal();
+      loadStockData();
+      alert("Stock added successfully!");
+    }
+
+    init();
   </script>
 </body>
 </html>

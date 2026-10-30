@@ -3,31 +3,114 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vicnos Hotel - Live Orders</title>
+  <title>Vicnos Hotel - Kitchen Display System</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }</style>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+  </style>
 </head>
-<body class="min-h-screen p-4">
-  <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 gap-4">
-    <div class="flex items-center gap-3">
-      <div class="bg-red-100 p-2 rounded-xl text-red-600 animate-pulse"><i data-lucide="bell" class="w-6 h-6"></i></div>
-      <div>
-        <h1 class="font-bold text-gray-800 text-lg">Kitchen Order Board</h1>
-        <p id="status-text" class="text-xs text-gray-500">Click Enable to start listening</p>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-red-500/20 p-2 rounded-xl text-red-400 animate-pulse"><i data-lucide="flame" class="w-6 h-6"></i></div>
+        <div>
+          <h1 class="font-bold text-white text-lg">Kitchen Display System</h1>
+          <p id="status-text" class="text-xs text-slate-400">Connecting to live feed...</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="sound-btn" onclick="enableSound()" class="bg-amber-500/20 text-amber-400 border border-amber-500/50 px-4 py-2 rounded-xl text-sm font-bold shadow-sm animate-pulse flex items-center gap-2">
+          <i data-lucide="volume-2" class="w-4 h-4"></i> Enable Voice Alerts
+        </button>
+        <button onclick="switchTab('orders')" id="tab-btn-orders" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2">
+          <i data-lucide="monitor"></i> Live Orders
+        </button>
+        <button onclick="switchTab('stock')" id="tab-btn-stock" class="bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2">
+          <i data-lucide="package"></i> Kitchen Stock
+        </button>
+        <button onclick="window.location.href='dashboard.html'" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold shadow-sm">
+          Exit
+        </button>
       </div>
     </div>
-    <div class="flex gap-2">
-        <button id="sound-btn" onclick="enableSound()" class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm animate-bounce">🔊 Enable Voice Alerts</button>
-        <button onclick="window.location.href='dashboard.html'" class="bg-gray-100 px-4 py-2 rounded-xl text-sm font-bold text-gray-600">Back</button>
+  </header>
+
+  <main class="max-w-7xl w-full mx-auto p-4 flex-1">
+    
+    <!-- Live Orders View -->
+    <div id="tab-orders" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Pending Column -->
+      <div class="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col h-[75vh]">
+        <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800 rounded-t-2xl">
+          <h2 class="font-bold text-amber-400 flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4"></i> Pending</h2>
+          <span id="count-pending" class="bg-slate-700 text-xs px-2 py-1 rounded-full">0</span>
+        </div>
+        <div id="col-pending" class="p-3 overflow-y-auto space-y-3 flex-1"></div>
+      </div>
+
+      <!-- Preparing Column -->
+      <div class="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col h-[75vh]">
+        <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800 rounded-t-2xl">
+          <h2 class="font-bold text-blue-400 flex items-center gap-2"><i data-lucide="chef-hat" class="w-4 h-4"></i> Preparing</h2>
+          <span id="count-preparing" class="bg-slate-700 text-xs px-2 py-1 rounded-full">0</span>
+        </div>
+        <div id="col-preparing" class="p-3 overflow-y-auto space-y-3 flex-1"></div>
+      </div>
+
+      <!-- Ready Column -->
+      <div class="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col h-[75vh]">
+        <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800 rounded-t-2xl">
+          <h2 class="font-bold text-emerald-400 flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Ready for Waiter</h2>
+          <span id="count-ready" class="bg-slate-700 text-xs px-2 py-1 rounded-full">0</span>
+        </div>
+        <div id="col-ready" class="p-3 overflow-y-auto space-y-3 flex-1"></div>
+      </div>
     </div>
-  </div>
 
-  <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    <p class="text-gray-500 col-span-full text-center py-10">No active orders right now.</p>
-  </div>
+    <!-- Kitchen Stock View (Visible to Chef, Accountant, Manager) -->
+    <div id="tab-stock" class="hidden">
+      <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
+        <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+          <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="package"></i> Live Kitchen Stock</h2>
+          <div class="flex gap-4 text-xs font-bold">
+            <span class="text-red-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Low Stock (< 5)</span>
+            <span class="text-amber-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Bad Stock Logged</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-900 text-slate-400">
+              <tr>
+                <th class="px-4 py-3">Item Name</th>
+                <th class="px-4 py-3 text-center">In Stock</th>
+                <th class="px-4 py-3 text-center">Bad Stock</th>
+                <th class="px-4 py-3 text-center">Physical Count</th>
+                <th class="px-4 py-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="stock-table-body">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
+  </main>
+
+  <footer class="text-center text-xs text-slate-500 py-4 mt-auto">
+    Powered by <strong class="text-slate-400">DEKY</strong>
+  </footer>
+
+  <!-- Hidden Audio for Background Play -->
   <audio id="silent-audio" loop><source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav"></audio>
 
   <script>
@@ -38,19 +121,28 @@
     lucide.createIcons();
 
     let soundEnabled = false;
+    let currentTab = 'orders';
+    let orderChannel = null;
 
+    // --- INITIALIZATION & AUTH ---
     async function initAuth() {
         const { data: { user } } = await db.auth.getUser();
         if (!user) return window.location.href = 'index.html';
-        const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
         
-        const allowedRoles = ['md', 'admin', 'manager', 'accountant', 'supervisor', 'barman', 'waitress', 'chef'];
+        const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+        const allowedRoles = ['md', 'admin', 'manager', 'accountant', 'supervisor', 'chef'];
+        
         if (!profile || !allowedRoles.includes(profile.role)) {
-            alert("Access Denied."); return window.location.href = 'dashboard.html';
+            alert("Access Denied. You do not have permission to view this page."); 
+            return window.location.href = 'dashboard.html';
         }
+
+        document.getElementById('status-text').innerText = "Connected. Listening for orders...";
         loadOrders();
+        setupRealtime();
     }
 
+    // --- TEXT TO SPEECH ALARM ---
     async function enableSound() {
         soundEnabled = true;
         const silentAudio = document.getElementById('silent-audio');
@@ -64,81 +156,176 @@
             }
         } catch (err) { document.getElementById('status-text').innerText = "Listening..."; }
 
-        document.getElementById('sound-btn').innerText = "✅ Voice Alerts Active";
-        document.getElementById('sound-btn').className = "bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm";
+        const btn = document.getElementById('sound-btn');
+        btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Alerts Active`;
+        btn.className = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2";
+        lucide.createIcons();
+        
         announceOrder("Test", [{qty: 1, name: "System Check"}]);
     }
 
     function announceOrder(roomNum, items) {
         if (!soundEnabled) return;
-        window.speechSynthesis.cancel();
-        let itemList = items.map(i => `${i.qty} ${i.name}`).join(", ");
+        window.speechSynthesis.cancel(); // Stop current speech
+        
+        let itemList = "";
+        if (Array.isArray(items)) {
+            itemList = items.map(i => `${i.qty} ${i.name}`).join(", ");
+        } else {
+            itemList = "Items"; // Fallback
+        }
+        
         let text = `Attention Kitchen. New order from Room ${roomNum}. ${itemList}. Please check the screen.`;
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.9; utterance.pitch = 1.1; utterance.volume = 1.0; 
+        utterance.rate = 0.9; utterance.pitch = 1.0; utterance.volume = 1.0; 
         window.speechSynthesis.speak(utterance);
     }
 
-    async function loadOrders() {
-      const grid = document.getElementById('orders-grid');
-      const { data: orders, error } = await db.from('guest_orders')
-        .select(`*, bookings ( guests ( full_name ) )`)
-        .neq('status', 'Delivered').order('created_at', { ascending: true });
-
-      if (error || !orders || orders.length === 0) {
-        grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">No active orders right now. Relax! ☕</p>';
-        return;
-      }
-
-      grid.innerHTML = orders.map(order => {
-        const time = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        let guestName = order.bookings?.guests?.full_name || "Unknown Guest";
-        let statusColor = order.status === 'Preparing' ? "bg-blue-100 text-blue-800" : order.status === 'On the Way' ? "bg-purple-100 text-purple-800" : "bg-yellow-100 text-yellow-800";
+    // --- TABS ---
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tab-orders').classList.add('hidden');
+        document.getElementById('tab-stock').classList.add('hidden');
         
-        let itemsHtml = order.items.map(item => `<li class="flex justify-between border-b border-gray-100 py-1 text-sm"><span class="font-bold text-gray-800">${item.qty}x ${item.name}</span></li>`).join('');
+        document.getElementById('tab-btn-orders').className = "bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2";
+        document.getElementById('tab-btn-stock').className = "bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2";
 
-        return `
-          <div class="bg-white rounded-2xl shadow-md border-t-4 border-orange-500 overflow-hidden flex flex-col">
-            <div class="bg-gray-50 p-3 flex justify-between items-center border-b">
-              <div>
-                <span class="bg-blue-600 text-white font-bold text-xs px-2 py-1 rounded">Room ${order.room_number || 'N/A'}</span>
-                <span class="text-xs font-bold px-2 py-1 rounded ml-1 ${statusColor}">${order.status}</span>
-                <p class="font-bold text-gray-800 text-sm mt-2">${guestName}</p>
-                <p class="text-[10px] text-gray-500">Ordered at ${time}</p>
-              </div>
-              <p class="font-extrabold text-blue-600">₦${Number(order.total_amount).toLocaleString()}</p>
-            </div>
-            <div class="p-4 flex-1"><ul class="mb-4">${itemsHtml}</ul>
-              <div class="bg-gray-50 p-2 rounded-xl border">
-                <label class="block text-[10px] font-bold text-gray-500 mb-1">Update Status & ETA</label>
-                <div class="flex gap-2">
-                    <select id="status-${order.id}" class="flex-1 text-xs border rounded-lg p-1 outline-none">
-                        <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                        <option value="Preparing" ${order.status === 'Preparing' ? 'selected' : ''}>Preparing</option>
-                        <option value="On the Way" ${order.status === 'On the Way' ? 'selected' : ''}>On the Way</option>
-                        <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                    </select>
-                    <input id="eta-${order.id}" type="number" value="${order.estimated_minutes || 30}" class="w-16 text-xs border rounded-lg p-1 outline-none" placeholder="Mins">
-                    <button onclick="updateOrder('${order.id}')" class="bg-black text-white px-3 py-1 rounded-lg text-xs font-bold active:scale-95">Save</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
+        document.getElementById(`tab-${tab}`).classList.remove('hidden');
+        document.getElementById(`tab-btn-${tab}`).className = "bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2";
+
+        if (tab === 'orders') loadOrders();
+        if (tab === 'stock') loadStock();
     }
 
-    async function updateOrder(id) {
-      const newStatus = document.getElementById(`status-${id}`).value;
-      const newEta = document.getElementById(`eta-${id}`).value;
-      await db.from('guest_orders').update({ status: newStatus, estimated_minutes: newEta }).eq('id', id);
-      loadOrders(); 
+    // --- LIVE ORDERS LOGIC ---
+    async function loadOrders() {
+        // Fetch only Kitchen orders that aren't completed/delivered
+        const { data: orders, error } = await db.from('guest_orders')
+            .select('*')
+            .eq('department', 'Kitchen')
+            .in('status', ['Pending', 'Preparing', 'Ready'])
+            .order('created_at', { ascending: true });
+
+        const colPending = document.getElementById('col-pending');
+        const colPreparing = document.getElementById('col-preparing');
+        const colReady = document.getElementById('col-ready');
+
+        colPending.innerHTML = '';
+        colPreparing.innerHTML = '';
+        colReady.innerHTML = '';
+
+        let counts = { Pending: 0, Preparing: 0, Ready: 0 };
+
+        if (!error && orders) {
+            orders.forEach(order => {
+                const status = order.status || 'Pending';
+                if (counts[status] !== undefined) counts[status]++;
+
+                let itemsHtml = '';
+                try {
+                    const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                    itemsHtml = items.map(i => `<li class="flex justify-between border-b border-slate-700/50 py-1 text-sm"><span class="font-bold text-white">${i.qty}x</span> <span class="text-slate-300">${i.name}</span></li>`).join('');
+                } catch(e) { itemsHtml = `<li class="text-red-400">Error parsing items</li>`; }
+
+                const timeStr = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const card = `
+                    <div class="bg-slate-800 rounded-xl border ${status === 'Pending' ? 'border-amber-500/50' : status === 'Preparing' ? 'border-blue-500/50' : 'border-emerald-500/50'} shadow-lg overflow-hidden mb-3">
+                        <div class="bg-slate-900/50 p-3 flex justify-between items-center border-b border-slate-700/50">
+                            <div>
+                                <span class="bg-indigo-500 text-white font-bold text-xs px-2 py-1 rounded">Room ${order.room_number}</span>
+                                <span class="text-[10px] text-slate-400 ml-2">${timeStr}</span>
+                            </div>
+                            ${order.estimated_minutes ? `<span class="text-xs text-slate-400 font-bold">~${order.estimated_minutes}m</span>` : ''}
+                        </div>
+                        <div class="p-3">
+                            <ul class="mb-3">${itemsHtml}</ul>
+                            
+                            ${status === 'Pending' ? `
+                                <button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-bold transition">Start Preparing</button>
+                            ` : status === 'Preparing' ? `
+                                <button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold transition">Mark Ready</button>
+                            ` : status === 'Ready' ? `
+                                <div class="text-center text-xs text-emerald-400 font-bold animate-pulse">Waiting for Waiter</div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                if (status === 'Pending') colPending.insertAdjacentHTML('beforeend', card);
+                if (status === 'Preparing') colPreparing.insertAdjacentHTML('beforeend', card);
+                if (status === 'Ready') colReady.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        document.getElementById('count-pending').innerText = counts.Pending;
+        document.getElementById('count-preparing').innerText = counts.Preparing;
+        document.getElementById('count-ready').innerText = counts.Ready;
+
+        if (counts.Pending === 0) colPending.innerHTML = '<p class="text-slate-500 text-center text-sm py-4">No pending orders.</p>';
+        if (counts.Preparing === 0) colPreparing.innerHTML = '<p class="text-slate-500 text-center text-sm py-4">No orders cooking.</p>';
+        if (counts.Ready === 0) colReady.innerHTML = '<p class="text-slate-500 text-center text-sm py-4">No orders ready.</p>';
     }
 
-    db.channel('custom-insert-channel').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
-        announceOrder(payload.new.room_number || 'Unknown', payload.new.items);
+    async function updateOrderStatus(orderId, newStatus) {
+        const { error } = await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+        if (error) return alert("Error updating order: " + error.message);
         loadOrders();
-    }).subscribe();
+    }
+
+    // --- KITCHEN STOCK LOGIC ---
+    async function loadStock() {
+        const { data: items, error } = await db.from('inventory')
+            .select('*')
+            .eq('department', 'Kitchen')
+            .order('item_name');
+
+        const tbody = document.getElementById('stock-table-body');
+        tbody.innerHTML = '';
+
+        if (error || !items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-500">No kitchen stock found.</td></tr>';
+            return;
+        }
+
+        items.forEach(item => {
+            const isLow = item.stock_quantity <= 5;
+            const hasBadStock = item.bad_stock > 0;
+            
+            let statusBadge = `<span class="bg-emerald-900/50 text-emerald-400 text-[10px] font-bold px-2 py-1 rounded">Good</span>`;
+            if (hasBadStock) statusBadge = `<span class="bg-amber-900/50 text-amber-400 text-[10px] font-bold px-2 py-1 rounded">Check Bad Stock</span>`;
+            if (isLow) statusBadge = `<span class="bg-red-900/50 text-red-400 text-[10px] font-bold px-2 py-1 rounded">Low Stock Alert</span>`;
+
+            tbody.innerHTML += `
+                <tr class="border-b border-slate-700 hover:bg-slate-750">
+                    <td class="px-4 py-3 font-bold text-white">${item.item_name}</td>
+                    <td class="px-4 py-3 text-center font-bold ${isLow ? 'text-red-400' : 'text-slate-300'}">${item.stock_quantity}</td>
+                    <td class="px-4 py-3 text-center ${hasBadStock ? 'text-amber-400 font-bold' : 'text-slate-400'}">${item.bad_stock || 0}</td>
+                    <td class="px-4 py-3 text-center text-slate-400">${item.physical_count || '-'}</td>
+                    <td class="px-4 py-3 text-center">${statusBadge}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // --- REALTIME LISTENER ---
+    function setupRealtime() {
+        if (orderChannel) db.removeChannel(orderChannel);
+        
+        orderChannel = db.channel('kitchen-kds-channel')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
+                // Only alarm if it's for the Kitchen
+                if (payload.new.department === 'Kitchen') {
+                    announceOrder(payload.new.room_number || 'Unknown', payload.new.items);
+                    if (currentTab === 'orders') loadOrders();
+                }
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'guest_orders' }, payload => {
+                // If status changes elsewhere (e.g., waitress delivers), update the board
+                if (currentTab === 'orders') loadOrders();
+            })
+            .subscribe();
+    }
 
     initAuth();
   </script>

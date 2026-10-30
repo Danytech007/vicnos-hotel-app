@@ -9,154 +9,236 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; min-height: 100vh; }
     h1, h2, h3 { font-family: 'Playfair Display', serif; }
+    .fade-in { animation: fadeIn 0.4s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="min-h-screen p-4 flex flex-col items-center">
+<body class="p-4 flex flex-col items-center pb-24">
 
-  <nav class="w-full max-w-md bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 mb-6">
-    <a href="room-service.html" id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
-    <h1 class="font-bold text-gray-800 text-lg">Track Order</h1>
+  <!-- Header -->
+  <nav class="w-full max-w-md bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between mb-6 sticky top-4 z-50">
+    <div class="flex items-center gap-3">
+      <a href="guest-portal.html" id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
+      <div>
+        <h1 class="font-bold text-gray-900 text-lg leading-tight">Live Tracking</h1>
+        <p class="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Room <span id="nav-room-num">---</span></p>
+      </div>
+    </div>
+    <div class="bg-blue-50 p-2 rounded-xl text-blue-600 animate-pulse">
+      <i data-lucide="radio" class="w-5 h-5"></i>
+    </div>
   </nav>
 
-  <main class="w-full max-w-md">
-    <div id="tracking-container" class="hidden bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
-        
-        <div class="text-center mb-8">
-            <div class="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="chef-hat" class="w-10 h-10 text-blue-600"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800" id="order-status-text">Preparing</h2>
-            <p class="text-gray-500 text-sm mt-1">Estimated Time: <span id="order-eta" class="font-bold text-gray-800">30 mins</span></p>
-        </div>
-
-        <!-- Timeline -->
-        <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-            
-            <!-- Step 1: Pending -->
-            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active" id="step-pending">
-                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                    <i data-lucide="receipt" class="w-5 h-5"></i>
-                </div>
-                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                    <p class="font-bold text-gray-800 text-sm">Order Received</p>
-                </div>
-            </div>
-
-            <!-- Step 2: Preparing -->
-            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active" id="step-preparing">
-                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                    <i data-lucide="cooking-pot" class="w-5 h-5"></i>
-                </div>
-                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                    <p class="font-bold text-gray-800 text-sm">Preparing Food</p>
-                </div>
-            </div>
-
-            <!-- Step 3: On the Way -->
-            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active" id="step-ontheway">
-                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                    <i data-lucide="bike" class="w-5 h-5"></i>
-                </div>
-                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                    <p class="font-bold text-gray-800 text-sm">On the Way</p>
-                </div>
-            </div>
-
-            <!-- Step 4: Delivered -->
-            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active" id="step-delivered">
-                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i>
-                </div>
-                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                    <p class="font-bold text-gray-800 text-sm">Delivered</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-8 border-t pt-4">
-            <p class="text-xs font-bold text-gray-400 uppercase mb-2">Your Items</p>
-            <div id="order-items" class="space-y-1 text-sm text-gray-600"></div>
-        </div>
+  <main class="w-full max-w-md space-y-6" id="orders-container">
+    <!-- Loading State -->
+    <div id="loading-state" class="text-center py-20">
+      <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-gray-500 text-sm font-medium">Checking for active orders...</p>
     </div>
 
-    <div id="empty-container" class="text-center py-20 hidden">
-        <i data-lucide="utensils-crossed" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
-        <p class="text-gray-500">You have no active food orders right now.</p>
-        <a href="room-service.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Order Now</a>
+    <!-- Empty State (Hidden by default) -->
+    <div id="empty-state" class="hidden text-center py-20 fade-in">
+      <div class="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+        <i data-lucide="utensils-crossed" class="w-10 h-10 text-gray-400"></i>
+      </div>
+      <h2 class="text-xl font-bold text-gray-800 mb-2">No active orders</h2>
+      <p class="text-gray-500 text-sm mb-8 px-4">You don't have any food, drinks, or minimart orders in progress right now.</p>
+      <a href="room-service.html" id="order-now-btn" class="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
+        <i data-lucide="plus-circle" class="w-5 h-5"></i> Order Now
+      </a>
     </div>
   </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto pt-10 pb-6 text-center w-full max-w-md">
+    <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+    <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+  </footer>
 
   <script>
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    lucide.createIcons();
-
+    
+    // Get Room Number from URL
     const urlParams = new URLSearchParams(window.location.search);
     const roomNum = urlParams.get('room') || '101'; 
     
-    document.getElementById('back-btn').href = `room-service.html?room=${roomNum}`;
+    // Set Dynamic Links
+    document.getElementById('nav-room-num').textContent = roomNum;
+    document.getElementById('back-btn').href = `guest-portal.html?room=${roomNum}`;
+    document.getElementById('order-now-btn').href = `room-service.html?room=${roomNum}`;
 
-    async function loadActiveOrder() {
-        // Get the most recent order for this room that is not 'Delivered'
-        const { data: orders } = await db.from('guest_orders')
+    let ordersChannel = null;
+
+    async function loadActiveOrders() {
+        // Fetch all active orders for this room that are not Delivered or Completed
+        const { data: orders, error } = await db.from('guest_orders')
             .select('*')
             .eq('room_number', roomNum)
-            .neq('status', 'Delivered')
-            .order('created_at', { ascending: false })
-            .limit(1);
+            .not('status', 'in', '("Delivered","Completed","Cancelled")')
+            .order('created_at', { ascending: false });
 
-        if (!orders || orders.length === 0) {
-            document.getElementById('tracking-container').classList.add('hidden');
-            document.getElementById('empty-container').classList.remove('hidden');
+        document.getElementById('loading-state').classList.add('hidden');
+        const container = document.getElementById('orders-container');
+        
+        // Clear previous dynamic cards (keep loading/empty states)
+        document.querySelectorAll('.order-card').forEach(el => el.remove());
+
+        if (error || !orders || orders.length === 0) {
+            document.getElementById('empty-state').classList.remove('hidden');
             return;
         }
 
-        const order = orders[0];
-        document.getElementById('tracking-container').classList.remove('hidden');
-        document.getElementById('empty-container').classList.add('hidden');
+        document.getElementById('empty-state').classList.add('hidden');
 
-        // Set Text
-        document.getElementById('order-status-text').innerText = order.status;
-        document.getElementById('order-eta').innerText = `${order.estimated_minutes || 30} mins`;
-
-        // Render Items
-        let itemsHtml = '';
-        order.items.forEach(i => {
-            itemsHtml += `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>₦${Number(i.price).toLocaleString()}</span></div>`;
-        });
-        document.getElementById('order-items').innerHTML = itemsHtml;
-
-        // Highlight Timeline Steps
-        const steps = ['Pending', 'Preparing', 'On the Way', 'Delivered'];
-        const currentIndex = steps.indexOf(order.status);
-
-        // Reset all to gray
-        document.querySelectorAll('[id^="step-"]').forEach(el => {
-            el.querySelector('div:first-child').className = 'flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-gray-200 text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2';
+        orders.forEach(order => {
+            container.insertAdjacentHTML('beforeend', generateOrderCard(order));
         });
 
-        // Color active steps
-        for (let i = 0; i <= currentIndex; i++) {
-            let stepId = `step-${steps[i].replace(/\s/g, '').toLowerCase()}`;
-            let el = document.getElementById(stepId);
-            if (el) {
-                el.querySelector('div:first-child').className = 'flex items-center justify-center w-10 h-10 rounded-full border-2 border-white bg-blue-600 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2';
-            }
-        }
+        lucide.createIcons();
     }
 
-    // Realtime listener for status updates
-    db.channel('track-order-channel')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'guest_orders' }, payload => {
-        loadActiveOrder(); // Refresh UI when kitchen updates status
-      })
-      .subscribe();
+    function generateOrderCard(order) {
+        // Map statuses to index for timeline coloring
+        const statusMap = {
+            'Pending': 0,
+            'Preparing': 1,
+            'Ready': 2,
+            'On the Way': 2, // Fallback just in case
+            'Delivered': 3,
+            'Completed': 3
+        };
+        const currentStep = statusMap[order.status] !== undefined ? statusMap[order.status] : 0;
 
-    loadActiveOrder();
+        // Parse Items
+        let itemsHtml = '';
+        try {
+            const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+            itemsHtml = items.map(i => `
+                <div class="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded">${i.qty}x</span>
+                        <span class="text-gray-800 font-medium text-sm">${i.name}</span>
+                    </div>
+                    <span class="text-gray-500 text-xs">₦${Number(i.price || 0).toLocaleString()}</span>
+                </div>
+            `).join('');
+        } catch(e) { itemsHtml = '<p class="text-red-500 text-xs">Error loading items</p>'; }
+
+        // Department Styling
+        let deptColor = 'bg-gray-100 text-gray-700';
+        let deptIcon = 'utensils';
+        if (order.department === 'Kitchen') { deptColor = 'bg-orange-100 text-orange-700'; deptIcon = 'chef-hat'; }
+        if (order.department === 'Bar') { deptColor = 'bg-purple-100 text-purple-700'; deptIcon = 'wine'; }
+        if (order.department === 'Minimart') { deptColor = 'bg-green-100 text-green-700'; deptIcon = 'shopping-bag'; }
+
+        const timeStr = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const activeStatusText = order.status === 'Ready' ? 'Ready for Delivery' : order.status;
+
+        // Timeline Step Class Generator
+        const stepClass = (index) => index <= currentStep ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 text-gray-400 border-gray-200';
+        const lineClass = (index) => index < currentStep ? 'bg-blue-600' : 'bg-gray-200';
+
+        return `
+            <div class="order-card bg-white rounded-3xl p-5 shadow-xl shadow-gray-200/50 border border-gray-100 fade-in relative overflow-hidden">
+                
+                <!-- Top Bar -->
+                <div class="flex justify-between items-start mb-6 pb-4 border-b border-gray-100">
+                    <div>
+                        <span class="${deptColor} text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider flex items-center gap-1 w-max mb-2">
+                            <i data-lucide="${deptIcon}" class="w-3 h-3"></i> ${order.department || 'Order'}
+                        </span>
+                        <p class="text-[10px] text-gray-400 font-medium">Ordered at ${timeStr}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total</p>
+                        <p class="text-lg font-black text-gray-900">₦${Number(order.total_amount || 0).toLocaleString()}</p>
+                    </div>
+                </div>
+
+                <!-- Status Banner -->
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-1">${activeStatusText}</h2>
+                    <p class="text-blue-600 text-sm font-semibold flex items-center justify-center gap-1">
+                        <i data-lucide="clock" class="w-4 h-4"></i> 
+                        ${order.estimated_minutes ? `~${order.estimated_minutes} mins remaining` : 'Processing...'}
+                    </p>
+                </div>
+
+                <!-- Timeline (Horizontal) -->
+                <div class="relative flex justify-between mb-8 px-2">
+                    <!-- Background Line -->
+                    <div class="absolute top-4 left-4 right-4 h-1 bg-gray-100 -z-10 rounded-full"></div>
+                    <!-- Active Line -->
+                    <div class="absolute top-4 left-4 h-1 ${lineClass(1)} -z-10 rounded-full transition-all duration-500" style="width: ${currentStep === 0 ? '0%' : currentStep === 1 ? '33%' : currentStep === 2 ? '66%' : '100%'}"></div>
+
+                    <!-- Step 1 -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(0)}">
+                            <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <span class="text-[10px] font-bold ${currentStep >= 0 ? 'text-gray-800' : 'text-gray-400'}">Received</span>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(1)}">
+                            <i data-lucide="cooking-pot" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <span class="text-[10px] font-bold ${currentStep >= 1 ? 'text-gray-800' : 'text-gray-400'}">Preparing</span>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(2)}">
+                            <i data-lucide="bell-ring" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <span class="text-[10px] font-bold ${currentStep >= 2 ? 'text-gray-800' : 'text-gray-400'}">Ready</span>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(3)}">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <span class="text-[10px] font-bold ${currentStep >= 3 ? 'text-gray-800' : 'text-gray-400'}">Delivered</span>
+                    </div>
+                </div>
+
+                <!-- Items List -->
+                <div class="bg-gray-50 rounded-2xl p-4">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3 h-3"></i> Order Details</p>
+                    <div class="space-y-1">${itemsHtml}</div>
+                </div>
+
+            </div>
+        `;
+    }
+
+    // Setup Realtime WebSocket
+    function setupRealtime() {
+        if (ordersChannel) db.removeChannel(ordersChannel);
+        
+        ordersChannel = db.channel('track-order-room-' + roomNum)
+            .on('postgres_changes', { 
+                event: '*', // Listen to Inserts, Updates, and Deletes
+                schema: 'public', 
+                table: 'guest_orders',
+                filter: `room_number=eq.${roomNum}`
+            }, payload => {
+                console.log("Order update received:", payload);
+                loadActiveOrders(); // Re-render UI instantly
+            })
+            .subscribe();
+    }
+
+    // Initialize
+    loadActiveOrders();
+    setupRealtime();
   </script>
 </body>
 </html>

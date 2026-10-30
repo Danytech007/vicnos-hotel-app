@@ -81,6 +81,22 @@
       </a>
     </div>
 
+    <!-- SPECIAL LIVE TRACKING BUTTON -->
+    <div class="px-4 mt-5">
+      <a id="link-track-order" href="#" class="block relative rounded-2xl overflow-hidden shadow-lg active:scale-95 transition-transform bg-gradient-to-r from-blue-600 to-indigo-700 p-4 flex items-center justify-between border border-blue-500">
+        <div class="flex items-center gap-3">
+          <div class="bg-white/20 p-2 rounded-full border border-white/30 shadow-inner">
+            <i data-lucide="map-pin" class="w-6 h-6 text-white animate-bounce"></i>
+          </div>
+          <div>
+            <p class="text-white font-bold text-sm tracking-wide">Live Order Tracking</p>
+            <p class="text-blue-100 text-[11px]">See exactly when your food arrives</p>
+          </div>
+        </div>
+        <i data-lucide="chevron-right" class="text-white w-5 h-5"></i>
+      </a>
+    </div>
+
     <div class="px-4 mt-3">
       <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE?text=Hello,%20I%20want%20to%20advertise%20my%20business%20on%20the%20Vicnos%20Guest%20App." target="_blank" class="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl shadow-sm active:scale-95 transition-transform">
         <div class="flex items-center gap-2">
@@ -131,9 +147,18 @@
           <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Upgrade<br>Room</span>
         </a>
 
-        <a href="#" onclick="alert('WiFi: Vicnos_Guest | Pass: Welcome2026')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+        <!-- Track Order in Grid -->
+        <a href="track-order.html" id="link-track-grid" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
           <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center">
-            <i data-lucide="wifi" class="w-6 h-6 text-indigo-600"></i>
+            <i data-lucide="activity" class="w-6 h-6 text-indigo-600"></i>
+          </div>
+          <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Track<br>Order</span>
+        </a>
+
+        <!-- Restored WiFi -->
+        <a href="#" onclick="alert('WiFi: Vicnos_Guest | Pass: Welcome2026')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+          <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center">
+            <i data-lucide="wifi" class="w-6 h-6 text-gray-600"></i>
           </div>
           <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">WiFi<br>Connect</span>
         </a>
@@ -225,6 +250,7 @@
     document.getElementById('nav-room-num').textContent = roomNum;
     document.getElementById('booking-id').textContent = `VIC-${roomNum}`;
 
+    // Dynamic Routing Links
     document.getElementById('link-local-hub').href = `inside-life.html?room=${roomNum}`;
     document.getElementById('nav-link-hub').href = `inside-life.html?room=${roomNum}`;
     document.getElementById('link-room-service').href = `room-service.html?room=${roomNum}`;
@@ -232,6 +258,10 @@
     document.getElementById('nav-link-bill').href = `guest-profile.html?room=${roomNum}`;
     document.getElementById('link-blog').href = `guest-blog.html?room=${roomNum}`;
     document.getElementById('link-upgrade').href = `upgrade-room.html?room=${roomNum}`;
+    
+    // Live Tracking Links
+    document.getElementById('link-track-order').href = `track-order.html?room=${roomNum}`;
+    document.getElementById('link-track-grid').href = `track-order.html?room=${roomNum}`;
 
     async function loadGuestData() {
       try {
