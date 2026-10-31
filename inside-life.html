@@ -25,7 +25,7 @@
 </head>
 <body class="pb-10">
 
-  <!-- CHECKOUT LOCKOUT SCREEN (Hidden by default) -->
+  <!-- CHECKOUT LOCKOUT SCREEN -->
   <div id="checkout-lockout" class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-6 text-center fade-in">
     <div class="bg-white/10 p-6 rounded-full mb-6">
       <i data-lucide="door-closed" class="w-16 h-16 text-blue-400"></i>
@@ -56,32 +56,42 @@
         <p class="text-sm text-gray-500">Everything you need, curated for your stay.</p>
       </div>
 
-      <!-- MINI SHOP: LIVE VENDOR PRODUCTS -->
+      <!-- DYNAMIC SPONSORED AD BANNER (Replaced Elite Guides) -->
+      <div id="ad-banner-container" class="px-4 mb-8 hidden">
+        <a id="ad-link" href="#" class="block relative rounded-3xl overflow-hidden shadow-xl active:scale-95 transition-transform">
+          <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
+            <div class="bg-black/20 backdrop-blur-sm rounded-2xl p-5 flex items-center justify-between relative overflow-hidden">
+              <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg z-20">SPONSORED</div>
+              <div class="flex items-center gap-4 z-10">
+                <img id="ad-image" src="" class="w-14 h-14 rounded-full object-cover border-2 border-white/30 hidden">
+                <div id="ad-icon-container" class="bg-white/20 p-3 rounded-full border border-white/30 shadow-inner">
+                  <i data-lucide="sparkles" class="w-6 h-6 text-yellow-300 animate-pulse"></i>
+                </div>
+                <div>
+                  <p id="ad-title" class="text-white text-sm font-extrabold uppercase tracking-wide">Ad Title</p>
+                  <p id="ad-desc" class="text-indigo-100 text-[11px] font-medium mt-1 line-clamp-2">Ad Description</p>
+                </div>
+              </div>
+              <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- NEW UPDATES (Formerly Mini Shop - 20hr Expiry) -->
       <div class="px-4 mb-8">
         <div class="flex justify-between items-end mb-3">
-          <h2 class="text-xl font-bold text-gray-800">Fresh from the Mini Shop</h2>
-          <span class="text-xs font-bold text-blue-600">Live</span>
+          <h2 class="text-xl font-bold text-gray-800">New Updates</h2>
+          <div class="flex items-center gap-1 text-emerald-600">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-[10px] font-bold uppercase tracking-wider">Live Feed</span>
+          </div>
         </div>
         
         <div class="flex gap-3 overflow-x-auto hide-scroll pb-4" id="minishop-list">
-          <p class="text-gray-500 text-xs py-4 animate-pulse">Loading products...</p>
-        </div>
-      </div>
-
-      <!-- ULTRA-VIP GUIDES -->
-      <div class="px-4 mb-8">
-        <div class="bg-slate-900 rounded-3xl p-5 shadow-2xl relative overflow-hidden">
-          <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500/20 rounded-full blur-2xl"></div>
-          
-          <div class="flex items-center gap-2 mb-2 relative z-10">
-            <i data-lucide="crown" class="w-5 h-5 text-yellow-400"></i>
-            <h2 class="text-white font-bold text-lg">Elite Local Guides</h2>
-          </div>
-          <p class="text-slate-400 text-xs mb-4 relative z-10">Hire a vetted, professional guide for business, shopping, or city tours. <span class="text-yellow-400 font-bold">(₦50,000 Connection Fee)</span></p>
-          
-          <div class="flex gap-3 overflow-x-auto hide-scroll pb-2 relative z-10" id="vip-guides-list">
-            <p class="text-slate-500 text-xs py-4">Loading Elite Guides...</p>
-          </div>
+          <p class="text-gray-500 text-xs py-4 animate-pulse">Listening for live updates...</p>
         </div>
       </div>
 
@@ -170,6 +180,7 @@
     lucide.createIcons();
 
     let guestSession = null;
+    let realtimeChannel = null;
 
     // --- SECURE AUTHENTICATION ---
     async function authenticateGuest() {
@@ -213,8 +224,9 @@
         document.getElementById('nav-room-num').textContent = guestSession.room_number;
         document.getElementById('back-btn').onclick = () => window.location.href = `guest-portal.html?room=${guestSession.room_number}`;
 
+        loadAd();
         loadMiniShop();
-        loadVIPGuides();
+        setupRealtimeListeners(); // Start listening for live updates
     }
 
     function showLockout() {
@@ -228,32 +240,83 @@
         window.location.href = `vendor-list.html?category=${encodedCategory}&room=${guestSession.room_number}`;
     }
 
-    // --- LOAD MINI SHOP (Vendor Products) ---
+    // --- HELPER: Time Ago ---
+    function timeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+        
+        if (seconds < 60) return "Just now";
+        let interval = seconds / 60;
+        if (interval < 60) return Math.floor(interval) + "m ago";
+        interval = seconds / 3600;
+        if (interval < 24) return Math.floor(interval) + "h ago";
+        
+        return Math.floor(interval / 24) + "d ago";
+    }
+
+    // --- LOAD AD BANNER ---
+    async function loadAd() {
+      const container = document.getElementById('ad-banner-container');
+      
+      const { data: ads } = await db.from('ads')
+          .select('*')
+          .eq('is_active', true)
+          .eq('moderation_status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(1);
+      
+      if (ads && ads.length > 0) {
+        const ad = ads[0];
+        container.classList.remove('hidden');
+        document.getElementById('ad-title').textContent = ad.title;
+        document.getElementById('ad-desc').textContent = ad.description;
+        
+        if (ad.image_url) {
+            document.getElementById('ad-image').src = ad.image_url;
+            document.getElementById('ad-image').classList.remove('hidden');
+            document.getElementById('ad-icon-container').classList.add('hidden');
+        }
+      } else {
+        container.classList.add('hidden'); // Hide if no active ads
+      }
+    }
+
+    // --- LOAD MINI SHOP (20hr Expiry) ---
     async function loadMiniShop() {
         const list = document.getElementById('minishop-list');
         
-        // Fetch products from active vendors
+        // Calculate the time 20 hours ago
+        const twentyHoursAgo = new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString();
+
+        // Fetch products created in the last 20 hours
         const { data: products, error } = await db.from('vendor_products')
             .select(`
                 *,
                 vendors!inner (business_name, whatsapp_number, is_active)
             `)
             .eq('vendors.is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(10);
+            .gte('created_at', twentyHoursAgo) // ONLY SHOW LAST 20 HOURS
+            .order('created_at', { ascending: false });
 
         if (error || !products || products.length === 0) {
-            list.innerHTML = '<p class="text-slate-500 text-xs py-4">No products in the mini shop right now.</p>';
+            list.innerHTML = '<p class="text-gray-500 text-xs py-4">No recent updates right now. Check back soon!</p>';
             return;
         }
 
         list.innerHTML = products.map(p => {
-            const vendorWa = p.vendors.whatsapp_number.replace(/[^0-9]/g, ''); // Clean number
+            const vendorWa = p.vendors.whatsapp_number.replace(/[^0-9]/g, ''); 
             const waText = encodeURIComponent(`Hello ${p.vendors.business_name}, I want to order "${p.name}" (₦${Number(p.price).toLocaleString()}) from my room ${guestSession.room_number}.`);
             const waLink = `https://wa.me/${vendorWa}?text=${waText}`;
+            
+            // Get time string
+            const timeString = timeAgo(p.created_at);
 
             return `
-                <div class="min-w-[140px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-shrink-0 flex flex-col fade-in">
+                <div class="min-w-[140px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-shrink-0 flex flex-col fade-in relative">
+                    <div class="absolute top-1 left-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-bold text-white z-10 flex items-center gap-1">
+                        <i data-lucide="clock" class="w-2.5 h-2.5"></i> ${timeString}
+                    </div>
                     <img src="${p.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'}" class="w-full h-24 object-cover bg-gray-50">
                     <div class="p-3 flex flex-col flex-1 justify-between">
                         <div>
@@ -268,30 +331,23 @@
                 </div>
             `;
         }).join('');
+        lucide.createIcons();
     }
 
-    // --- LOAD VIP GUIDES ---
-    async function loadVIPGuides() {
-        const list = document.getElementById('vip-guides-list');
-        const { data: guides } = await db.from('vip_guides').select('*').eq('is_active', true);
-        
-        if (!guides || guides.length === 0) {
-            list.innerHTML = '<p class="text-slate-500 text-xs py-4">No Elite Guides available right now.</p>';
-            return;
-        }
+    // --- REAL-TIME LISTENER (No Refresh Needed) ---
+    function setupRealtimeListeners() {
+        if (realtimeChannel) db.removeChannel(realtimeChannel);
 
-        list.innerHTML = guides.map(guide => `
-            <div class="min-w-[200px] bg-slate-800 rounded-2xl p-3 border border-slate-700 flex-shrink-0">
-                <img src="${guide.image_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'}" class="w-full h-28 object-cover rounded-xl mb-2">
-                <h4 class="text-white font-bold text-sm">${guide.full_name}</h4>
-                <p class="text-slate-400 text-[10px] line-clamp-2 mt-1 mb-2">${guide.bio}</p>
-                <button onclick="payForGuide('${guide.id}', '${guide.full_name}')" class="w-full bg-yellow-500 text-black font-bold text-xs py-2 rounded-lg active:scale-95 transition">Book - ₦50k</button>
-            </div>
-        `).join('');
-    }
-
-    function payForGuide(id, name) {
-        alert(`Initiating ₦50,000 Paystack Checkout for ${name}...`);
+        realtimeChannel = db.channel('inside-life-live')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vendor_products' }, payload => {
+                console.log("New product added in realtime:", payload);
+                loadMiniShop(); // Auto-reload the mini shop
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ads' }, payload => {
+                console.log("Ad updated in realtime:", payload);
+                loadAd(); // Auto-reload the ad banner
+            })
+            .subscribe();
     }
 
     // Initialize
