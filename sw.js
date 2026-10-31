@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vicnos-v4'; // Bumped to v4
+const CACHE_NAME = 'vicnos-v10'; // Bumped to v10 to force clear old cache
 const ASSETS = [
   'index.html',
   'dashboard.html',
