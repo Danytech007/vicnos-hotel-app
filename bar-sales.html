@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos - Bar Sales & Remittance</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+  </style>
+</head>
+<body class="min-h-screen p-4 pb-24">
+
+  <nav class="bg-slate-800 p-4 rounded-2xl shadow-sm flex justify-between items-center mb-6 border border-slate-700">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-slate-700 p-2 rounded-xl text-slate-300 hover:bg-slate-600 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-white text-lg leading-tight">Sales & Remittance</h1><p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Bar</p></div>
+    </div>
+    <button onclick="downloadPDF()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1"><i data-lucide="download" class="w-4 h-4"></i> PDF</button>
+  </nav>
+
+  <main class="max-w-2xl mx-auto space-y-6">
+    
+    <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl text-center">
+      <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sales Today</p>
+      <p id="total-sales" class="text-4xl font-extrabold text-white">₦0</p>
+      <div class="grid grid-cols-2 gap-4 mt-6 border-t border-slate-700 pt-4">
+        <div><p class="text-[10px] text-slate-400 font-bold uppercase">Cash Collected</p><p id="cash-sales" class="text-lg font-bold text-emerald-400">₦0</p></div>
+        <div><p class="text-[10px] text-slate-400 font-bold uppercase">Room Credits</p><p id="credit-sales" class="text-lg font-bold text-amber-400">₦0</p></div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+      <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="banknote" class="text-emerald-400"></i> Remit Cash</h2>
+      <form id="remit-form" class="flex gap-2">
+        <input id="remit-amount" type="number" required placeholder="Amount (₦)" class="flex-1 bg-slate-900 border border-slate-600 p-3 rounded-xl text-white outline-none">
+        <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-md transition">Submit</button>
+      </form>
+      <p id="remit-msg" class="mt-2 text-center text-sm font-bold text-emerald-400"></p>
+    </div>
+
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let salesData = { cash: 0, credit: 0, total: 0 };
+
+    async function init() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+      loadSales();
+    }
+
+    async function loadSales() {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', 'Bar').eq('created_by', currentUser.id).gte('created_at', today);
+      
+      let cash = 0, credit = 0;
+      if (orders) {
+        orders.forEach(o => {
+          if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount);
+          else cash += Number(o.total_amount);
+        });
+      }
+      salesData = { cash, credit, total: cash + credit };
+
+      document.getElementById('total-sales').textContent = `₦${salesData.total.toLocaleString()}`;
+      document.getElementById('cash-sales').textContent = `₦${cash.toLocaleString()}`;
+      document.getElementById('credit-sales').textContent = `₦${credit.toLocaleString()}`;
+    }
+
+    function downloadPDF() {
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div style="padding: 20px; font-family: sans-serif;">
+          <h2 style="text-align: center;">Vicnos Hotel - Bar Sales Report</h2>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+          <p><strong>Barman:</strong> ${currentUser.email}</p>
+          <hr style="margin: 20px 0;">
+          <h3>Sales Summary</h3>
+          <p><strong>Cash Collected:</strong> ₦${salesData.cash.toLocaleString()}</p>
+          <p><strong>Room Credits:</strong> ₦${salesData.credit.toLocaleString()}</p>
+          <p><strong>Total Sales:</strong> ₦${salesData.total.toLocaleString()}</p>
+          <br>
+          <p style="text-align: center; font-size: 10px;">Powered by DEKY</p>
+        </div>
+      `;
+      html2pdf().set({ margin: 0.5, filename: `Bar_Sales_${new Date().toISOString().split('T')[0]}.pdf` }).from(element).save();
+    }
+
+    document.getElementById('remit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('remit-amount').value);
+      const msg = document.getElementById('remit-msg');
+      const { error } = await db.from('remittances').insert({ user_id: currentUser.id, amount: amount, status: 'Pending' });
+      if (error) { msg.textContent = "Error: " + error.message; msg.className = "mt-2 text-center text-sm font-bold text-red-400"; } 
+      else { msg.textContent = "✅ Remittance submitted."; msg.className = "mt-2 text-center text-sm font-bold text-emerald-400"; document.getElementById('remit-form').reset(); }
+    });
+
+    init();
+  </script>
+</body>
+</html>
