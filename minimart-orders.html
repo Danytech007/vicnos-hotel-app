@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos - Minimart Live Orders</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen p-4 pb-24">
+
+  <nav class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100 mb-6 rounded-2xl">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div>
+        <h1 class="font-bold text-gray-900 text-lg leading-tight">Minimart Orders</h1>
+        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Reception Live Feed</p>
+      </div>
+    </div>
+    <div class="bg-teal-50 p-2 rounded-full text-teal-600"><i data-lucide="bell" class="w-5 h-5 animate-pulse"></i></div>
+  </nav>
+
+  <main class="max-w-2xl mx-auto space-y-4">
+    <div id="orders-list" class="space-y-4">
+      <p class="text-center text-gray-500 text-sm py-10 animate-pulse">Listening for Minimart orders...</p>
+    </div>
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function loadLiveOrders() {
+      const list = document.getElementById('orders-list');
+      
+      // Fetch ONLY Minimart orders that are not completed
+      const { data: orders, error } = await db.from('guest_orders')
+        .select('*')
+        .eq('department', 'Minimart')
+        .neq('status', 'Completed')
+        .neq('status', 'Delivered')
+        .neq('status', 'Cancelled')
+        .order('created_at', { ascending: true });
+
+      if (error || !orders) {
+        list.innerHTML = '<p class="text-center text-red-500">Error loading orders.</p>';
+        return;
+      }
+
+      if (orders.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-20">
+            <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="shopping-bag" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <p class="text-gray-500 font-medium">No active minimart orders.</p>
+          </div>`;
+        lucide.createIcons();
+        return;
+      }
+
+      list.innerHTML = orders.map(order => {
+        let itemsHtml = '';
+        try {
+          const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+          itemsHtml = items.map(i => `<li class="flex justify-between text-sm text-gray-700 border-b border-gray-50 py-1 last:border-0"><span class="font-bold">${i.qty}x</span> <span>${i.name}</span></li>`).join('');
+        } catch(e) { itemsHtml = `<li>Error reading items</li>`; }
+
+        let statusBadge = `<span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-1 rounded">${order.status}</span>`;
+        if (order.status === 'Pending') statusBadge = `<span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded animate-pulse">NEW REQUEST</span>`;
+        if (order.status === 'Preparing') statusBadge = `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded">PACKING</span>`;
+        if (order.status === 'Ready') statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">READY</span>`;
+
+        return `
+          <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm fade-in">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h3 class="text-gray-900 font-bold text-xl">Room ${order.room_number}</h3>
+                <p class="text-[10px] text-gray-400 font-medium">${new Date(order.created_at).toLocaleTimeString()}</p>
+              </div>
+              ${statusBadge}
+            </div>
+            <ul class="mb-4 bg-gray-50 p-3 rounded-xl">${itemsHtml}</ul>
+            <div class="flex justify-between items-center border-t pt-3">
+              <p class="font-black text-gray-900">₦${Number(order.total_amount).toLocaleString()}</p>
+              <div class="flex gap-2">
+                ${order.status === 'Pending' || !order.status ? `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm">Start Packing</button>` : ''}
+                ${order.status === 'Preparing' ? `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm">Mark Ready</button>` : ''}
+                ${order.status === 'Ready' ? `<button onclick="updateOrderStatus('${order.id}', 'Delivered')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm">Mark Delivered</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      const { error } = await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+      if (error) return alert("Error updating order: " + error.message);
+      loadLiveOrders();
+    }
+
+    // Setup Realtime Listener so Reception hears a bell instantly
+    db.channel('minimart-orders-channel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
+          if (payload.new.department === 'Minimart') {
+              const msg = new SpeechSynthesisUtterance("New minimart order from room " + payload.new.room_number);
+              window.speechSynthesis.speak(msg);
+              loadLiveOrders();
+          }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'guest_orders' }, payload => {
+          loadLiveOrders();
+      })
+      .subscribe();
+
+    loadLiveOrders();
+  </script>
+</body>
+</html>
