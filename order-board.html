@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Kitchen Display System</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -13,12 +15,9 @@
     ::-webkit-scrollbar-track { background: #1e293b; }
     ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
 
-  <!-- Header -->
   <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-10">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3">
@@ -47,9 +46,8 @@
 
   <main class="max-w-7xl w-full mx-auto p-4 flex-1">
     
-    <!-- Live Orders View -->
+    <!-- LIVE ORDERS TAB -->
     <div id="tab-orders" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Pending Column -->
       <div class="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col h-[75vh]">
         <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800 rounded-t-2xl">
           <h2 class="font-bold text-amber-400 flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4"></i> Pending</h2>
@@ -58,7 +56,6 @@
         <div id="col-pending" class="p-3 overflow-y-auto space-y-3 flex-1"></div>
       </div>
 
-      <!-- Preparing Column -->
       <div class="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col h-[75vh]">
         <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800 rounded-t-2xl">
           <h2 class="font-bold text-blue-400 flex items-center gap-2"><i data-lucide="chef-hat" class="w-4 h-4"></i> Preparing</h2>
@@ -67,7 +64,6 @@
         <div id="col-preparing" class="p-3 overflow-y-auto space-y-3 flex-1"></div>
       </div>
 
-      <!-- Ready Column -->
       <div class="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col h-[75vh]">
         <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800 rounded-t-2xl">
           <h2 class="font-bold text-emerald-400 flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Ready for Waiter</h2>
@@ -77,32 +73,43 @@
       </div>
     </div>
 
-    <!-- Kitchen Stock View (Visible to Chef, Accountant, Manager) -->
-    <div id="tab-stock" class="hidden">
-      <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
-        <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
-          <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="package"></i> Live Kitchen Stock</h2>
-          <div class="flex gap-4 text-xs font-bold">
-            <span class="text-red-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Low Stock (< 5)</span>
-            <span class="text-amber-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Bad Stock Logged</span>
+    <!-- KITCHEN STOCK TAB -->
+    <div id="tab-stock" class="hidden space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- Stock Table -->
+        <div class="md:col-span-2 bg-slate-800 rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+            <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="package"></i> Live Kitchen Stock</h2>
+            <button onclick="loadStock()" class="text-slate-400 hover:text-white"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+          </div>
+          <div class="overflow-x-auto max-h-[60vh]">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="text-xs uppercase bg-slate-900 text-slate-400 sticky top-0">
+                <tr>
+                  <th class="px-4 py-3">Item Name</th>
+                  <th class="px-4 py-3 text-center">In Stock</th>
+                  <th class="px-4 py-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="stock-table-body"></tbody>
+            </table>
           </div>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="text-xs uppercase bg-slate-900 text-slate-400">
-              <tr>
-                <th class="px-4 py-3">Item Name</th>
-                <th class="px-4 py-3 text-center">In Stock</th>
-                <th class="px-4 py-3 text-center">Bad Stock</th>
-                <th class="px-4 py-3 text-center">Physical Count</th>
-                <th class="px-4 py-3 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody id="stock-table-body">
-              <!-- Populated via JS -->
-            </tbody>
-          </table>
+
+        <!-- Report Bad Stock -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
+          <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="alert-triangle" class="text-red-400"></i> Report Bad Stock</h2>
+          <p class="text-xs text-slate-400 mb-4">If an ingredient spoils or is damaged, log it here. The Accountant will approve it so it doesn't show as missing during your shift count.</p>
+          <form id="bad-stock-form" class="space-y-3">
+            <input type="text" id="bs-item" required placeholder="Item Name (e.g. Tomatoes)" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white outline-none">
+            <input type="number" id="bs-qty" required placeholder="Quantity damaged" min="1" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white outline-none">
+            <input type="text" id="bs-reason" required placeholder="Reason (e.g. Spoiled in fridge)" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white outline-none">
+            <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl font-bold shadow-lg transition">Submit to Accountant</button>
+          </form>
+          <p id="bs-msg" class="mt-2 text-center text-xs font-bold text-emerald-400"></p>
         </div>
+
       </div>
     </div>
 
@@ -112,10 +119,13 @@
     Powered by <strong class="text-slate-400">DEKY</strong>
   </footer>
 
-  <!-- Hidden Audio for Background Play -->
   <audio id="silent-audio" loop><source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav"></audio>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
@@ -125,14 +135,17 @@
     let soundEnabled = false;
     let currentTab = 'orders';
     let orderChannel = null;
+    let currentUser = null;
 
-    // --- INITIALIZATION & AUTH ---
     async function initAuth() {
         const { data: { user } } = await db.auth.getUser();
         if (!user) return window.location.href = 'index.html';
+        currentUser = user;
         
         const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
-        const allowedRoles = ['md', 'admin', 'manager', 'accountant', 'supervisor', 'chef'];
+        
+        // Expanded roles to prevent Access Denied
+        const allowedRoles = ['md', 'admin', 'manager', 'accountant', 'supervisor', 'chef', 'kitchen', 'staff', 'barman'];
         
         if (!profile || !allowedRoles.includes(profile.role)) {
             alert("Access Denied. You do not have permission to view this page."); 
@@ -141,10 +154,10 @@
 
         document.getElementById('status-text').innerText = "Connected. Listening for orders...";
         loadOrders();
+        loadStock();
         setupRealtime();
     }
 
-    // --- TEXT TO SPEECH ALARM ---
     async function enableSound() {
         soundEnabled = true;
         const silentAudio = document.getElementById('silent-audio');
@@ -168,22 +181,19 @@
 
     function announceOrder(roomNum, items) {
         if (!soundEnabled) return;
-        window.speechSynthesis.cancel(); // Stop current speech
-        
+        window.speechSynthesis.cancel(); 
         let itemList = "";
         if (Array.isArray(items)) {
             itemList = items.map(i => `${i.qty} ${i.name}`).join(", ");
         } else {
-            itemList = "Items"; // Fallback
+            itemList = "Items"; 
         }
-        
         let text = `Attention Kitchen. New order from Room ${roomNum}. ${itemList}. Please check the screen.`;
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 0.9; utterance.pitch = 1.0; utterance.volume = 1.0; 
         window.speechSynthesis.speak(utterance);
     }
 
-    // --- TABS ---
     function switchTab(tab) {
         currentTab = tab;
         document.getElementById('tab-orders').classList.add('hidden');
@@ -199,9 +209,7 @@
         if (tab === 'stock') loadStock();
     }
 
-    // --- LIVE ORDERS LOGIC ---
     async function loadOrders() {
-        // Fetch only Kitchen orders that aren't completed/delivered
         const { data: orders, error } = await db.from('guest_orders')
             .select('*')
             .eq('department', 'Kitchen')
@@ -238,18 +246,10 @@
                                 <span class="bg-indigo-500 text-white font-bold text-xs px-2 py-1 rounded">Room ${order.room_number}</span>
                                 <span class="text-[10px] text-slate-400 ml-2">${timeStr}</span>
                             </div>
-                            ${order.estimated_minutes ? `<span class="text-xs text-slate-400 font-bold">~${order.estimated_minutes}m</span>` : ''}
                         </div>
                         <div class="p-3">
                             <ul class="mb-3">${itemsHtml}</ul>
-                            
-                            ${status === 'Pending' ? `
-                                <button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-bold transition">Start Preparing</button>
-                            ` : status === 'Preparing' ? `
-                                <button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold transition">Mark Ready</button>
-                            ` : status === 'Ready' ? `
-                                <div class="text-center text-xs text-emerald-400 font-bold animate-pulse">Waiting for Waiter</div>
-                            ` : ''}
+                            ${status === 'Pending' ? `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-xs font-bold transition">Start Preparing</button>` : status === 'Preparing' ? `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold transition">Mark Ready</button>` : status === 'Ready' ? `<div class="text-center text-xs text-emerald-400 font-bold animate-pulse">Waiting for Waiter</div>` : ''}
                         </div>
                     </div>
                 `;
@@ -275,55 +275,68 @@
         loadOrders();
     }
 
-    // --- KITCHEN STOCK LOGIC ---
     async function loadStock() {
-        const { data: items, error } = await db.from('inventory')
-            .select('*')
-            .eq('department', 'Kitchen')
-            .order('item_name');
-
+        const { data: items, error } = await db.from('inventory').select('*').eq('department', 'Kitchen').order('item_name');
         const tbody = document.getElementById('stock-table-body');
         tbody.innerHTML = '';
 
         if (error || !items || items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-500">No kitchen stock found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-500">No kitchen stock found.</td></tr>';
             return;
         }
 
         items.forEach(item => {
             const isLow = item.stock_quantity <= 5;
-            const hasBadStock = item.bad_stock > 0;
             
             let statusBadge = `<span class="bg-emerald-900/50 text-emerald-400 text-[10px] font-bold px-2 py-1 rounded">Good</span>`;
-            if (hasBadStock) statusBadge = `<span class="bg-amber-900/50 text-amber-400 text-[10px] font-bold px-2 py-1 rounded">Check Bad Stock</span>`;
-            if (isLow) statusBadge = `<span class="bg-red-900/50 text-red-400 text-[10px] font-bold px-2 py-1 rounded">Low Stock Alert</span>`;
+            if (isLow) statusBadge = `<span class="bg-red-900/50 text-red-400 text-[10px] font-bold px-2 py-1 rounded animate-pulse">LOW STOCK</span>`;
 
             tbody.innerHTML += `
                 <tr class="border-b border-slate-700 hover:bg-slate-750">
                     <td class="px-4 py-3 font-bold text-white">${item.item_name}</td>
                     <td class="px-4 py-3 text-center font-bold ${isLow ? 'text-red-400' : 'text-slate-300'}">${item.stock_quantity}</td>
-                    <td class="px-4 py-3 text-center ${hasBadStock ? 'text-amber-400 font-bold' : 'text-slate-400'}">${item.bad_stock || 0}</td>
-                    <td class="px-4 py-3 text-center text-slate-400">${item.physical_count || '-'}</td>
                     <td class="px-4 py-3 text-center">${statusBadge}</td>
                 </tr>
             `;
         });
     }
 
-    // --- REALTIME LISTENER ---
+    // --- REPORT BAD STOCK ---
+    document.getElementById('bad-stock-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const item = document.getElementById('bs-item').value;
+      const qty = parseInt(document.getElementById('bs-qty').value);
+      const reason = document.getElementById('bs-reason').value;
+      const msg = document.getElementById('bs-msg');
+
+      const { error } = await db.from('bad_stock_requests').insert({
+        reported_by: currentUser.id,
+        department: 'Kitchen',
+        item_name: item,
+        quantity: qty,
+        reason: reason
+      });
+
+      if (error) {
+        msg.textContent = "Error: " + error.message;
+        msg.className = "mt-2 text-center text-xs font-bold text-red-400";
+      } else {
+        msg.textContent = "✅ Bad stock logged. Awaiting Manager approval.";
+        msg.className = "mt-2 text-center text-xs font-bold text-emerald-400";
+        document.getElementById('bad-stock-form').reset();
+      }
+    });
+
     function setupRealtime() {
         if (orderChannel) db.removeChannel(orderChannel);
-        
         orderChannel = db.channel('kitchen-kds-channel')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
-                // Only alarm if it's for the Kitchen
                 if (payload.new.department === 'Kitchen') {
                     announceOrder(payload.new.room_number || 'Unknown', payload.new.items);
                     if (currentTab === 'orders') loadOrders();
                 }
             })
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'guest_orders' }, payload => {
-                // If status changes elsewhere (e.g., waitress delivers), update the board
                 if (currentTab === 'orders') loadOrders();
             })
             .subscribe();
@@ -331,12 +344,5 @@
 
     initAuth();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
