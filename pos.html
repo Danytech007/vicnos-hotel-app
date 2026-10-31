@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vicnos Hotel - Staff Portal (POS & Orders)</title>
+  <title>Vicnos Hotel - POS & Shift Handover</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     * { -webkit-tap-highlight-color: transparent; }
     @media print {
@@ -43,11 +44,12 @@
     <button id="tab-btn-orders" onclick="switchTab('orders')" class="px-4 py-2 rounded-lg font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap flex items-center gap-2">
       Live Guest Orders <span id="order-badge" class="hidden bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
     </button>
-    <button id="tab-btn-stock" onclick="switchTab('stock')" class="px-4 py-2 rounded-lg font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Stock & Handover</button>
+    <button id="tab-btn-shift" onclick="switchTab('shift')" class="px-4 py-2 rounded-lg font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Shift & Handover</button>
   </div>
 
   <main class="max-w-6xl w-full mx-auto flex-1">
 
+    <!-- POS TAB -->
     <div id="tab-pos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col h-[75vh]">
         <h2 id="menu-title" class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="utensils"></i> Loading Menu...</h2>
@@ -83,6 +85,7 @@
       </div>
     </div>
 
+    <!-- LIVE ORDERS TAB -->
     <div id="tab-orders" class="hidden">
       <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 min-h-[60vh]">
         <div class="flex justify-between items-center mb-4">
@@ -93,46 +96,79 @@
       </div>
     </div>
 
-    <div id="tab-stock" class="hidden space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
-          <p class="text-xs text-slate-400 uppercase font-bold">Total Sales Today</p>
-          <p id="summary-total-sales" class="text-2xl font-bold text-emerald-400 mt-1">₦0</p>
-        </div>
-        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
-          <p class="text-xs text-slate-400 uppercase font-bold">Credits (To Room)</p>
-          <p id="summary-credits" class="text-2xl font-bold text-amber-400 mt-1">₦0</p>
-        </div>
-        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg flex justify-between items-center">
-          <div>
-            <p class="text-xs text-slate-400 uppercase font-bold">Low Stock Alerts</p>
-            <p id="summary-low-stock" class="text-2xl font-bold text-red-400 mt-1">0 Items</p>
+    <!-- SHIFT & HANDOVER TAB -->
+    <div id="tab-shift" class="hidden space-y-4">
+      
+      <!-- Active Shift Overview -->
+      <div id="active-shift-dashboard" class="hidden">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg">
+            <p class="text-[10px] text-slate-400 uppercase font-bold">Cash Sales</p>
+            <p id="shift-cash" class="text-xl font-bold text-emerald-400 mt-1">₦0</p>
           </div>
-          <i data-lucide="alert-triangle" class="text-red-500 w-8 h-8 opacity-50"></i>
+          <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg">
+            <p class="text-[10px] text-slate-400 uppercase font-bold">Credits (To Room)</p>
+            <p id="shift-credits" class="text-xl font-bold text-amber-400 mt-1">₦0</p>
+          </div>
+          <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg">
+            <p class="text-[10px] text-slate-400 uppercase font-bold">Total Sales</p>
+            <p id="shift-total" class="text-xl font-bold text-white mt-1">₦0</p>
+          </div>
+          <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg flex flex-col justify-center">
+            <p class="text-[10px] text-slate-400 uppercase font-bold mb-2">Actions</p>
+            <button onclick="endShift()" class="w-full bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold py-2 rounded-lg shadow transition">End Shift</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg text-center">
+          <h2 class="text-xl font-bold text-white mb-2">Shift is Active</h2>
+          <p class="text-sm text-slate-400 mb-6">You are currently selling. When you are done, click "End Shift" to handover to the next staff member.</p>
+          <button onclick="generateShiftPDF()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 mx-auto">
+            <i data-lucide="download" class="w-5 h-5"></i> Download Mid-Shift Report
+          </button>
         </div>
       </div>
 
-      <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
-        <div class="p-4 border-b border-slate-700 flex justify-between items-center">
-          <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="package"></i> Inventory & Handover</h2>
-          <button onclick="openAddStockModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition"><i data-lucide="plus" class="w-3 h-3"></i> Add Stock</button>
+      <!-- Start Shift Panel (Barman B does the count here) -->
+      <div id="start-shift-panel" class="hidden bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
+        <div class="text-center mb-6">
+          <div class="bg-indigo-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="clipboard-check" class="w-8 h-8 text-indigo-400"></i>
+          </div>
+          <h2 class="text-xl font-bold text-white mb-1">Start New Shift</h2>
+          <p class="text-xs text-slate-400">Verify the physical stock left by the previous shift before you start selling.</p>
         </div>
-        <div class="overflow-x-auto">
+
+        <div class="overflow-x-auto max-h-[50vh] mb-4">
           <table class="w-full text-left text-sm text-slate-300">
-            <thead class="text-xs uppercase bg-slate-900 text-slate-400">
+            <thead class="text-xs uppercase bg-slate-900 text-slate-400 sticky top-0">
               <tr>
-                <th class="px-4 py-3">Item Name</th>
-                <th class="px-4 py-3 text-center">Price</th>
-                <th class="px-4 py-3 text-center">In Stock</th>
+                <th class="px-4 py-3">Item</th>
+                <th class="px-4 py-3 text-center">Expected Stock</th>
                 <th class="px-4 py-3 text-center">Physical Count</th>
-                <th class="px-4 py-3 text-center">Bad Stock</th>
-                <th class="px-4 py-3 text-center">Action</th>
+                <th class="px-4 py-3 text-center">Discrepancy</th>
               </tr>
             </thead>
-            <tbody id="stock-table-body"></tbody>
+            <tbody id="start-shift-table-body"></tbody>
           </table>
         </div>
+
+        <button onclick="submitOpeningCount()" id="start-shift-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">Confirm Count & Start Shift</button>
+        <p id="start-shift-msg" class="mt-2 text-center text-xs font-bold text-red-400"></p>
       </div>
+
+      <!-- Pending Approval Panel (For Barman A after ending shift) -->
+      <div id="pending-shift-panel" class="hidden bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-lg text-center">
+        <div class="bg-amber-500/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="hourglass" class="w-10 h-10 text-amber-400"></i>
+        </div>
+        <h2 class="text-xl font-bold text-white mb-2">Shift Ended</h2>
+        <p class="text-sm text-slate-400 mb-6">Your shift is closed. The incoming staff or manager will verify the stock.</p>
+        <button onclick="generateShiftPDF()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 mx-auto">
+          <i data-lucide="download" class="w-5 h-5"></i> Download Final Shift Report
+        </button>
+      </div>
+
     </div>
 
   </main>
@@ -143,7 +179,7 @@
 
   <div id="add-stock-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl p-6">
-      <h3 class="text-lg font-bold text-white mb-4">Add Stock</h3>
+      <h3 class="text-lg font-bold text-white mb-4">Add Stock (Request from Store)</h3>
       <select id="add-stock-item" class="w-full mb-3 p-3 bg-slate-900 border border-slate-600 text-white rounded-lg outline-none"></select>
       <input type="number" id="add-stock-qty" placeholder="Quantity received" class="w-full mb-4 p-3 bg-slate-900 border border-slate-600 text-white rounded-lg outline-none" min="1">
       <div class="flex gap-2">
@@ -190,6 +226,10 @@
     let currentPaymentMethod = 'Cash';
     let currentDepartment = 'Bar';
     let currentTab = 'pos';
+    
+    let activeShift = null;
+    let lastPendingShift = null; // Tracks the shift waiting for opening count verification
+    let shiftSales = { cash: 0, credit: 0, total: 0 };
 
     async function init() {
       const { data: { user } } = await db.auth.getUser();
@@ -240,12 +280,12 @@
       lucide.createIcons();
       loadPOS();
       loadLiveOrders();
-      loadStockData();
+      checkShiftStatus();
     }
 
     function switchTab(tab) {
       currentTab = tab;
-      ['pos', 'orders', 'stock'].forEach(t => {
+      ['pos', 'orders', 'shift'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.add('hidden');
         document.getElementById(`tab-btn-${t}`).classList.remove('bg-indigo-600', 'text-white');
         document.getElementById(`tab-btn-${t}`).classList.add('bg-slate-800', 'text-slate-300');
@@ -254,10 +294,257 @@
       document.getElementById(`tab-btn-${tab}`).classList.remove('bg-slate-800', 'text-slate-300');
       document.getElementById(`tab-btn-${tab}`).classList.add('bg-indigo-600', 'text-white');
 
-      if (tab === 'stock') loadStockData();
+      if (tab === 'shift') checkShiftStatus();
       if (tab === 'orders') loadLiveOrders();
     }
 
+    // ================= SHIFT & HANDOVER LOGIC =================
+    async function checkShiftStatus() {
+      document.getElementById('start-shift-panel').classList.add('hidden');
+      document.getElementById('active-shift-dashboard').classList.add('hidden');
+      document.getElementById('pending-shift-panel').classList.add('hidden');
+
+      // 1. Check if THIS user has an Active shift
+      const { data: myActiveShifts } = await db.from('shifts')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('department', currentDepartment)
+        .eq('status', 'Active')
+        .limit(1);
+
+      if (myActiveShifts && myActiveShifts.length > 0) {
+        activeShift = myActiveShifts[0];
+        document.getElementById('active-shift-dashboard').classList.remove('hidden');
+        loadShiftSales();
+        return;
+      }
+
+      // 2. Check if THIS user has a Pending_Approval shift (They just ended their shift)
+      const { data: myPendingShifts } = await db.from('shifts')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('department', currentDepartment)
+        .eq('status', 'Pending_Approval')
+        .order('start_time', { ascending: false })
+        .limit(1);
+
+      if (myPendingShifts && myPendingShifts.length > 0) {
+        activeShift = myPendingShifts[0];
+        document.getElementById('pending-shift-panel').classList.remove('hidden');
+        return;
+      }
+
+      // 3. No active shift for this user. Check if there is a shift from the PREVIOUS person that needs verification.
+      // Note: For this to work perfectly, the previous person's shift must be "Pending_Approval".
+      const { data: previousShifts } = await db.from('shifts')
+        .select('*')
+        .eq('department', currentDepartment)
+        .eq('status', 'Pending_Approval')
+        .order('end_time', { ascending: false })
+        .limit(1);
+
+      if (previousShifts && previousShifts.length > 0) {
+         lastPendingShift = previousShifts[0];
+      }
+
+      // Show the Start Shift panel (For Barman B to do the incoming count)
+      document.getElementById('start-shift-panel').classList.remove('hidden');
+      loadOpeningCountTable();
+    }
+
+    async function loadOpeningCountTable() {
+      const tbody = document.getElementById('start-shift-table-body');
+      tbody.innerHTML = '';
+
+      const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment);
+      
+      if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">No inventory items found in this department.</td></tr>';
+        return;
+      }
+
+      items.forEach(item => {
+        const expected = item.stock_quantity; // System stock
+
+        tbody.innerHTML += `
+          <tr class="border-b border-slate-700">
+            <td class="px-4 py-3 font-bold text-white">${item.item_name}</td>
+            <td class="px-4 py-3 text-center text-slate-400 font-bold">${expected}</td>
+            <td class="px-4 py-3 text-center">
+              <input type="number" id="open-phys-${item.id}" oninput="calcOpenDisc('${item.id}', ${expected})" placeholder="${expected}" class="w-20 bg-slate-900 border border-slate-600 rounded-lg p-2 text-center text-white outline-none focus:border-indigo-500 transition">
+            </td>
+            <td class="px-4 py-3 text-center">
+              <span id="open-disc-${item.id}" class="text-sm font-bold text-slate-500">0</span>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function calcOpenDisc(itemId, expected) {
+      const input = document.getElementById(`open-phys-${itemId}`);
+      const discSpan = document.getElementById(`open-disc-${itemId}`);
+      const physical = parseInt(input.value);
+
+      if (isNaN(physical)) {
+        discSpan.textContent = '0';
+        discSpan.className = 'text-sm font-bold text-slate-500';
+        return;
+      }
+
+      const diff = physical - expected;
+      if (diff === 0) {
+        discSpan.textContent = '0';
+        discSpan.className = 'text-sm font-bold text-emerald-400';
+      } else if (diff < 0) {
+        discSpan.textContent = `${diff} (Missing)`;
+        discSpan.className = 'text-sm font-bold text-red-400';
+      } else {
+        discSpan.textContent = `+${diff} (Extra)`;
+        discSpan.className = 'text-sm font-bold text-amber-400';
+      }
+    }
+
+    async function endShift() {
+      if (!confirm("Are you sure you want to end your shift? The next person will verify your stock.")) return;
+
+      // Set shift to Pending_Approval to wait for the next person to count
+      const { error } = await db.from('shifts').update({
+        status: 'Pending_Approval',
+        end_time: new Date().toISOString(),
+        total_cash_sales: shiftSales.cash,
+        total_credit_sales: shiftSales.credit
+      }).eq('id', activeShift.id);
+
+      if (error) return alert("Error ending shift: " + error.message);
+      
+      alert("✅ Shift Ended. Handover successful. Please log out so the next staff can verify the stock.");
+      checkShiftStatus();
+    }
+
+    async function submitOpeningCount() {
+      const btn = document.getElementById('start-shift-btn');
+      const msg = document.getElementById('start-shift-msg');
+      const rows = document.querySelectorAll('[id^="open-phys-"]');
+      let physicalCounts = [];
+      let hasEmpty = false;
+
+      rows.forEach(input => {
+        if (!input.value) hasEmpty = true;
+        const itemId = input.id.replace('open-phys-', '');
+        const itemName = input.closest('tr').querySelector('td').textContent;
+        const expected = parseInt(input.placeholder);
+        const physical = parseInt(input.value) || 0;
+        
+        physicalCounts.push({
+          item_id: itemId,
+          item_name: itemName,
+          expected: expected,
+          physical: physical,
+          discrepancy: physical - expected
+        });
+      });
+
+      if (hasEmpty) {
+        msg.textContent = "Please enter the physical count for ALL items.";
+        return;
+      }
+
+      btn.innerText = "Verifying...";
+      btn.disabled = true;
+
+      try {
+        // 1. If there is a pending shift from the previous person, log the handover verification
+        if (lastPendingShift) {
+          await db.from('shift_handovers').insert({
+            shift_id: lastPendingShift.id,
+            user_id: currentUser.id, // The incoming person is submitting the count
+            department: currentDepartment,
+            physical_counts: physicalCounts,
+            status: 'Pending' // Manager still needs to approve
+          });
+        }
+
+        // 2. Start the New Shift for the incoming person
+        const { error } = await db.from('shifts').insert({
+          user_id: currentUser.id,
+          department: currentDepartment,
+          status: 'Active'
+        });
+
+        if (error) throw error;
+
+        alert("✅ Physical count verified! Your shift has started.");
+        checkShiftStatus();
+        loadPOS();
+
+      } catch (err) {
+        msg.textContent = "Error: " + err.message;
+        btn.innerText = "Confirm Count & Start Shift";
+        btn.disabled = false;
+      }
+    }
+
+    async function loadShiftSales() {
+      if (!activeShift) return;
+      
+      const { data: orders } = await db.from('pos_orders')
+        .select('*')
+        .eq('department', currentDepartment)
+        .eq('created_by', currentUser.id)
+        .gte('created_at', activeShift.start_time);
+
+      let cash = 0, credit = 0;
+      if (orders) {
+        orders.forEach(o => {
+          if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount);
+          else cash += Number(o.total_amount);
+        });
+      }
+
+      shiftSales = { cash, credit, total: cash + credit };
+
+      document.getElementById('shift-cash').textContent = `₦${cash.toLocaleString()}`;
+      document.getElementById('shift-credits').textContent = `₦${credit.toLocaleString()}`;
+      document.getElementById('shift-total').textContent = `₦${(cash + credit).toLocaleString()}`;
+    }
+
+    function generateShiftPDF() {
+      if (!activeShift) return;
+
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div style="padding: 20px; font-family: sans-serif;">
+          <h2 style="text-align: center;">Vicnos Hotel - Shift Report</h2>
+          <p><strong>Department:</strong> ${currentDepartment}</p>
+          <p><strong>Staff:</strong> ${currentUser.email}</p>
+          <p><strong>Start Time:</strong> ${new Date(activeShift.start_time).toLocaleString()}</p>
+          <p><strong>End Time:</strong> ${activeShift.end_time ? new Date(activeShift.end_time).toLocaleString() : 'Active'}</p>
+          <hr style="margin: 20px 0;">
+          <h3>Sales Summary</h3>
+          <p><strong>Cash Sales:</strong> ₦${shiftSales.cash.toLocaleString()}</p>
+          <p><strong>Room Credits:</strong> ₦${shiftSales.credit.toLocaleString()}</p>
+          <p><strong>Total Sales:</strong> ₦${shiftSales.total.toLocaleString()}</p>
+          <hr style="margin: 20px 0;">
+          <h3>Status</h3>
+          <p>${activeShift.status === 'Active' ? 'Currently Active' : 'Pending Approval (Awaiting Incoming Verification)'}</p>
+          <br>
+          <p style="text-align: center; font-size: 10px;">Powered by DEKY</p>
+        </div>
+      `;
+
+      const opt = {
+        margin:       0.5,
+        filename:     `Shift_Report_${currentDepartment}_${new Date().toISOString().split('T')[0]}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+
+    // ================= POS & SALES LOGIC =================
     async function loadPOS() {
       if (currentDepartment === 'Kitchen') return;
       
@@ -442,7 +729,7 @@
           renderCart();
           document.getElementById('room-select').value = '';
           loadPOS(); 
-          loadStockData(); 
+          loadShiftSales(); 
         }, 500);
       }, 100);
     }
@@ -450,7 +737,6 @@
     async function loadLiveOrders() {
       const list = document.getElementById('live-orders-list');
       
-      // FIX: Fetch ALL pending orders, then filter in JS to handle case-sensitivity bugs
       const { data: allOrders, error } = await db.from('guest_orders')
         .select('*')
         .neq('status', 'Completed')
@@ -466,7 +752,6 @@
       const cDept = currentDepartment.toLowerCase();
       const orders = allOrders.filter(o => {
           const oDept = (o.department || '').toLowerCase();
-          // Allow 'kitchen' or 'food' to match
           if (cDept === 'kitchen') return oDept === 'kitchen' || oDept === 'food' || oDept === '';
           return oDept === cDept;
       });
@@ -525,111 +810,6 @@
       const { error } = await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
       if (error) return alert("Error updating order: " + error.message);
       loadLiveOrders();
-    }
-
-    async function loadStockData() {
-      const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).order('item_name');
-      inventory = items || [];
-
-      const tbody = document.getElementById('stock-table-body');
-      tbody.innerHTML = '';
-      let lowStockCount = 0;
-
-      inventory.forEach(item => {
-        if (item.stock_quantity <= 5) lowStockCount++;
-        
-        const isApproved = item.is_approved ? `<span class="text-emerald-400 text-[10px] bg-emerald-900/50 px-2 py-1 rounded">Approved</span>` : `<span class="text-amber-400 text-[10px] bg-amber-900/50 px-2 py-1 rounded">Pending</span>`;
-
-        tbody.innerHTML += `
-          <tr class="border-b border-slate-700 hover:bg-slate-750">
-            <td class="px-4 py-3 font-bold text-white">${item.item_name}</td>
-            <td class="px-4 py-3 text-center">₦${item.price.toLocaleString()}</td>
-            <td class="px-4 py-3 text-center font-bold ${item.stock_quantity <= 5 ? 'text-red-400' : 'text-slate-300'}">${item.stock_quantity}</td>
-            <td class="px-4 py-3 text-center">
-              <input type="number" id="physical-${item.id}" value="${item.physical_count || item.stock_quantity}" class="w-16 bg-slate-900 border border-slate-600 rounded p-1 text-center text-white outline-none">
-            </td>
-            <td class="px-4 py-3 text-center">
-              <input type="number" id="bad-${item.id}" value="${item.bad_stock || 0}" class="w-16 bg-slate-900 border border-slate-600 rounded p-1 text-center text-white outline-none">
-            </td>
-            <td class="px-4 py-3 text-center flex flex-col items-center gap-2">
-              <button onclick="submitCount('${item.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded w-full transition">Submit</button>
-              ${isApproved}
-            </td>
-          </tr>
-        `;
-      });
-
-      const select = document.getElementById('add-stock-item');
-      select.innerHTML = inventory.map(i => `<option value="${i.id}">${i.item_name} (Currently: ${i.stock_quantity})</option>`).join('');
-
-      const today = new Date().toISOString().split('T')[0];
-      const { data: sales } = await db.from('pos_orders')
-        .select('total_amount, payment_method')
-        .eq('department', currentDepartment)
-        .gte('created_at', today);
-
-      let totalSales = 0;
-      let totalCredits = 0;
-      if(sales) {
-        sales.forEach(s => {
-          totalSales += s.total_amount;
-          if (s.payment_method === 'Charge_to_Room') totalCredits += s.total_amount;
-        });
-      }
-
-      document.getElementById('summary-total-sales').innerText = '₦' + totalSales.toLocaleString();
-      document.getElementById('summary-credits').innerText = '₦' + totalCredits.toLocaleString();
-      document.getElementById('summary-low-stock').innerText = lowStockCount + ' Items';
-    }
-
-    async function submitCount(itemId) {
-      const phys = parseInt(document.getElementById(`physical-${itemId}`).value) || 0;
-      const bad = parseInt(document.getElementById(`bad-${itemId}`).value) || 0;
-      const item = inventory.find(i => i.id === itemId);
-      const discrepancy = item.stock_quantity - phys - bad;
-
-      const { error } = await db.from('inventory').update({
-        physical_count: phys,
-        bad_stock: bad,
-        discrepancy: discrepancy,
-        is_approved: false, 
-        last_updated_by: currentUser.id
-      }).eq('id', itemId);
-
-      if (error) return alert("Error submitting count: " + error.message);
-      alert("Count submitted! Pending Admin approval.");
-      loadStockData();
-    }
-
-    function openAddStockModal() {
-      document.getElementById('add-stock-modal').classList.remove('hidden');
-      document.getElementById('add-stock-modal').classList.add('flex');
-    }
-
-    function closeAddStockModal() {
-      document.getElementById('add-stock-modal').classList.add('hidden');
-      document.getElementById('add-stock-modal').classList.remove('flex');
-      document.getElementById('add-stock-qty').value = '';
-    }
-
-    async function submitAddStock() {
-      const itemId = document.getElementById('add-stock-item').value;
-      const qty = parseInt(document.getElementById('add-stock-qty').value);
-
-      if (!itemId || !qty || qty <= 0) return alert('Select item and enter valid quantity.');
-
-      const item = inventory.find(i => i.id === itemId);
-      
-      const { error } = await db.from('inventory').update({
-        stock_quantity: item.stock_quantity + qty,
-        opening_stock: (item.opening_stock || 0) + qty
-      }).eq('id', itemId);
-
-      if (error) return alert("Error adding stock: " + error.message);
-      
-      closeAddStockModal();
-      loadStockData();
-      alert("Stock added successfully!");
     }
 
     init();
