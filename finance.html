@@ -4,10 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos - Management & Finance Portal</title>
-  
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -43,7 +41,6 @@
     <button onclick="switchTab('badstock')" id="tab-btn-badstock" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex items-center gap-2">
       Bad Stock <span id="badstock-badge" class="hidden bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
     </button>
-    <button onclick="switchTab('history')" id="tab-btn-history" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">History</button>
     <button onclick="switchTab('transfers')" id="tab-btn-transfers" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Transfers</button>
     <button onclick="switchTab('credits')" id="tab-btn-credits" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Credits</button>
   </div>
@@ -118,16 +115,6 @@
       </div>
     </div>
 
-    <!-- SHIFT HISTORY TAB -->
-    <div id="section-history" class="tab-content hidden fade-in">
-      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
-        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="history" class="w-5 h-5 text-blue-400"></i> Closed Shift History (Audit)</h2>
-        <div id="history-list" class="space-y-3">
-          <p class="text-center text-slate-500 text-sm animate-pulse">Loading shift history...</p>
-        </div>
-      </div>
-    </div>
-
     <!-- TRANSFERS TAB -->
     <div id="section-transfers" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
@@ -151,9 +138,7 @@
   </main>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
-    }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
@@ -162,28 +147,18 @@
     lucide.createIcons();
 
     window.history.replaceState({ tab: 'overview' }, '', '#overview');
-    window.onpopstate = function(event) {
-      if (event.state && event.state.tab) switchTab(event.state.tab, false);
-      else switchTab('overview', false);
-    };
+    window.onpopstate = function(event) { if (event.state && event.state.tab) switchTab(event.state.tab, false); else switchTab('overview', false); };
 
     function switchTab(tabId, pushHistory = true) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
         document.getElementById(`section-${tabId}`).classList.remove('hidden');
-        
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition';
-            if(['tab-btn-approvals', 'tab-btn-badstock'].includes(btn.id)) btn.classList.add('flex', 'items-center', 'gap-2');
-        });
+        document.querySelectorAll('.tab-btn').forEach(btn => { btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition'; if(['tab-btn-approvals', 'tab-btn-badstock'].includes(btn.id)) btn.classList.add('flex', 'items-center', 'gap-2'); });
         document.getElementById(`tab-btn-${tabId}`).className = 'tab-btn bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition';
         if(['approvals', 'badstock'].includes(tabId)) document.getElementById(`tab-btn-${tabId}`).classList.add('flex', 'items-center', 'gap-2');
-        
         if (pushHistory) window.history.pushState({ tab: tabId }, '', `#${tabId}`);
-
         if (tabId === 'overview') loadOverview();
         if (tabId === 'approvals') loadApprovals();
         if (tabId === 'badstock') loadBadStock();
-        if (tabId === 'history') loadHistory();
         if (tabId === 'transfers') loadTransfers();
         if (tabId === 'credits') loadCredits();
     }
@@ -191,125 +166,47 @@
     async function loadOverview() {
       const dateInput = document.getElementById('audit-date');
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-      const selectedDate = dateInput.value;
-      const startOfDay = new Date(selectedDate).toISOString();
-      const endOfDay = new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString();
-
+      const selectedDate = dateInput.value, startOfDay = new Date(selectedDate).toISOString(), endOfDay = new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString();
       const { data: orders } = await db.from('pos_orders').select('department, total_amount, payment_method').gte('created_at', startOfDay).lt('created_at', endOfDay);
       let totalCash = 0, totalCredit = 0, deptTotals = {};
-
-      if (orders) {
-        orders.forEach(o => {
-          const amt = Number(o.total_amount);
-          if (o.payment_method === 'Charge_to_Room') totalCredit += amt;
-          else totalCash += amt;
-          if(!deptTotals[o.department]) deptTotals[o.department] = 0;
-          deptTotals[o.department] += amt;
-        });
-      }
-
+      if (orders) orders.forEach(o => { const amt = Number(o.total_amount); if (o.payment_method === 'Charge_to_Room') totalCredit += amt; else totalCash += amt; if(!deptTotals[o.department]) deptTotals[o.department] = 0; deptTotals[o.department] += amt; });
       const { count: pendingCount } = await db.from('shifts').select('*', { count: 'exact', head: true }).eq('status', 'Pending_Approval');
       const { count: badStockCount } = await db.from('bad_stock_requests').select('*', { count: 'exact', head: true }).eq('status', 'Pending');
-
-      document.getElementById('stat-revenue').textContent = '₦' + totalCash.toLocaleString();
-      document.getElementById('stat-credits').textContent = '₦' + totalCredit.toLocaleString();
-      document.getElementById('stat-total').textContent = '₦' + (totalCash + totalCredit).toLocaleString();
-      document.getElementById('stat-pending').textContent = pendingCount || 0;
-
-      const appBadge = document.getElementById('approval-badge');
-      if (pendingCount > 0) { appBadge.textContent = pendingCount; appBadge.classList.remove('hidden'); } else { appBadge.classList.add('hidden'); }
-
-      const badBadge = document.getElementById('badstock-badge');
-      if (badStockCount > 0) { badBadge.textContent = badStockCount; badBadge.classList.remove('hidden'); } else { badBadge.classList.add('hidden'); }
-
-      // Render Dept Sales
-      const list = document.getElementById('dept-sales-list');
-      list.innerHTML = '';
+      document.getElementById('stat-revenue').textContent = '₦' + totalCash.toLocaleString(); document.getElementById('stat-credits').textContent = '₦' + totalCredit.toLocaleString(); document.getElementById('stat-total').textContent = '₦' + (totalCash + totalCredit).toLocaleString(); document.getElementById('stat-pending').textContent = pendingCount || 0;
+      const appBadge = document.getElementById('approval-badge'); if (pendingCount > 0) { appBadge.textContent = pendingCount; appBadge.classList.remove('hidden'); } else { appBadge.classList.add('hidden'); }
+      const badBadge = document.getElementById('badstock-badge'); if (badStockCount > 0) { badBadge.textContent = badStockCount; badBadge.classList.remove('hidden'); } else { badBadge.classList.add('hidden'); }
+      
+      const list = document.getElementById('dept-sales-list'); list.innerHTML = '';
       const depts = ['Bar', 'Kitchen', 'Minimart', 'Reception', 'Laundry'];
-      depts.forEach(d => {
-        const amt = deptTotals[d] || 0;
-        list.innerHTML += `<div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700"><span class="text-sm font-bold text-slate-300">${d}</span><span class="font-bold ${amt > 0 ? 'text-emerald-400' : 'text-slate-500'}">₦${amt.toLocaleString()}</span></div>`;
-      });
-
-      // Render Low Stock Alerts
+      depts.forEach(d => { const amt = deptTotals[d] || 0; list.innerHTML += `<div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700"><span class="text-sm font-bold text-slate-300">${d}</span><span class="font-bold ${amt > 0 ? 'text-emerald-400' : 'text-slate-500'}">₦${amt.toLocaleString()}</span></div>`; });
+      
       const lowStockList = document.getElementById('low-stock-list');
       const { data: lowStock } = await db.from('inventory').select('*').lte('stock_quantity', 10).order('stock_quantity');
-      if (lowStock && lowStock.length > 0) {
-        lowStockList.innerHTML = lowStock.map(i => `
-          <div class="flex justify-between items-center bg-red-500/10 p-3 rounded-xl border border-red-500/30">
-            <div><p class="text-sm font-bold text-white">${i.item_name}</p><p class="text-[10px] text-red-400 uppercase">${i.department}</p></div>
-            <span class="font-bold text-red-400 text-lg">${i.stock_quantity}</span>
-          </div>
-        `).join('');
-      } else {
-        lowStockList.innerHTML = '<p class="text-center text-slate-500 text-sm py-4">All stock levels are healthy.</p>';
-      }
+      if (lowStock && lowStock.length > 0) { lowStockList.innerHTML = lowStock.map(i => `<div class="flex justify-between items-center bg-red-500/10 p-3 rounded-xl border border-red-500/30"><div><p class="text-sm font-bold text-white">${i.item_name}</p><p class="text-[10px] text-red-400 uppercase">${i.department}</p></div><span class="font-bold text-red-400 text-lg">${i.stock_quantity}</span></div>`).join(''); } 
+      else { lowStockList.innerHTML = '<p class="text-center text-slate-500 text-sm py-4">All stock levels are healthy.</p>'; }
     }
 
     async function loadBadStock() {
       const list = document.getElementById('badstock-list');
       const { data: requests } = await db.from('bad_stock_requests').select(`*, profiles (full_name)`).eq('status', 'Pending').order('created_at', { ascending: false });
-
-      if (!requests || requests.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending bad stock reports. 🎉</p>';
-        return;
-      }
-
-      list.innerHTML = requests.map(req => `
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
-          <div class="flex justify-between items-start border-b border-slate-700 pb-3">
-            <div>
-              <h3 class="font-bold text-white text-sm">${req.profiles?.full_name || 'Staff'} - ${req.department}</h3>
-              <p class="text-[10px] text-slate-400 mt-1">${new Date(req.created_at).toLocaleString()}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-[10px] text-red-400 uppercase font-bold">Bad Stock</p>
-              <p class="text-red-400 font-bold text-lg">${req.quantity}x ${req.item_name}</p>
-            </div>
-          </div>
-          <p class="text-xs text-slate-300"><span class="font-bold text-slate-400">Reason:</span> ${req.reason}</p>
-          <div class="flex gap-2">
-            <button onclick="approveBadStock('${req.id}', '${req.item_name}', ${req.quantity}, '${req.department}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Approve & Deduct Stock</button>
-            <button onclick="rejectBadStock('${req.id}')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Reject</button>
-          </div>
-        </div>
-      `).join('');
+      if (!requests || requests.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending bad stock reports. 🎉</p>';
+      list.innerHTML = requests.map(req => `<div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3"><div class="flex justify-between items-start border-b border-slate-700 pb-3"><div><h3 class="font-bold text-white text-sm">${req.profiles?.full_name || 'Staff'} - ${req.department}</h3><p class="text-[10px] text-slate-400 mt-1">${new Date(req.created_at).toLocaleString()}</p></div><div class="text-right"><p class="text-[10px] text-red-400 uppercase font-bold">Bad Stock</p><p class="text-red-400 font-bold text-lg">${req.quantity}x ${req.item_name}</p></div></div><p class="text-xs text-slate-300"><span class="font-bold text-slate-400">Reason:</span> ${req.reason}</p><div class="flex gap-2"><button onclick="approveBadStock('${req.id}', '${req.item_name}', ${req.quantity}, '${req.department}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Approve & Deduct Stock</button><button onclick="rejectBadStock('${req.id}')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Reject</button></div></div>`).join('');
     }
 
     async function approveBadStock(reqId, itemName, qty, dept) {
-      if(!confirm("Are you sure? This will permanently deduct the stock from the system.")) return;
-
-      // 1. Fetch current stock to deduct
+      if(!confirm("Approve this? This will permanently deduct the stock from the system.")) return;
       const { data: item } = await db.from('inventory').select('*').eq('item_name', itemName).eq('department', dept).single();
-      
-      if (item) {
-        await db.from('inventory').update({ stock_quantity: item.stock_quantity - qty }).eq('id', item.id);
-      }
-
-      // 2. Mark request as Approved
+      if (item) await db.from('inventory').update({ stock_quantity: item.stock_quantity - qty }).eq('id', item.id);
       await db.from('bad_stock_requests').update({ status: 'Approved' }).eq('id', reqId);
-      
-      alert("✅ Approved. Stock has been deducted from system.");
-      loadBadStock();
-      loadOverview();
+      alert("✅ Approved. Stock has been deducted."); loadBadStock(); loadOverview();
     }
 
     async function rejectBadStock(reqId) {
       if(!confirm("Reject this bad stock report? Stock will NOT be deducted.")) return;
       await db.from('bad_stock_requests').update({ status: 'Rejected' }).eq('id', reqId);
-      loadBadStock();
-      loadOverview();
+      loadBadStock(); loadOverview();
     }
 
-    // --- OTHER TABS (Approvals, History, Transfers, Credits) ---
-    async function loadApprovals() { /* Same as previous code */ }
-    async function loadHistory() { /* Same as previous code */ }
-    async function loadTransfers() { /* Same as previous code */ }
-    async function loadCredits() { /* Same as previous code */ }
-    async function viewDiscrepancies(handoverId) { /* Same as previous code */ }
-    async function approveShift(shiftId) { /* Same as previous code */ }
-
-    // Placeholder for the unchanged functions to keep code complete
     async function loadApprovals() {
       const list = document.getElementById('approvals-list');
       const { data: shifts } = await db.from('shifts').select(`*, profiles (full_name)`).eq('status', 'Pending_Approval').order('end_time', { ascending: true });
@@ -322,11 +219,20 @@
       }).join('');
     }
 
-    async function loadHistory() {
-      const list = document.getElementById('history-list');
-      const { data: shifts } = await db.from('shifts').select(`*, profiles (full_name)`).eq('status', 'Closed').order('end_time', { ascending: false }).limit(20);
-      if (!shifts || shifts.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No closed shifts in history yet.</p>';
-      list.innerHTML = shifts.map(shift => `<div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex justify-between items-center"><div><h3 class="font-bold text-white text-sm">${shift.profiles?.full_name || 'Unknown Staff'} - ${shift.department}</h3><p class="text-[10px] text-slate-400 mt-1">${new Date(shift.end_time).toLocaleString()}</p></div><div class="text-right"><p class="font-bold text-emerald-400">₦${Number(shift.total_cash_sales).toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">Cash Remitted</p></div></div>`).join('');
+    async function viewDiscrepancies(handoverId) {
+      const { data: handover } = await db.from('shift_handovers').select('*').eq('id', handoverId).single();
+      if (!handover) return;
+      let msg = "STOCK DISCREPANCY REPORT\n\n", hasDisc = false;
+      handover.physical_counts.forEach(item => { if (item.discrepancy !== 0) { hasDisc = true; msg += `${item.item_name}: Expected ${item.expected}, Counted ${item.physical} (Diff: ${item.discrepancy > 0 ? '+' : ''}${item.discrepancy})\n`; } });
+      if (!hasDisc) msg += "Perfect count. No discrepancies found.";
+      alert(msg);
+    }
+
+    async function approveShift(shiftId) {
+      if(!confirm("Approve this shift? Ensure you have received the physical cash.")) return;
+      await db.from('shifts').update({ status: 'Closed' }).eq('id', shiftId);
+      await db.from('shift_handovers').update({ status: 'Approved' }).eq('shift_id', shiftId);
+      alert("✅ Shift Approved and Closed."); loadApprovals(); loadOverview();
     }
 
     async function loadTransfers() {
@@ -342,41 +248,13 @@
       if (!bookings || bookings.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No active guests found.</p>';
       const { data: charges } = await db.from('folio_charges').select('booking_id, amount').in('booking_id', bookings.map(b => b.id));
       if (!charges || charges.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
-      const creditTotals = {};
-      charges.forEach(c => { if(!creditTotals[c.booking_id]) creditTotals[c.booking_id] = 0; creditTotals[c.booking_id] += Number(c.amount); });
+      const creditTotals = {}; charges.forEach(c => { if(!creditTotals[c.booking_id]) creditTotals[c.booking_id] = 0; creditTotals[c.booking_id] += Number(c.amount); });
       list.innerHTML = '';
       Object.keys(creditTotals).forEach(bId => {
-        const booking = bookings.find(b => b.id === bId);
-        const amt = creditTotals[bId];
-        if (amt > 0 && booking) {
-          list.innerHTML += `<div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${booking.rooms.room_number}</p><p class="text-[10px] text-slate-400">${booking.guests.full_name}</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${amt.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">Unpaid</p></div></div>`;
-        }
+        const booking = bookings.find(b => b.id === bId); const amt = creditTotals[bId];
+        if (amt > 0 && booking) list.innerHTML += `<div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${booking.rooms.room_number}</p><p class="text-[10px] text-slate-400">${booking.guests.full_name}</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${amt.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">Unpaid</p></div></div>`;
       });
       if (list.innerHTML === '') list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
-    }
-
-    async function viewDiscrepancies(handoverId) {
-      const { data: handover } = await db.from('shift_handovers').select('*').eq('id', handoverId).single();
-      if (!handover) return;
-      let msg = "STOCK & CASH DISCREPANCY REPORT\n\n";
-      let hasDisc = false;
-      handover.physical_counts.forEach(item => {
-        if (item.discrepancy !== 0) {
-          hasDisc = true;
-          msg += `${item.item_name}: Expected ${item.expected}, Counted ${item.physical} (Diff: ${item.discrepancy > 0 ? '+' : ''}${item.discrepancy})\n`;
-        }
-      });
-      if (!hasDisc) msg += "Perfect count. No discrepancies found.";
-      alert(msg);
-    }
-
-    async function approveShift(shiftId) {
-      if(!confirm("Approve this shift? Ensure you have received the physical cash.")) return;
-      await db.from('shifts').update({ status: 'Closed' }).eq('id', shiftId);
-      await db.from('shift_handovers').update({ status: 'Approved' }).eq('shift_id', shiftId);
-      alert("✅ Shift Approved and Closed.");
-      loadApprovals();
-      loadOverview();
     }
 
     loadOverview();
