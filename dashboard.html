@@ -80,34 +80,20 @@
 
     <!-- ================= DARK MODE VIEW (BARMAN & CHEF) ================= -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
-      
       <div id="ops-low-stock-banner" class="hidden glass-card bg-red-500/10 border-red-500/30 p-4 rounded-xl flex items-start gap-3">
         <div class="bg-red-500/20 p-2 rounded-full text-red-400 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
         <div><h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3><p id="ops-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p></div>
       </div>
-
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Total Sales Today</p><p id="ops-total-sales" class="text-2xl font-black gold-text">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Credits</p><p id="ops-credit-sales" class="text-2xl font-black text-amber-400">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Cash to Remit</p><p id="ops-cash-sales" class="text-2xl font-black text-emerald-400">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-indigo-500/20 to-transparent border-indigo-500/30"><p class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider mb-1">Shift Status</p><p id="ops-shift-status" class="text-lg font-bold text-white">No Active Shift</p></div>
       </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in" id="ops-action-buttons">
-        <!-- Injected via JS based on role -->
-      </div>
-
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in" id="ops-action-buttons"></div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
-        <div class="glass-card p-5 rounded-2xl">
-          <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 id="ops-bills-title" class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bills (Checkout Due)</h3></div>
-          <div id="ops-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div>
-        </div>
-        <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center">
-          <div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div>
-          <h3 class="font-bold text-white mb-2">Received New Stock?</h3>
-          <p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p>
-          <a id="ops-stock-request-link" href="#" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a>
-        </div>
+        <div class="glass-card p-5 rounded-2xl"><div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 id="ops-bills-title" class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bills (Checkout Due)</h3></div><div id="ops-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div></div>
+        <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center"><div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div><h3 class="font-bold text-white mb-2">Received New Stock?</h3><p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p><a id="ops-stock-request-link" href="#" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a></div>
       </div>
     </div>
 
@@ -186,9 +172,10 @@
       }
     }
 
-    // ================= RECEPTIONIST LOGIC =================
+    // ================= RECEPTIONIST LOGIC (FIXED) =================
     async function loadReceptionistData() {
       const { data: rooms } = await db.from('rooms').select('*').order('room_number');
+      // Fetch ALL active checked-in bookings
       const { data: bookings } = await db.from('bookings').select('*, guests(full_name)').eq('status', 'Checked In');
       
       const { data: lowStock } = await db.from('inventory').select('*').eq('department', 'Minimart').lte('stock_quantity', 5);
@@ -203,23 +190,28 @@
       roomGrid.innerHTML = '';
 
       rooms.forEach(room => {
-        if (stats[room.status] !== undefined) stats[room.status]++;
+        let displayStatus = room.status;
         let guestName = '';
-        if (room.status === 'Occupied') {
-          const booking = bookings?.find(b => b.room_id === room.id);
-          if (booking && booking.guests) guestName = booking.guests.full_name;
+
+        // SMART CHECK: If a guest is checked in, force the status to Occupied
+        const activeBooking = bookings?.find(b => b.room_id === room.id);
+        if (activeBooking) {
+            displayStatus = 'Occupied';
+            if (activeBooking.guests) guestName = activeBooking.guests.full_name;
         }
 
+        if (stats[displayStatus] !== undefined) stats[displayStatus]++;
+
         let cardColor = 'bg-white border-gray-200', badgeColor = 'bg-gray-100 text-gray-600', iconColor = 'text-gray-400';
-        if (room.status === 'Available') { badgeColor = 'bg-emerald-100 text-emerald-700'; iconColor = 'text-emerald-500'; }
-        if (room.status === 'Occupied') { badgeColor = 'bg-blue-100 text-blue-700'; iconColor = 'text-blue-500'; cardColor = 'bg-white border-blue-200'; }
-        if (room.status === 'Dirty') { badgeColor = 'bg-amber-100 text-amber-700'; iconColor = 'text-amber-500'; }
-        if (room.status === 'Maintenance') { badgeColor = 'bg-red-100 text-red-700'; iconColor = 'text-red-500'; }
+        if (displayStatus === 'Available') { badgeColor = 'bg-emerald-100 text-emerald-700'; iconColor = 'text-emerald-500'; }
+        if (displayStatus === 'Occupied') { badgeColor = 'bg-blue-100 text-blue-700'; iconColor = 'text-blue-500'; cardColor = 'bg-white border-blue-200'; }
+        if (displayStatus === 'Dirty') { badgeColor = 'bg-amber-100 text-amber-700'; iconColor = 'text-amber-500'; }
+        if (displayStatus === 'Maintenance') { badgeColor = 'bg-red-100 text-red-700'; iconColor = 'text-red-500'; }
 
         roomGrid.innerHTML += `
-          <div onclick="openAritModal('${room.room_number}', '${room.status}', '${guestName}')" class="room-card ${cardColor} border p-4 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between fade-in group">
+          <div onclick="openAritModal('${room.room_number}', '${displayStatus}', '${guestName}')" class="room-card ${cardColor} border p-4 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between fade-in group">
             <div>
-              <div class="flex justify-between items-start mb-2"><h3 class="text-2xl font-black text-gray-900 group-hover:text-blue-700 transition">${room.room_number}</h3><span class="${badgeColor} text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">${room.status}</span></div>
+              <div class="flex justify-between items-start mb-2"><h3 class="text-2xl font-black text-gray-900 group-hover:text-blue-700 transition">${room.room_number}</h3><span class="${badgeColor} text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">${displayStatus}</span></div>
               <p class="text-xs text-gray-500 font-medium">${room.room_type}</p>
               <div class="mt-3 flex items-center gap-2 h-6"><i data-lucide="user" class="w-3 h-3 ${iconColor}"></i><p class="text-xs font-bold text-gray-700 truncate">${guestName || 'No Guest'}</p></div>
             </div>
@@ -255,7 +247,6 @@
       const today = new Date().toISOString().split('T')[0];
       const dept = role === 'barman' ? 'Bar' : 'Kitchen';
       
-      // 1. Fetch Stats
       const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', dept).gte('created_at', today);
       let cash = 0, credit = 0;
       if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
@@ -263,19 +254,16 @@
       document.getElementById('ops-credit-sales').textContent = `₦${credit.toLocaleString()}`;
       document.getElementById('ops-cash-sales').textContent = `₦${cash.toLocaleString()}`;
 
-      // 2. Shift Status
       const { data: shifts } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', dept).eq('status', 'Active').limit(1);
       const shiftStatusEl = document.getElementById('ops-shift-status');
       if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; } 
       else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
 
-      // 3. Low Stock
       const { data: lowStock } = await db.from('inventory').select('*').eq('department', dept).lte('stock_quantity', 5);
       const banner = document.getElementById('ops-low-stock-banner');
       if (lowStock && lowStock.length > 0) { banner.classList.remove('hidden'); document.getElementById('ops-low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', '); } 
       else { banner.classList.add('hidden'); }
 
-      // 4. Render Action Buttons
       const btnContainer = document.getElementById('ops-action-buttons');
       const posLink = `pos.html?dept=${dept}&tab=pos`;
       const shiftLink = `pos.html?dept=${dept}&tab=shift`;
@@ -294,7 +282,6 @@
       document.getElementById('ops-stock-request-link').href = stockLink;
       document.getElementById('ops-bills-title').innerHTML = `<i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room ${title} Bills (Checkout Due)`;
 
-      // 5. Fetch Room Bills
       const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
       const list = document.getElementById('ops-room-bills-list');
       if (departures && departures.length > 0) {
@@ -311,7 +298,7 @@
       lucide.createIcons();
     }
 
-    // ================= STANDARD ROLES RENDER =================
+    // ================= STANDARD ROLES RENDER (Fixed Test Guest Button) =================
     function renderStandardOperations(role) {
       const grid = document.getElementById('std-operations-grid');
       let buttons = '';
@@ -321,14 +308,50 @@
       const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); 
       const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
 
-      if (role === 'super_admin') { buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network'); buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); }
-      else if (['md', 'admin', 'manager'].includes(role)) { buttons += auditBtn; buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights'); buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); buttons += orderBtn; buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager'); buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); buttons += clockBtn; }
-      else if (role === 'accountant') { buttons += auditBtn; buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += orderBtn; buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += clockBtn; }
-      else if (role === 'supervisor') { buttons += auditBtn; buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
+      if (role === 'super_admin') { 
+          buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network'); 
+          buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); 
+      }
+      else if (['md', 'admin', 'manager'].includes(role)) { 
+          buttons += auditBtn; 
+          buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights'); 
+          buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); 
+          buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); 
+          buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); 
+          buttons += orderBtn; 
+          buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager'); 
+          buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); 
+          buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); 
+          buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); 
+          buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); 
+          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); 
+          buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); 
+          buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); 
+          buttons += clockBtn;
+          // ADDED TEST GUEST PORTAL HERE
+          buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal');
+      }
+      else if (role === 'accountant') { 
+          buttons += auditBtn; 
+          buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); 
+          buttons += btn('pos.html?dept=Kitchen&tab=orders', 'bell', 'text-orange-400', 'bg-orange-500/20', 'Live Orders'); // Fixed Live Orders for Acct
+          buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); 
+          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); 
+          buttons += clockBtn; 
+      }
+      else if (role === 'supervisor') { 
+          buttons += auditBtn; 
+          buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms'); 
+          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); 
+          buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock'); 
+          buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); 
+          buttons += clockBtn; 
+      }
       else if (role === 'housekeeping') { buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
       else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += clockBtn; }
       else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
       else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-red-400', 'bg-red-500/20', 'Security Control'); buttons += clockBtn; }
+      else if (role === 'vendor') { window.location.replace('vendor-dashboard.html'); return; }
       else { buttons += clockBtn; }
 
       grid.innerHTML = buttons;
