@@ -38,7 +38,8 @@
 
   <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[68px] z-40">
     <button onclick="switchTab('overview')" id="btn-overview" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition">Overview</button>
-    <button onclick="switchTab('manage-vendors')" id="btn-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Manage Vendors</button>
+    <button onclick="switchTab('manage-vendors')" id="btn-manage-vendors" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Vendors</button>
+    <button onclick="switchTab('manage-ads')" id="btn-manage-ads" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Manage Ads</button>
     <button onclick="switchTab('vendor')" id="btn-vendor" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Add Vendor</button>
     <button onclick="switchTab('guide')" id="btn-guide" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Add Guide</button>
     <button onclick="switchTab('ad')" id="btn-ad" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Add Ad</button>
@@ -74,7 +75,20 @@
       </div>
     </div>
 
-    <!-- ADD VENDOR -->
+    <!-- MANAGE ADS -->
+    <div id="section-manage-ads" class="tab-content hidden fade-in">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-bold text-white">All Sponsored Ads</h2>
+          <button onclick="switchTab('ad')" class="bg-yellow-500 text-black text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> New Ad</button>
+        </div>
+        <div id="ad-list-admin" class="space-y-4">
+            <p class="text-center text-slate-500 animate-pulse">Loading ads...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD / EDIT VENDOR -->
     <div id="section-vendor" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
       <h2 class="font-bold text-white mb-4 text-lg">Manually Add Vendor</h2>
       <form id="vendor-form" class="space-y-4">
@@ -153,23 +167,26 @@
       <p id="g-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
 
-    <!-- ADD AD -->
+    <!-- ADD / EDIT AD -->
     <div id="section-ad" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
-      <h2 class="font-bold text-white mb-4 text-lg">Add Sponsored Ad</h2>
+      <h2 id="ad-form-title" class="font-bold text-white mb-4 text-lg">Add Sponsored Ad</h2>
       <form id="ad-form" class="space-y-4">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Ad Title</label>
-          <input id="a-title" type="text" required placeholder="e.g. Rent a Prado" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+          <input id="a-title" type="text" required placeholder="e.g. Learn crypto and Forex trading" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Short Description</label>
-          <input id="a-desc" type="text" required placeholder="e.g. XYZ Motors - 10% off" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+          <input id="a-desc" type="text" required placeholder="e.g. Learn Basic and Advanced technical analysis..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Ad Banner Image</label>
+          <label class="block text-xs text-slate-400 mb-1">Ad Banner Image (Leave blank to keep existing when editing)</label>
           <input id="a-image" type="file" accept="image/*" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white text-sm outline-none">
         </div>
-        <button type="submit" id="a-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Publish Ad</button>
+        <div class="flex gap-2">
+            <button type="button" onclick="resetAdForm()" id="a-cancel-btn" class="hidden w-1/3 bg-slate-700 text-white font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Cancel</button>
+            <button type="submit" id="a-btn" class="flex-1 bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Publish Ad</button>
+        </div>
       </form>
       <p id="a-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
     </div>
@@ -187,13 +204,12 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    // Initialize History State for Smart Back Button
-    window.history.replaceState({ tab: 'overview' }, '', '#overview');
+    let editingAdId = null; // Tracks if we are editing an ad
 
-    // Handle Phone Back Button
+    window.history.replaceState({ tab: 'overview' }, '', '#overview');
     window.onpopstate = function(event) {
       if (event.state && event.state.tab) {
-        switchTab(event.state.tab, false); // false = don't push to history again
+        switchTab(event.state.tab, false);
       } else {
         switchTab('overview', false);
       }
@@ -219,17 +235,17 @@
         });
         document.getElementById(`btn-${tabId}`).className = 'tab-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition';
         
-        // SMART APP: Push state so Back Button works
         if (pushHistory) {
             window.history.pushState({ tab: tabId }, '', `#${tabId}`);
         }
 
         if(tabId === 'overview') loadOverview();
         if(tabId === 'manage-vendors') loadAdminVendors();
+        if(tabId === 'manage-ads') loadAdminAds();
     }
 
+    // --- OVERVIEW ---
     async function loadOverview() {
-        // 1. INSTANT CACHE LOAD
         const cachedStats = localStorage.getItem('vicnos_admin_stats');
         if (cachedStats) {
             const s = JSON.parse(cachedStats);
@@ -238,7 +254,6 @@
             document.getElementById('stat-commission').textContent = `₦${Number(s.commission).toLocaleString()}`;
         }
 
-        // 2. BACKGROUND SYNC
         const { data: vendors } = await db.from('vendors').select('*');
         const { data: inquiries } = await db.from('vendor_inquiries').select('vendor_id');
         const { data: orders } = await db.from('vendor_orders').select('commission_amount').eq('status', 'Released');
@@ -248,7 +263,6 @@
         let totalComm = 0;
         if(orders) orders.forEach(o => totalComm += Number(o.commission_amount));
 
-        // 3. UPDATE UI & CACHE
         document.getElementById('stat-vendors').textContent = vCount;
         document.getElementById('stat-inquiries').textContent = iCount;
         document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
@@ -260,13 +274,10 @@
         }));
     }
 
+    // --- MANAGE VENDORS ---
     async function loadAdminVendors() {
         const list = document.getElementById('vendor-list-admin');
-        
-        const { data: vendors } = await db.from('vendors').select(`
-            *,
-            profiles (id)
-        `).order('created_at', { ascending: false });
+        const { data: vendors } = await db.from('vendors').select(`*, profiles (id)`).order('created_at', { ascending: false });
 
         if (!vendors || vendors.length === 0) {
             list.innerHTML = '<p class="text-center text-slate-500">No vendors registered yet.</p>';
@@ -341,13 +352,9 @@
 
     async function deleteVendor(userId, vendorId, name) {
         if (!confirm(`⚠️ Are you sure you want to PERMANENTLY delete ${name}?`)) return;
-
         if (userId) {
-            await db.functions.invoke('manage-staff', {
-                body: { action: 'delete_user', user_id: userId }
-            });
+            await db.functions.invoke('manage-staff', { body: { action: 'delete_user', user_id: userId } });
         }
-
         await db.from('vendors').delete().eq('id', vendorId);
         loadAdminVendors();
     }
@@ -371,6 +378,135 @@
         alert(`✅ Login created for ${name}!`);
         loadAdminVendors();
     }
+
+    // --- MANAGE ADS ---
+    async function loadAdminAds() {
+        const list = document.getElementById('ad-list-admin');
+        const { data: ads } = await db.from('ads').select('*').order('created_at', { ascending: false });
+
+        if (!ads || ads.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-500">No ads found.</p>';
+            return;
+        }
+
+        list.innerHTML = ads.map(ad => {
+            const isLive = ad.is_active && ad.moderation_status === 'approved';
+            
+            return `
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex flex-col gap-3 fade-in">
+                    <div class="flex items-center gap-3">
+                        <img src="${ad.image_url || 'https://via.placeholder.com/150'}" class="w-16 h-16 rounded-lg object-cover border border-slate-600">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-white text-sm">${ad.title}</h3>
+                            <p class="text-[10px] text-slate-400 line-clamp-1">${ad.description}</p>
+                            <span class="${isLive ? 'text-green-400' : 'text-red-400'} text-[10px] font-bold uppercase mt-1 block">
+                                ${isLive ? '● Live on Guest App' : '○ Hidden / Inactive'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="editAd('${ad.id}', '${ad.title.replace(/'/g, "\\'")}', '${ad.description.replace(/'/g, "\\'")}')" class="flex-1 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold border border-slate-700 flex items-center justify-center gap-1">
+                            <i data-lucide="edit" class="w-3 h-3"></i> Edit
+                        </button>
+                        <button onclick="toggleAdStatus('${ad.id}', ${ad.is_active})" class="flex-1 ${isLive ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'} py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+                            <i data-lucide="${isLive ? 'eye-off' : 'eye'}" class="w-3 h-3"></i> ${isLive ? 'Take Down' : 'Activate'}
+                        </button>
+                        <button onclick="deleteAd('${ad.id}')" class="bg-red-500/20 text-red-400 px-3 py-2 rounded-lg text-xs font-bold">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    async function toggleAdStatus(id, currentStatus) {
+        const newStatus = !currentStatus;
+        const { error } = await db.from('ads').update({ is_active: newStatus }).eq('id', id);
+        if (error) return alert("Error updating status: " + error.message);
+        loadAdminAds();
+    }
+
+    async function deleteAd(id) {
+        if (!confirm("⚠️ Are you sure you want to permanently delete this ad?")) return;
+        await db.from('ads').delete().eq('id', id);
+        loadAdminAds();
+    }
+
+    function editAd(id, title, description) {
+        editingAdId = id;
+        document.getElementById('ad-form-title').textContent = "Edit Sponsored Ad";
+        document.getElementById('a-title').value = title;
+        document.getElementById('a-desc').value = description;
+        document.getElementById('a-btn').textContent = "Update Ad";
+        document.getElementById('a-cancel-btn').classList.remove('hidden');
+        
+        switchTab('ad');
+    }
+
+    function resetAdForm() {
+        editingAdId = null;
+        document.getElementById('ad-form-title').textContent = "Add Sponsored Ad";
+        document.getElementById('ad-form').reset();
+        document.getElementById('a-btn').textContent = "Publish Ad";
+        document.getElementById('a-cancel-btn').classList.add('hidden');
+    }
+
+    // --- FORMS ---
+    document.getElementById('ad-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('a-btn');
+        const msg = document.getElementById('a-msg');
+        btn.innerText = editingAdId ? "Updating..." : "Publishing..."; 
+        btn.disabled = true;
+
+        try {
+            const file = document.getElementById('a-image').files[0];
+            let imageUrl = null;
+            
+            if (file) {
+                imageUrl = await uploadImage(file, 'ad_images');
+            }
+
+            const adData = {
+                title: document.getElementById('a-title').value,
+                description: document.getElementById('a-desc').value,
+                payment_status: 'paid',
+                moderation_status: 'approved',
+                is_active: true
+            };
+
+            if (imageUrl) adData.image_url = imageUrl;
+
+            if (editingAdId) {
+                // Update Existing Ad
+                const { error } = await db.from('ads').update(adData).eq('id', editingAdId);
+                if (error) throw error;
+                msg.textContent = "✅ Ad Updated Successfully!";
+            } else {
+                // Insert New Ad
+                const { error } = await db.from('ads').insert(adData);
+                if (error) throw error;
+                msg.textContent = "✅ Ad Published!";
+            }
+
+            resetAdForm();
+            loadAdminAds();
+            switchTab('manage-ads');
+            
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+            msg.className = "mt-2 text-center text-sm font-bold text-red-400";
+        } finally {
+            btn.disabled = false;
+            setTimeout(() => {
+                msg.textContent = '';
+                msg.className = "mt-2 text-center text-sm font-bold text-green-400";
+            }, 4000);
+        }
+    });
 
     document.getElementById('vendor-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -402,9 +538,13 @@
 
         } catch (err) {
             msg.textContent = "Error: " + err.message;
+            msg.className = "mt-2 text-center text-sm font-bold text-red-400";
         } finally {
             btn.innerText = "Save Vendor & Create Login"; btn.disabled = false;
-            setTimeout(() => msg.textContent = '', 3000);
+            setTimeout(() => {
+                msg.textContent = '';
+                msg.className = "mt-2 text-center text-sm font-bold text-green-400";
+            }, 4000);
         }
     });
 
@@ -430,38 +570,13 @@
             document.getElementById('guide-form').reset();
         } catch (err) {
             msg.textContent = "Error: " + err.message;
+            msg.className = "mt-2 text-center text-sm font-bold text-red-400";
         } finally {
             btn.innerText = "Save Guide"; btn.disabled = false;
-            setTimeout(() => msg.textContent = '', 3000);
-        }
-    });
-
-    document.getElementById('ad-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('a-btn');
-        const msg = document.getElementById('a-msg');
-        btn.innerText = "Publishing..."; btn.disabled = true;
-
-        try {
-            const file = document.getElementById('a-image').files[0];
-            const imageUrl = await uploadImage(file, 'ad_images');
-
-            await db.from('ads').insert({
-                title: document.getElementById('a-title').value,
-                description: document.getElementById('a-desc').value,
-                image_url: imageUrl,
-                payment_status: 'paid',
-                moderation_status: 'approved',
-                is_active: true
-            });
-
-            msg.textContent = "✅ Ad Published!";
-            document.getElementById('ad-form').reset();
-        } catch (err) {
-            msg.textContent = "Error: " + err.message;
-        } finally {
-            btn.innerText = "Publish Ad"; btn.disabled = false;
-            setTimeout(() => msg.textContent = '', 3000);
+            setTimeout(() => {
+                msg.textContent = '';
+                msg.className = "mt-2 text-center text-sm font-bold text-green-400";
+            }, 4000);
         }
     });
 
