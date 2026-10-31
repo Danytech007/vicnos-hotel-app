@@ -4,121 +4,54 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos HotelStack - Dashboard</title>
-  
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script> 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Outfit', sans-serif; background-color: #0f172a; background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.1) 0, transparent 50%); -webkit-tap-highlight-color: transparent; user-select: none; min-height: 100vh; display: flex; flex-direction: column; }
+    .section-title { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; margin-left: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: #334155; }
   </style>
 </head>
 <body class="text-slate-200">
-  
   <nav class="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 p-5 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center gap-3">
       <div class="bg-blue-600/20 p-2 rounded-xl border border-blue-500/30"><i data-lucide="hotel" class="w-6 h-6 text-blue-400"></i></div>
-      <div>
-        <h1 class="font-bold text-white text-lg leading-tight tracking-wide">Vicnos HotelStack</h1>
-        <p id="user-role-display" class="text-[10px] text-blue-400 uppercase tracking-widest font-bold">Loading...</p>
-      </div>
+      <div><h1 class="font-bold text-white text-lg leading-tight tracking-wide">Vicnos HotelStack</h1><p id="user-role-display" class="text-[10px] text-blue-400 uppercase tracking-widest font-bold">Loading...</p></div>
     </div>
     <button onclick="logout()" class="bg-slate-700/50 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
   </nav>
 
   <main class="flex-grow p-4 w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-6xl mx-auto flex flex-col mt-4">
-    
     <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden mb-8">
       <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
-      <div class="relative z-10">
-        <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p>
-        <h2 id="admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2>
-      </div>
+      <div class="relative z-10"><p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p><h2 id="admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2></div>
       <span id="role-badge" class="relative z-10 bg-blue-500/20 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-500/30 tracking-wide">ROLE</span>
     </div>
-
-    <div class="flex-grow">
-      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">Core Operations</h3>
-      <div id="operations-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 pb-8"></div>
-    </div>
-
-    <div class="mt-auto pt-8 pb-6 text-center">
-      <p class="text-[10px] text-slate-500 tracking-wider">Vicnos HotelStack &copy; 2026</p>
-      <p class="text-xs font-bold text-slate-400 tracking-widest mt-1">POWERED BY DEKY</p>
-    </div>
-
+    <div id="operations-container" class="flex-grow pb-8"></div>
+    <div class="mt-auto pt-8 pb-6 text-center"><p class="text-[10px] text-slate-500 tracking-wider">Vicnos HotelStack &copy; 2026</p><p class="text-xs font-bold text-slate-400 tracking-widest mt-1">POWERED BY DEKY</p></div>
   </main>
 
-  <!-- Hotel Highlights Modal -->
-  <div id="highlights-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-slate-800 w-full max-w-md rounded-3xl border border-slate-700 shadow-2xl p-6 relative">
-      <button onclick="closeHighlights()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
-      
-      <h2 class="text-xl font-bold text-white mb-1 flex items-center gap-2"><i data-lucide="sparkles" class="text-amber-400"></i> Hotel Highlights</h2>
-      <p class="text-xs text-slate-400 mb-6">Live operational snapshot</p>
-      
-      <div class="space-y-4">
-        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-          <div class="flex items-center gap-3">
-            <div class="bg-blue-500/20 p-2 rounded-lg text-blue-400"><i data-lucide="users" class="w-5 h-5"></i></div>
-            <span class="text-sm font-bold text-slate-300">Active Guests</span>
-          </div>
-          <span id="hl-active-guests" class="text-xl font-black text-white">-</span>
-        </div>
-        
-        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-          <div class="flex items-center gap-3">
-            <div class="bg-orange-500/20 p-2 rounded-lg text-orange-400"><i data-lucide="bell" class="w-5 h-5"></i></div>
-            <span class="text-sm font-bold text-slate-300">Pending Orders</span>
-          </div>
-          <span id="hl-pending-orders" class="text-xl font-black text-white">-</span>
-        </div>
-        
-        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-          <div class="flex items-center gap-3">
-            <div class="bg-red-500/20 p-2 rounded-lg text-red-400"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
-            <span class="text-sm font-bold text-slate-300">Low Stock Alerts</span>
-          </div>
-          <span id="hl-low-stock" class="text-xl font-black text-white">-</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
-    }
-
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    // --- 1. INSTANT LOAD FROM CACHE ---
     const cachedRole = localStorage.getItem('vicnos_role');
-    if (cachedRole) {
-      document.getElementById('role-badge').textContent = cachedRole.toUpperCase();
-      document.getElementById('user-role-display').textContent = cachedRole + ' Portal';
-      renderOperations(cachedRole); 
-    }
+    if (cachedRole) { document.getElementById('role-badge').textContent = cachedRole.toUpperCase(); document.getElementById('user-role-display').textContent = cachedRole + ' Portal'; renderOperations(cachedRole); }
 
     async function loadDashboard() {
       const { data: { user } } = await db.auth.getUser();
-      if (!user) { 
-        localStorage.removeItem('vicnos_role');
-        window.location.href = 'index.html'; 
-        return; 
-      }
-      
+      if (!user) { localStorage.removeItem('vicnos_role'); window.location.href = 'index.html'; return; }
       const { data: profile } = await db.from('profiles').select('full_name, role').eq('id', user.id).single();
-      
       if (profile) {
-        localStorage.setItem('vicnos_role', profile.role); // Sync cache
+        localStorage.setItem('vicnos_role', profile.role);
         document.getElementById('admin-name').textContent = profile.full_name + ' 👋';
         document.getElementById('user-role-display').textContent = profile.role + ' Portal';
         document.getElementById('role-badge').textContent = profile.role.toUpperCase();
@@ -127,151 +60,65 @@
     }
 
     function renderOperations(role) {
-      const grid = document.getElementById('operations-grid');
-      let buttons = '';
-
-      const btn = (href, icon, color, bg, label, onclick = '') => `
-        <a ${onclick ? `onclick="${onclick}"` : `href="${href}"`} class="bg-slate-800/40 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-700/50 active:scale-95 transition-all shadow-sm group cursor-pointer">
-          <div class="${bg} p-2.5 sm:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-            <i data-lucide="${icon}" class="w-5 h-5 sm:w-6 sm:h-6 ${color}"></i>
-          </div>
+      const container = document.getElementById('operations-container');
+      const btn = (href, icon, color, bg, label) => `
+        <a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-700/50 active:scale-95 transition-all shadow-sm group cursor-pointer">
+          <div class="${bg} p-2.5 sm:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"><i data-lucide="${icon}" class="w-5 h-5 sm:w-6 sm:h-6 ${color}"></i></div>
           <span class="text-[10px] sm:text-xs font-medium text-slate-300 text-center leading-tight">${label}</span>
-        </a>
-      `;
+        </a>`;
 
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out');
       const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); 
-      const highlightBtn = btn('#', 'sparkles', 'text-yellow-400', 'bg-yellow-500/20', 'Highlights', 'openHighlights()');
       const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
 
-      if (role === 'super_admin') {
-          buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network');
-          buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff');
-      }
-      else if (role === 'blogger') {
-          buttons += btn('blog-manager.html', 'pen-tool', 'text-purple-400', 'bg-purple-500/20', 'Blog Studio');
-          buttons += clockBtn;
-      }
-      else if (['md', 'admin', 'manager'].includes(role)) {
-        buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights');
-        buttons += highlightBtn;
-        buttons += auditBtn;
-        buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In');
-        buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
-        buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
-        buttons += orderBtn;
-        buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager');
-        buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
-        buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms');
-        buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff');
-        buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms');
-        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
-        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
-        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager');
-        buttons += clockBtn;
-        buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal');
-      } 
-      else if (role === 'accountant') {
-        buttons += highlightBtn;
-        buttons += auditBtn;
-        buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
-        buttons += orderBtn; 
-        buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List');
-        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
-        buttons += clockBtn;
-      }
-      else if (role === 'waitress') {
-        buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
-        buttons += orderBtn;
-        buttons += btn('waitress-sales.html', 'line-chart', 'text-blue-400', 'bg-blue-500/20', 'My Sales');
-        buttons += clockBtn;
-      }
-      else if (role === 'chef') {
-        buttons += orderBtn; 
-        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Kitchen Stock');
-        buttons += clockBtn;
-      }
-      else if (role === 'barman') {
-        buttons += btn('pos.html?dept=Bar', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'Bar POS');
-        buttons += orderBtn; 
-        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Bar Stock');
-        buttons += clockBtn;
-      }
-      else if (role === 'supervisor') {
-        buttons += highlightBtn;
-        buttons += auditBtn;
-        buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms');
-        buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
-        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock');
-        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
-        buttons += clockBtn;
-      }
-      else if (role === 'receptionist') {
-        buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Reception Desk');
-        buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
-        buttons += btn('pos.html?dept=Minimart', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'Minimart POS');
-        buttons += orderBtn;
-        buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Minimart Stock');
-        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
-        buttons += clockBtn;
-      }
-      else if (role === 'housekeeping') {
-        buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms');
-        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
-        buttons += clockBtn;
-      }
-      else if (role === 'store_keeper') {
-        buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store');
-        buttons += clockBtn;
-      }
-      else if (role === 'laundry') {
-        buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub');
-        buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
-        buttons += clockBtn;
-      }
-      else if (role === 'security') {
-        buttons += btn('security-dashboard.html', 'shield', 'text-red-400', 'bg-red-500/20', 'Security Control');
-        buttons += clockBtn;
-      }
-      else if (role === 'vendor') {
-        window.location.replace('vendor-dashboard.html');
-        return;
-      }
-      else {
-        buttons += clockBtn;
+      // --- RECEPTIONIST ---
+      if (role === 'receptionist') {
+        container.innerHTML = `
+          <div class="mb-8"><h3 class="section-title"><i data-lucide="concierge-bell" class="w-4 h-4"></i> Front Desk</h3><div class="grid grid-cols-3 gap-3 sm:gap-4">${btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In')}${btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out')}${orderBtn}</div></div>
+          <div class="mb-8"><h3 class="section-title"><i data-lucide="shopping-bag" class="w-4 h-4"></i> Minimart</h3><div class="grid grid-cols-3 gap-3 sm:gap-4">${btn('pos.html?dept=Minimart', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'Minimart POS')}${btn('minimart-stock.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Requests')}${clockBtn}</div></div>
+          <div><h3 class="section-title"><i data-lucide="wrench" class="w-4 h-4"></i> General</h3><div class="grid grid-cols-3 gap-3 sm:gap-4">${btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance')}</div></div>
+        `;
+        lucide.createIcons(); return;
       }
 
-      grid.innerHTML = buttons;
+      // --- BARMAN ---
+      if (role === 'barman') {
+        container.innerHTML = `
+          <div class="mb-8"><h3 class="section-title"><i data-lucide="beer" class="w-4 h-4"></i> Bar Operations</h3><div class="grid grid-cols-3 gap-3 sm:gap-4">${btn('pos.html?dept=Bar', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'Bar POS')}${orderBtn}${clockBtn}</div></div>
+          <div><h3 class="section-title"><i data-lucide="package" class="w-4 h-4"></i> Inventory</h3><div class="grid grid-cols-3 gap-3 sm:gap-4">${btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Bar Stock')}${btn('stock-request.html', 'file-plus', 'text-indigo-400', 'bg-indigo-500/20', 'Request Stock')}</div></div>
+        `;
+        lucide.createIcons(); return;
+      }
+
+      // --- WAITRESS ---
+      if (role === 'waitress') {
+        container.innerHTML = `
+          <div class="mb-8"><h3 class="section-title"><i data-lucide="utensils" class="w-4 h-4"></i> Service</h3><div class="grid grid-cols-3 gap-3 sm:gap-4">${btn('pos.html?dept=Kitchen', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'Food POS')}${orderBtn}${clockBtn}</div></div>
+          <div><h3 class="section-title"><i data-lucide="line-chart" class="w-4 h-4"></i> Reporting</h3><div class="grid grid-cols-3 gap-3 sm:gap-4">${btn('waitress-sales.html', 'line-chart', 'text-blue-400', 'bg-blue-500/20', 'My Sales')}${btn('stock-request.html', 'file-plus', 'text-indigo-400', 'bg-indigo-500/20', 'Request Stock')}</div></div>
+        `;
+        lucide.createIcons(); return;
+      }
+
+      // --- ALL OTHER ROLES (STANDARD GRID) ---
+      let buttons = '';
+      if (role === 'super_admin') { buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network'); buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); }
+      else if (role === 'blogger') { buttons += btn('blog-manager.html', 'pen-tool', 'text-purple-400', 'bg-purple-500/20', 'Blog Studio'); buttons += clockBtn; }
+      else if (['md', 'admin', 'manager'].includes(role)) { buttons += auditBtn; buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights'); buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); buttons += orderBtn; buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager'); buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); buttons += clockBtn; }
+      else if (role === 'accountant') { buttons += auditBtn; buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += orderBtn; buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += clockBtn; }
+      else if (role === 'chef') { buttons += orderBtn; buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Kitchen Stock'); buttons += clockBtn; }
+      else if (role === 'supervisor') { buttons += auditBtn; buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
+      else if (role === 'housekeeping') { buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
+      else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += clockBtn; }
+      else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
+      else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-red-400', 'bg-red-500/20', 'Security Control'); buttons += clockBtn; }
+      else if (role === 'vendor') { window.location.replace('vendor-dashboard.html'); return; }
+      else { buttons += clockBtn; }
+
+      container.innerHTML = `<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">${buttons}</div>`;
       lucide.createIcons();
     }
 
-    async function openHighlights() {
-      const modal = document.getElementById('highlights-modal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-
-      const { count: activeGuests } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'Checked In');
-      document.getElementById('hl-active-guests').textContent = activeGuests || 0;
-
-      const { count: pendingOrders } = await db.from('guest_orders').select('*', { count: 'exact', head: true }).in('status', ['Pending', 'Preparing', 'Ready']);
-      document.getElementById('hl-pending-orders').textContent = pendingOrders || 0;
-
-      const { data: lowStock } = await db.from('inventory').select('id').lte('stock_quantity', 5);
-      document.getElementById('hl-low-stock').textContent = lowStock ? lowStock.length : 0;
-    }
-
-    function closeHighlights() {
-      const modal = document.getElementById('highlights-modal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-
-    async function logout() { 
-      localStorage.removeItem('vicnos_role');
-      await db.auth.signOut(); 
-      window.location.replace('index.html'); 
-    }
-    
+    async function logout() { localStorage.removeItem('vicnos_role'); await db.auth.signOut(); window.location.replace('index.html'); }
     loadDashboard();
   </script>
 </body>
