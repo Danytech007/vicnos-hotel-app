@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - My Bill</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -12,129 +16,215 @@
     body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; }
     h1, h2, h3 { font-family: 'Playfair Display', serif; }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="min-h-screen pb-24">
 
-  <nav class="bg-white p-4 flex items-center gap-3 sticky top-0 z-50 border-b border-gray-100">
-    <a href="guest-portal.html?room=101" class="bg-gray-50 p-2 rounded-full active:scale-95 transition"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
-    <h1 class="font-bold text-gray-800 text-lg">My Folio</h1>
-  </nav>
-
-  <main class="max-w-md mx-auto p-4 space-y-5">
-    
-    <!-- CHECKOUT COUNTDOWN -->
-    <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-center shadow-lg relative overflow-hidden">
-      <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="clock" class="w-24 h-24 text-white"></i></div>
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Time until Checkout</p>
-      <div id="countdown" class="text-4xl font-extrabold text-white font-mono tracking-wider">-- : -- : --</div>
-      <p class="text-[10px] text-gray-400 mt-2" id="checkout-date-text">Checkout: --</p>
+  <!-- CHECKOUT LOCKOUT SCREEN (Hidden by default) -->
+  <div id="checkout-lockout" class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-6 text-center fade-in">
+    <div class="bg-white/10 p-6 rounded-full mb-6">
+      <i data-lucide="door-closed" class="w-16 h-16 text-blue-400"></i>
     </div>
+    <h1 class="text-2xl font-bold text-white mb-2">Session Expired</h1>
+    <p class="text-slate-400 text-sm mb-8">You have checked out or your session is invalid. Please scan your room QR code to view your bill.</p>
+    <a href="guest-portal.html" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">Return to Home</a>
+    <p class="text-xs text-slate-500 font-bold tracking-widest mt-10">POWERED BY DEKY</p>
+  </div>
 
-    <!-- LIVE EXPENDITURE -->
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-      <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Live Bill Breakdown</h2>
+  <!-- MAIN APP (Hidden until auth verifies) -->
+  <div id="main-app" class="hidden flex-col flex-grow">
+
+    <nav class="bg-white p-4 flex items-center gap-3 sticky top-0 z-50 border-b border-gray-100">
+      <button id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></button>
+      <h1 class="font-bold text-gray-800 text-lg">My Folio</h1>
+      <div class="ml-auto bg-blue-50 px-3 py-1 rounded-lg">
+        <p class="text-[9px] uppercase text-blue-500 font-bold tracking-wider">Room</p>
+        <p id="nav-room-num" class="font-bold text-blue-700 leading-none text-sm">---</p>
+      </div>
+    </nav>
+
+    <main class="max-w-md mx-auto p-4 space-y-5 w-full">
       
-      <div class="space-y-3 text-sm">
-        <div class="flex justify-between items-center">
-          <span class="text-gray-600">Room Accommodation</span>
-          <span class="font-bold text-gray-800" id="bill-room">₦0</span>
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-gray-600">Food & Drinks (POS)</span>
-          <span class="font-bold text-gray-800" id="bill-pos">₦0</span>
-        </div>
-        <!-- Add more here if needed (e.g., Laundry) -->
+      <!-- CHECKOUT COUNTDOWN -->
+      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-center shadow-lg relative overflow-hidden fade-in">
+        <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="clock" class="w-24 h-24 text-white"></i></div>
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Time until Checkout</p>
+        <div id="countdown" class="text-4xl font-extrabold text-white font-mono tracking-wider">-- : -- : --</div>
+        <p class="text-[10px] text-gray-400 mt-2" id="checkout-date-text">Fetching details...</p>
       </div>
 
-      <div class="border-t border-dashed border-gray-200 my-4"></div>
+      <!-- LIVE EXPENDITURE -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 fade-in">
+        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Live Bill Breakdown</h2>
+        
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Room Accommodation <span id="nights-text" class="text-xs text-gray-400"></span></span>
+            <span class="font-bold text-gray-800" id="bill-room">₦0</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Food & Drinks (POS)</span>
+            <span class="font-bold text-gray-800" id="bill-pos">₦0</span>
+          </div>
+          <!-- Add more here if needed (e.g., Laundry) -->
+        </div>
 
-      <div class="flex justify-between items-center">
-        <span class="text-lg font-bold text-gray-800">Total Due</span>
-        <span class="text-2xl font-extrabold text-blue-600" id="bill-total">₦0</span>
+        <div class="border-t border-dashed border-gray-200 my-4"></div>
+
+        <div class="flex justify-between items-center">
+          <span class="text-lg font-bold text-gray-800">Total Due</span>
+          <span class="text-2xl font-extrabold text-blue-600" id="bill-total">₦0</span>
+        </div>
+      </div>
+
+      <button onclick="alert('A receipt will be sent to your email. Please proceed to reception to pay.')" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition fade-in flex items-center justify-center gap-2">
+        <i data-lucide="check-circle" class="w-5 h-5"></i> Settle Bill & Express Checkout
+      </button>
+
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+      <div class="flex justify-around items-center h-16 max-w-md mx-auto">
+        <a id="nav-home" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+          <i data-lucide="home" class="w-6 h-6"></i>
+          <span class="text-[10px] font-medium mt-1">Home</span>
+        </a>
+        <a id="nav-inside-life" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+          <i data-lucide="map" class="w-6 h-6"></i>
+          <span class="text-[10px] font-medium mt-1">Inside Life</span>
+        </a>
+        <a id="nav-food" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+          <i data-lucide="utensils" class="w-6 h-6"></i>
+          <span class="text-[10px] font-medium mt-1">Food</span>
+        </a>
+        <a href="#" class="flex flex-col items-center text-blue-600">
+          <i data-lucide="user" class="w-6 h-6"></i>
+          <span class="text-[10px] font-bold mt-1">My Bill</span>
+        </a>
       </div>
     </div>
 
-    <button onclick="alert('A receipt will be sent to your email. Please proceed to reception to pay.')" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition">
-      Settle Bill & Express Checkout
-    </button>
-
-  </main>
-
-  <!-- BOTTOM NAV -->
-  <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-    <div class="flex justify-around items-center h-16 max-w-md mx-auto">
-      <a href="guest-portal.html?room=101" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-        <i data-lucide="home" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium mt-1">Home</span>
-      </a>
-      <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-        <i data-lucide="map" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium mt-1">Local Hub</span>
-      </a>
-      <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-        <i data-lucide="utensils" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium mt-1">Food</span>
-      </a>
-      <a href="#" class="flex flex-col items-center text-blue-600">
-        <i data-lucide="user" class="w-6 h-6"></i>
-        <span class="text-[10px] font-bold mt-1">My Bill</span>
-      </a>
-    </div>
   </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomNum = urlParams.get('room') || '101'; 
+    let guestSession = null;
     let countdownInterval;
 
+    // --- SECURE AUTHENTICATION ---
+    async function authenticateGuest() {
+        let savedGuest = localStorage.getItem('vicnos_guest_session');
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoom = urlParams.get('room');
+
+        if (!savedGuest) {
+            if (!urlRoom) return showLockout();
+            
+            // Handshake for new session
+            const { data: roomData } = await db.from('rooms').select('id').eq('room_number', urlRoom).single();
+            if (!roomData) return showLockout();
+
+            const { data: booking } = await db.from('bookings')
+                .select('id, check_in_date, expected_check_out, guests(full_name)')
+                .eq('room_id', roomData.id).eq('status', 'Checked In').limit(1).single();
+
+            if (!booking) return showLockout();
+
+            savedGuest = {
+                booking_id: booking.id,
+                room_number: urlRoom,
+                guest_name: booking.guests.full_name
+            };
+            localStorage.setItem('vicnos_guest_session', JSON.stringify(savedGuest));
+        } else {
+            savedGuest = JSON.parse(savedGuest);
+            
+            // Verify DB status
+            const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
+            if (!booking || booking.status !== 'Checked In') return showLockout();
+
+            // Prevent URL hacking
+            if (urlRoom && urlRoom !== savedGuest.room_number) {
+                window.history.replaceState(null, '', `?room=${savedGuest.room_number}`);
+            }
+        }
+
+        guestSession = savedGuest;
+        
+        // Load UI
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('flex');
+        document.getElementById('nav-room-num').textContent = guestSession.room_number;
+        
+        // Set Dynamic Navigation Links
+        document.getElementById('back-btn').onclick = () => window.location.href = `guest-portal.html?room=${guestSession.room_number}`;
+        document.getElementById('nav-home').href = `guest-portal.html?room=${guestSession.room_number}`;
+        document.getElementById('nav-inside-life').href = `inside-life.html?room=${guestSession.room_number}`;
+        document.getElementById('nav-food').href = `room-service.html?room=${guestSession.room_number}`;
+
+        // Fetch the Bill
+        loadBill();
+    }
+
+    function showLockout() {
+        localStorage.removeItem('vicnos_guest_session');
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('checkout-lockout').classList.remove('hidden');
+    }
+
+    // --- LOAD BILL ---
     async function loadBill() {
       try {
-        // 1. Get Room and Price
-        const { data: roomData } = await db.from('rooms').select('id, price_per_night').eq('room_number', roomNum).maybeSingle();
-        if (!roomData) return;
-
-        // 2. Get Booking Details
+        // Fetch Booking and Room Price using secure booking_id
         const { data: booking } = await db.from('bookings')
-          .select('id, expected_check_out, check_in_date')
-          .eq('room_id', roomData.id)
-          .eq('status', 'Checked In')
-          .limit(1)
-          .maybeSingle();
+          .select(`
+            expected_check_out, 
+            check_in_date, 
+            rooms (price_per_night)
+          `)
+          .eq('id', guestSession.booking_id)
+          .single();
 
         if (!booking) return;
 
-        // 3. Calculate Room Cost (Nights)
+        // Calculate Room Cost (Nights)
         const checkIn = new Date(booking.check_in_date);
         const checkOut = new Date(booking.expected_check_out);
         const diffTime = Math.abs(checkOut - checkIn);
         const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
-        const roomCost = nights * roomData.price_per_night;
+        const roomRate = booking.rooms.price_per_night;
+        const roomCost = nights * roomRate;
 
-        // 4. Get POS Charges
+        document.getElementById('nights-text').textContent = `(${nights} ${nights === 1 ? 'night' : 'nights'})`;
+
+        // Fetch POS Charges
         const { data: charges } = await db.from('folio_charges')
           .select('amount')
-          .eq('booking_id', booking.id);
+          .eq('booking_id', guestSession.booking_id);
         
         let posTotal = 0;
         if (charges) {
           charges.forEach(c => posTotal += Number(c.amount));
         }
 
-        // 5. Update UI
+        // Update UI
         document.getElementById('bill-room').textContent = `₦${roomCost.toLocaleString()}`;
         document.getElementById('bill-pos').textContent = `₦${posTotal.toLocaleString()}`;
         document.getElementById('bill-total').textContent = `₦${(roomCost + posTotal).toLocaleString()}`;
 
-        // 6. Start Countdown
+        // Start Countdown
         startCountdown(checkOut);
 
       } catch (err) {
@@ -142,6 +232,7 @@
       }
     }
 
+    // --- COUNTDOWN TIMER ---
     function startCountdown(checkoutDate) {
       // Set checkout time to 12:00 PM (Noon) on the checkout date
       const targetDate = new Date(checkoutDate);
@@ -171,14 +262,8 @@
       }, 1000);
     }
 
-    loadBill();
+    // Initialize
+    authenticateGuest();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
