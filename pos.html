@@ -29,7 +29,6 @@
       <p class="text-xs text-slate-400 mt-1">Station Operations</p>
     </div>
     <div class="flex items-center gap-4">
-      <!-- The Dropdown (Will be locked based on role) -->
       <select id="department" onchange="changeStation()" class="bg-slate-800 text-white font-bold border border-slate-700 p-2 rounded-lg outline-none disabled:opacity-50 transition">
         <option value="Bar">🍻 Bar</option>
         <option value="Kitchen">🍳 Kitchen</option>
@@ -197,16 +196,15 @@
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
 
-      // --- ROLE LOCK LOGIC ---
       const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
       const role = profile ? profile.role : 'staff';
       const deptSelect = document.getElementById('department');
 
       if (role === 'chef') {
           deptSelect.value = 'Kitchen';
-          deptSelect.disabled = true; // Lock it
+          deptSelect.disabled = true;
           deptSelect.classList.add('opacity-50', 'cursor-not-allowed');
-          document.getElementById('tab-btn-pos').classList.add('hidden'); // Chefs don't sell, hide POS tab
+          document.getElementById('tab-btn-pos').classList.add('hidden');
           switchTab('orders');
       } else if (role === 'barman') {
           deptSelect.value = 'Bar';
@@ -217,7 +215,6 @@
           deptSelect.disabled = true;
           deptSelect.classList.add('opacity-50', 'cursor-not-allowed');
       } else {
-          // Admin / Manager can switch freely
           const urlDept = new URLSearchParams(window.location.search).get('dept');
           if (urlDept) deptSelect.value = urlDept;
       }
@@ -453,18 +450,26 @@
     async function loadLiveOrders() {
       const list = document.getElementById('live-orders-list');
       
-      // Fetches ONLY the orders for the current department (e.g. only Kitchen if you are Chef)
-      const { data: orders, error } = await db.from('guest_orders')
+      // FIX: Fetch ALL pending orders, then filter in JS to handle case-sensitivity bugs
+      const { data: allOrders, error } = await db.from('guest_orders')
         .select('*')
-        .eq('department', currentDepartment)
         .neq('status', 'Completed')
         .neq('status', 'Delivered')
+        .neq('status', 'Cancelled')
         .order('created_at', { ascending: true });
 
-      if (error || !orders) {
-        list.innerHTML = '<p class="text-slate-500">No orders found or error loading.</p>';
+      if (error || !allOrders) {
+        list.innerHTML = '<p class="text-slate-500">Error loading orders.</p>';
         return;
       }
+
+      const cDept = currentDepartment.toLowerCase();
+      const orders = allOrders.filter(o => {
+          const oDept = (o.department || '').toLowerCase();
+          // Allow 'kitchen' or 'food' to match
+          if (cDept === 'kitchen') return oDept === 'kitchen' || oDept === 'food' || oDept === '';
+          return oDept === cDept;
+      });
 
       if (orders.length === 0) {
         list.innerHTML = '<p class="text-slate-500 col-span-full text-center py-10">No pending orders right now. 🎉</p>';
@@ -472,7 +477,7 @@
         return;
       }
 
-      const pendingOrders = orders.filter(o => o.status === 'Pending');
+      const pendingOrders = orders.filter(o => o.status === 'Pending' || !o.status);
       if (pendingOrders.length > 0 && !sessionStorage.getItem('alarm_played')) {
         const msg = new SpeechSynthesisUtterance("New order received from room " + pendingOrders[0].room_number);
         window.speechSynthesis.speak(msg);
@@ -486,7 +491,7 @@
 
       list.innerHTML = '';
       orders.forEach(order => {
-        let statusColor = order.status === 'Pending' ? 'bg-amber-500' : order.status === 'Preparing' ? 'bg-blue-500' : 'bg-emerald-500';
+        let statusColor = order.status === 'Pending' || !order.status ? 'bg-amber-500' : order.status === 'Preparing' ? 'bg-blue-500' : 'bg-emerald-500';
         
         let itemsHtml = '';
         try {
@@ -533,7 +538,7 @@
       inventory.forEach(item => {
         if (item.stock_quantity <= 5) lowStockCount++;
         
-        const isApproved = item.is_approved ? `<span class="text-emerald-400 text-[10px] bg-emerald-900/50 px-2 py-1 rounded">Approved</span>` : `<span class="text-amber-400 text-[10px] bg-amber-900/50 px-2 py-1 rounded">Pending Admin</span>`;
+        const isApproved = item.is_approved ? `<span class="text-emerald-400 text-[10px] bg-emerald-900/50 px-2 py-1 rounded">Approved</span>` : `<span class="text-amber-400 text-[10px] bg-amber-900/50 px-2 py-1 rounded">Pending</span>`;
 
         tbody.innerHTML += `
           <tr class="border-b border-slate-700 hover:bg-slate-750">
@@ -547,7 +552,7 @@
               <input type="number" id="bad-${item.id}" value="${item.bad_stock || 0}" class="w-16 bg-slate-900 border border-slate-600 rounded p-1 text-center text-white outline-none">
             </td>
             <td class="px-4 py-3 text-center flex flex-col items-center gap-2">
-              <button onclick="submitCount('${item.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded w-full transition">Submit Count</button>
+              <button onclick="submitCount('${item.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded w-full transition">Submit</button>
               ${isApproved}
             </td>
           </tr>

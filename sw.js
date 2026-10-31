@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vicnos-v3'; // Bumped to v3 to force update
+const CACHE_NAME = 'vicnos-v4'; // Bumped to v4
 const ASSETS = [
   'index.html',
   'dashboard.html',
@@ -8,32 +8,23 @@ const ASSETS = [
   'https://unpkg.com/lucide@latest'
 ];
 
-// Install Service Worker
 self.addEventListener('install', (e) => {
-  self.skipWaiting(); // Force new SW to take over immediately
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
 });
 
-// Delete old caches
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
+      return Promise.all(cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) return caches.delete(cache);
-        })
-      );
+      }));
     })
   );
 });
 
-// Fetch from cache first, then network
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    })
+    caches.match(e.request).then((response) => response || fetch(e.request))
   );
 });

@@ -294,13 +294,17 @@
       btn.disabled = true;
 
       try {
-        // FIX: Fetch the actual room UUID instead of using the room number
         const { data: roomData, error: roomError } = await db.from('rooms').select('id').eq('room_number', guestSession.room_number).single();
         if (roomError || !roomData) throw new Error("Could not find room details.");
         const actualRoomId = roomData.id;
 
+        // FIX: Strictly map categories to Department names
         const groupedCart = cart.reduce((acc, item) => {
-            const dept = item.category || 'Kitchen';
+            let dept = 'Kitchen'; // Default
+            const cat = (item.category || '').toLowerCase();
+            if (cat.includes('bar') || cat.includes('drink')) dept = 'Bar';
+            else if (cat.includes('mini') || cat.includes('mart')) dept = 'Minimart';
+            
             if (!acc[dept]) acc[dept] = [];
             acc[dept].push(item);
             return acc;
@@ -310,10 +314,10 @@
             let deptTotal = items.reduce((sum, item) => sum + (Number(item.price) * item.qty), 0);
 
             const { error: orderError } = await db.from('guest_orders').insert({
-              room_id: actualRoomId, // FIXED: Now sends valid UUID
+              room_id: actualRoomId,
               booking_id: guestSession.booking_id, 
               room_number: guestSession.room_number,
-              department: department, 
+              department: department, // Now strictly 'Kitchen', 'Bar', or 'Minimart'
               items: items,
               total_amount: deptTotal,
               status: 'Pending',
