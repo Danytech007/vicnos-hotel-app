@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos - Stock Request</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <!-- Header -->
+  <nav class="bg-slate-900 border-b border-slate-700/50 p-4 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-slate-800 p-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </a>
+      <div>
+        <h1 id="page-title" class="font-bold text-white text-lg leading-tight">Stock Requests</h1>
+        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider" id="dept-name">Loading...</p>
+      </div>
+    </div>
+    <div class="bg-indigo-500/20 p-2 rounded-full text-indigo-400">
+      <i data-lucide="package" class="w-5 h-5"></i>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-6 mt-2">
+    
+    <div class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl text-blue-300 text-xs font-medium">
+      <i data-lucide="info" class="w-4 h-4 inline-block mb-1 mr-1"></i> 
+      You cannot add stock directly. Submit a request below, and the Manager or Accountant will approve it before it enters your live inventory.
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="grid grid-cols-2 gap-3">
+      <button onclick="openModal('new')" class="bg-indigo-600 text-white p-4 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-2 active:scale-95 transition hover:bg-indigo-500">
+        <i data-lucide="plus-circle" class="w-6 h-6"></i>
+        <span class="font-bold text-sm">Request New Item</span>
+      </button>
+      <button onclick="openModal('restock')" class="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-2 active:scale-95 transition hover:bg-emerald-500">
+        <i data-lucide="package-plus" class="w-6 h-6"></i>
+        <span class="font-bold text-sm">Restock Existing</span>
+      </button>
+    </div>
+
+    <!-- Current Stock List -->
+    <div class="bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-700">
+      <h2 class="font-bold text-white mb-4 flex items-center gap-2">
+        <i data-lucide="boxes" class="w-5 h-5 text-indigo-400"></i> Current Live Stock
+      </h2>
+      <div id="stock-list" class="space-y-3 max-h-64 overflow-y-auto hide-scroll pr-1">
+        <p class="text-center text-slate-400 text-sm animate-pulse">Loading inventory...</p>
+      </div>
+    </div>
+
+    <!-- My Pending Requests -->
+    <div class="bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-700">
+      <h2 class="font-bold text-white mb-4 flex items-center gap-2">
+        <i data-lucide="clock" class="w-5 h-5 text-amber-400"></i> My Pending Requests
+      </h2>
+      <div id="pending-list" class="space-y-3">
+        <p class="text-center text-slate-400 text-sm">Loading...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal for Requesting -->
+  <div id="stock-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="modal-title" class="text-lg font-bold text-white">Request Item</h2>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      
+      <form id="stock-form" class="space-y-4">
+        <input type="hidden" id="action-type" value="new">
+        
+        <div id="new-item-fields" class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">Item Name</label>
+            <input type="text" id="item-name" placeholder="e.g. Heineken Pack" class="w-full px-4 py-3 bg-slate-900 border border-slate-600 text-white rounded-xl outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">Selling Price (₦)</label>
+            <input type="number" id="item-price" placeholder="e.g. 1500" class="w-full px-4 py-3 bg-slate-900 border border-slate-600 text-white rounded-xl outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div id="restock-fields" class="space-y-3 hidden">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">Select Item</label>
+            <select id="restock-select" class="w-full px-4 py-3 bg-slate-900 border border-slate-600 text-white rounded-xl outline-none focus:border-indigo-500"></select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Quantity Requested (Packs/Bottles)</label>
+          <input type="number" id="item-qty" placeholder="e.g. 24" class="w-full px-4 py-3 bg-slate-900 border border-slate-600 text-white rounded-xl outline-none focus:border-indigo-500" required>
+        </div>
+
+        <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition mt-2">Submit Request</button>
+      </form>
+      <p id="modal-msg" class="mt-2 text-center text-sm font-bold"></p>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let currentDepartment = 'Bar'; // Default
+    let myItems = [];
+
+    async function init() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+
+      // Check URL for department parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('dept')) {
+        currentDepartment = urlParams.get('dept');
+      }
+
+      document.getElementById('page-title').textContent = `${currentDepartment} Stock Requests`;
+      document.getElementById('dept-name').textContent = currentDepartment;
+
+      loadStock();
+      loadMyRequests();
+    }
+
+    async function loadStock() {
+      const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).order('item_name');
+      myItems = items || [];
+      const list = document.getElementById('stock-list');
+      const select = document.getElementById('restock-select');
+
+      if (myItems.length === 0) {
+        list.innerHTML = `<p class="text-center text-slate-500 text-sm py-4">No items in ${currentDepartment} yet.</p>`;
+        select.innerHTML = '<option value="">No items available</option>';
+        return;
+      }
+
+      list.innerHTML = myItems.map(i => {
+        const color = i.stock_quantity <= 5 ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
+        return `
+          <div class="flex justify-between items-center p-3 border border-slate-700 rounded-xl bg-slate-900/50">
+            <div><p class="font-bold text-white text-sm">${i.item_name}</p><p class="text-xs text-slate-400">₦${Number(i.price).toLocaleString()}</p></div>
+            <span class="text-sm font-bold px-3 py-1 rounded-lg border ${color}">${i.stock_quantity}</span>
+          </div>
+        `;
+      }).join('');
+      
+      select.innerHTML = myItems.map(i => `<option value="${i.id}" data-price="${i.price}" data-name="${i.item_name}">${i.item_name} (Current: ${i.stock_quantity})</option>`).join('');
+    }
+
+    async function loadMyRequests() {
+      const list = document.getElementById('pending-list');
+      const { data: requests } = await db.from('stock_restock_requests').select('*').eq('requested_by', currentUser.id).eq('status', 'Pending').order('created_at', { ascending: false });
+      
+      if (!requests || requests.length === 0) {
+        list.innerHTML = '<p class="text-center text-slate-500 text-sm py-2">No pending requests.</p>';
+        return;
+      }
+
+      list.innerHTML = requests.map(r => `
+        <div class="flex justify-between items-center p-3 border border-amber-500/30 bg-amber-500/10 rounded-xl">
+          <div><p class="font-bold text-white text-sm">${r.quantity}x ${r.item_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Awaiting Manager Approval</p></div>
+        </div>
+      `).join('');
+    }
+
+    function openModal(type) {
+      document.getElementById('stock-modal').classList.remove('hidden');
+      document.getElementById('stock-modal').classList.add('flex');
+      document.getElementById('modal-msg').textContent = '';
+      document.getElementById('stock-form').reset();
+      document.getElementById('action-type').value = type;
+
+      if (type === 'new') {
+        document.getElementById('modal-title').textContent = "Request New Item";
+        document.getElementById('new-item-fields').classList.remove('hidden');
+        document.getElementById('restock-fields').classList.add('hidden');
+        document.getElementById('item-name').required = true;
+        document.getElementById('item-price').required = true;
+      } else {
+        document.getElementById('modal-title').textContent = "Request Restock";
+        document.getElementById('new-item-fields').classList.add('hidden');
+        document.getElementById('restock-fields').classList.remove('hidden');
+        document.getElementById('item-name').required = false;
+        document.getElementById('item-price').required = false;
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('stock-modal').classList.add('hidden');
+      document.getElementById('stock-modal').classList.remove('flex');
+    }
+
+    document.getElementById('stock-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn'), msg = document.getElementById('modal-msg');
+      const type = document.getElementById('action-type').value, qty = parseInt(document.getElementById('item-qty').value);
+      btn.disabled = true; btn.textContent = "Submitting...";
+
+      try {
+        let itemName, price;
+        if (type === 'new') {
+          itemName = document.getElementById('item-name').value;
+          price = parseFloat(document.getElementById('item-price').value);
+        } else {
+          const select = document.getElementById('restock-select');
+          const opt = select.options[select.selectedIndex];
+          itemName = opt.dataset.name;
+          price = parseFloat(opt.dataset.price);
+        }
+
+        const { error } = await db.from('stock_restock_requests').insert({
+          requested_by: currentUser.id, department: currentDepartment, item_name: itemName, price: price, quantity: qty
+        });
+        if (error) throw error;
+
+        msg.textContent = "✅ Request sent to Management!";
+        msg.className = "mt-2 text-center text-sm font-bold text-emerald-400";
+        setTimeout(() => { closeModal(); loadMyRequests(); }, 1500);
+      } catch (err) {
+        msg.textContent = "Error: " + err.message; msg.className = "mt-2 text-center text-sm font-bold text-red-400";
+      } finally { btn.disabled = false; btn.textContent = "Submit Request"; }
+    });
+
+    init();
+  </script>
+</body>
+</html>

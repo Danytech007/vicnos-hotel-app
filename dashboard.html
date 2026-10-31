@@ -4,10 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos HotelStack - Dashboard</title>
-  
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script> 
@@ -18,89 +16,56 @@
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* Bar specific styles */
     .bar-bg { background-color: #0b1120; background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b1120 70%); }
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
     .gold-text { color: #fbbf24; }
-    
-    /* Room card hover */
     .room-card { transition: all 0.2s ease-in-out; cursor: pointer; }
     .room-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: #93c5fd; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- Top Navigation -->
   <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center">
     <div class="flex items-center gap-3">
-      <div class="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20">
-        <i data-lucide="hotel" class="w-5 h-5"></i>
-      </div>
-      <div>
-        <h1 class="font-bold text-gray-900 text-lg leading-tight">Vicnos HotelStack</h1>
-        <p id="user-role-display" class="text-[10px] text-blue-600 uppercase tracking-widest font-bold">Loading...</p>
-      </div>
+      <div class="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
+      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Vicnos HotelStack</h1><p id="user-role-display" class="text-[10px] text-blue-600 uppercase tracking-widest font-bold">Loading...</p></div>
     </div>
     <div class="flex items-center gap-3">
       <div class="text-right hidden sm:block">
         <p class="font-bold text-gray-900 text-sm">Welcome, <span id="admin-name" class="text-blue-600">Loading...</span> 👋</p>
         <p id="duty-title" class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Loading...</p>
       </div>
-      <button onclick="logout()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-red-100 hover:text-red-600 transition">
-        <i data-lucide="log-out" class="w-5 h-5"></i>
-      </button>
+      <button onclick="logout()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-red-100 hover:text-red-600 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
     </div>
   </nav>
 
-  <!-- Main Content Area -->
   <main id="main-content" class="flex-grow w-full mx-auto pb-12">
     
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
       
-      <!-- LOW STOCK ALERT BANNER -->
       <div id="recep-low-stock-banner" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-sm fade-in flex items-start gap-3">
         <div class="bg-red-100 p-2 rounded-full text-red-600 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
-        <div>
-          <h3 class="text-red-800 font-bold text-sm">Minimart Low Stock Alert!</h3>
-          <p id="recep-low-stock-items" class="text-red-700 text-xs mt-1 font-medium">Loading items...</p>
-        </div>
+        <div><h3 class="text-red-800 font-bold text-sm">Minimart Low Stock Alert!</h3><p id="recep-low-stock-items" class="text-red-700 text-xs mt-1 font-medium">Loading items...</p></div>
       </div>
 
-      <!-- Top Stats Row -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Available</p><p id="stat-available" class="text-3xl font-black text-emerald-600">0</p></div>
-          <div class="bg-emerald-50 p-3 rounded-full"><i data-lucide="door-open" class="w-6 h-6 text-emerald-600"></i></div>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Occupied</p><p id="stat-occupied" class="text-3xl font-black text-blue-600">0</p></div>
-          <div class="bg-blue-50 p-3 rounded-full"><i data-lucide="users" class="w-6 h-6 text-blue-600"></i></div>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Dirty</p><p id="stat-dirty" class="text-3xl font-black text-amber-500">0</p></div>
-          <div class="bg-amber-50 p-3 rounded-full"><i data-lucide="sparkles" class="w-6 h-6 text-amber-500"></i></div>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Maintenance</p><p id="stat-maintenance" class="text-3xl font-black text-red-600">0</p></div>
-          <div class="bg-red-50 p-3 rounded-full"><i data-lucide="wrench" class="w-6 h-6 text-red-600"></i></div>
-        </div>
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Available</p><p id="stat-available" class="text-3xl font-black text-emerald-600">0</p></div><div class="bg-emerald-50 p-3 rounded-full"><i data-lucide="door-open" class="w-6 h-6 text-emerald-600"></i></div></div>
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Occupied</p><p id="stat-occupied" class="text-3xl font-black text-blue-600">0</p></div><div class="bg-blue-50 p-3 rounded-full"><i data-lucide="users" class="w-6 h-6 text-blue-600"></i></div></div>
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Dirty</p><p id="stat-dirty" class="text-3xl font-black text-amber-500">0</p></div><div class="bg-amber-50 p-3 rounded-full"><i data-lucide="sparkles" class="w-6 h-6 text-amber-500"></i></div></div>
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Maintenance</p><p id="stat-maintenance" class="text-3xl font-black text-red-600">0</p></div><div class="bg-red-50 p-3 rounded-full"><i data-lucide="wrench" class="w-6 h-6 text-red-600"></i></div></div>
       </div>
 
-      <!-- Quick Links -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in">
         <a href="checkin.html" class="bg-slate-900 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition"><i data-lucide="log-in" class="w-5 h-5"></i> New Check-In</a>
         <a href="pos.html?dept=Minimart" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="shopping-cart" class="w-5 h-5 text-teal-600"></i> Minimart POS</a>
         <a href="minimart-orders.html" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 relative"><i data-lucide="bell" class="w-5 h-5 text-orange-500"></i> Minimart Orders <span id="recep-order-badge" class="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white hidden"></span></a>
-        <a href="minimart-stock.html" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="package" class="w-5 h-5 text-indigo-600"></i> Stock Requests</a>
+        <a href="stock-request.html?dept=Minimart" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="package" class="w-5 h-5 text-indigo-600"></i> Stock Requests</a>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 fade-in">
-          <div class="flex justify-between items-end mb-4">
-            <div><h2 class="text-xl font-bold text-gray-800">Room Status & Key Cards</h2><p class="text-xs text-gray-500 mt-1">Click any room to activate a Guest or Master Key Card.</p></div>
-            <button onclick="loadReceptionistData()" class="text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button>
-          </div>
+          <div class="flex justify-between items-end mb-4"><div><h2 class="text-xl font-bold text-gray-800">Room Status & Key Cards</h2><p class="text-xs text-gray-500 mt-1">Click any room to activate a Guest or Master Key Card.</p></div><button onclick="loadReceptionistData()" class="text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button></div>
           <div id="room-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4"><p class="text-gray-500 text-sm animate-pulse">Loading rooms...</p></div>
         </div>
         <div class="fade-in space-y-4">
@@ -110,81 +75,64 @@
       </div>
     </div>
 
-    <!-- ================= BARMAN VIEW (PREMIUM DARK MODE) ================= -->
+    <!-- ================= BARMAN VIEW ================= -->
     <div id="barman-view" class="hidden bar-bg min-h-screen text-slate-200 p-4 fade-in">
-      
       <div class="max-w-6xl mx-auto space-y-6 mt-2">
         
-        <!-- Low Stock Alert -->
         <div id="bar-low-stock-banner" class="hidden bg-red-500/10 border border-red-500/30 p-4 rounded-xl flex items-start gap-3">
           <div class="bg-red-500/20 p-2 rounded-full text-red-400 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
-          <div>
-            <h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3>
-            <p id="bar-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p>
-          </div>
+          <div><h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3><p id="bar-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p></div>
         </div>
 
-        <!-- Top Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between">
-            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Total Sales Today</p>
-            <p id="bar-total-sales" class="text-2xl font-black gold-text">₦0</p>
-          </div>
-          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between">
-            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Credits</p>
-            <p id="bar-credit-sales" class="text-2xl font-black text-amber-400">₦0</p>
-          </div>
-          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between">
-            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Cash to Remit</p>
-            <p id="bar-cash-sales" class="text-2xl font-black text-emerald-400">₦0</p>
-          </div>
-          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-indigo-500/20 to-transparent border-indigo-500/30">
-            <p class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider mb-1">Shift Status</p>
-            <p id="bar-shift-status" class="text-lg font-bold text-white">No Active Shift</p>
-          </div>
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Total Sales Today</p><p id="bar-total-sales" class="text-2xl font-black gold-text">₦0</p></div>
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Credits</p><p id="bar-credit-sales" class="text-2xl font-black text-amber-400">₦0</p></div>
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Cash to Remit</p><p id="bar-cash-sales" class="text-2xl font-black text-emerald-400">₦0</p></div>
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-indigo-500/20 to-transparent border-indigo-500/30"><p class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider mb-1">Shift Status</p><p id="bar-shift-status" class="text-lg font-bold text-white">No Active Shift</p></div>
         </div>
 
-        <!-- Quick Actions -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <a href="pos.html?dept=Bar&tab=pos" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30">
-            <div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="wine" class="w-6 h-6"></i></div>
-            <span class="font-bold text-sm text-white">Open POS</span>
-          </a>
-          <a href="pos.html?dept=Bar&tab=shift" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30">
-            <div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div>
-            <span class="font-bold text-sm text-white">Shift & Handover</span>
-          </a>
-          <a href="bar-orders.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30">
-            <div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div>
-            <span class="font-bold text-sm text-white">Bar Orders</span>
-            <span id="bar-order-badge" class="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900 hidden"></span>
-          </a>
-          <a href="bar-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-emerald-500/30">
-            <div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="file-text" class="w-6 h-6"></i></div>
-            <span class="font-bold text-sm text-white">Sales & PDF</span>
-          </a>
+          <a href="pos.html?dept=Bar&tab=pos" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="wine" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Open POS</span></a>
+          <a href="pos.html?dept=Bar&tab=shift" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Shift & Handover</span></a>
+          <a href="bar-orders.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Bar Orders</span><span id="bar-order-badge" class="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900 hidden"></span></a>
+          <a href="bar-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="file-text" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Sales & PDF</span></a>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Rooms Owing Bar Bills -->
           <div class="glass-card p-5 rounded-2xl">
-            <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
-              <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bar Bills (Checkout Due)</h3>
-            </div>
-            <div id="bar-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll">
-              <p class="text-xs text-slate-400">Checking for pending bills...</p>
-            </div>
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bar Bills (Checkout Due)</h3></div>
+            <div id="bar-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div>
           </div>
-
-          <!-- Stock Request -->
           <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center">
             <div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div>
             <h3 class="font-bold text-white mb-2">Received New Stock?</h3>
             <p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p>
-            <a href="minimart-stock.html" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a>
+            <a href="stock-request.html?dept=Bar" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a>
           </div>
         </div>
+      </div>
+    </div>
 
+    <!-- ================= WAITRESS VIEW ================= -->
+    <div id="waitress-view" class="hidden bar-bg min-h-screen text-slate-200 p-4 fade-in">
+      <div class="max-w-6xl mx-auto space-y-6 mt-2">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">My Total Sales</p><p id="wait-total-sales" class="text-2xl font-black gold-text">₦0</p></div>
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Credits</p><p id="wait-credit-sales" class="text-2xl font-black text-amber-400">₦0</p></div>
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Cash Collected</p><p id="wait-cash-sales" class="text-2xl font-black text-emerald-400">₦0</p></div>
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-indigo-500/20 to-transparent border-indigo-500/30"><p class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider mb-1">Shift Status</p><p id="wait-shift-status" class="text-lg font-bold text-white">No Active Shift</p></div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <a href="pos.html?dept=Kitchen&tab=pos" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="utensils" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Food POS</span></a>
+          <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="file-text" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Sales & PDF</span></a>
+          <a href="stock-request.html?dept=Kitchen" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="package-plus" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Request Stock</span></a>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Credits (Checkout Due)</h3></div>
+            <div id="wait-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div>
+        </div>
       </div>
     </div>
 
@@ -198,21 +146,6 @@
     </div>
 
   </main>
-
-  <!-- ARIT Card Writing Modal -->
-  <div id="arit-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center fade-in">
-      <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="credit-card" class="w-10 h-10 text-blue-600"></i></div>
-      <h2 class="text-xl font-bold text-gray-900 mb-2">ARIT Key Encoder</h2>
-      <p class="text-sm text-gray-500 mb-6">Place the card on the ARIT machine, then click below to encode for <strong>Room <span id="modal-room-num" class="text-gray-900">---</span></strong>.</p>
-      <button onclick="writeCard()" id="write-card-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Activate Card Now</button>
-      <button onclick="closeAritModal()" class="mt-4 text-gray-500 text-sm font-bold hover:text-gray-800">Cancel</button>
-    </div>
-  </div>
-  <div id="loading-overlay" class="fixed inset-0 bg-white/90 backdrop-blur-md hidden items-center justify-center z-[110] flex-col">
-    <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-    <p class="text-blue-900 font-bold animate-pulse">Writing data to ARIT Hardware...</p>
-  </div>
 
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
@@ -239,19 +172,20 @@
       
       if (currentRole === 'receptionist') {
         document.getElementById('receptionist-view').classList.remove('hidden');
-        document.getElementById('barman-view').classList.add('hidden');
         document.getElementById('duty-title').textContent = 'Receptionist on Duty';
         loadReceptionistData(); checkMinimartOrders();
       } 
       else if (currentRole === 'barman') {
-        document.getElementById('receptionist-view').classList.add('hidden');
         document.getElementById('barman-view').classList.remove('hidden');
         document.getElementById('duty-title').textContent = 'Barman on Duty';
         loadBarmanData();
       }
+      else if (currentRole === 'waitress') {
+        document.getElementById('waitress-view').classList.remove('hidden');
+        document.getElementById('duty-title').textContent = 'Waitress on Duty';
+        loadWaitressData();
+      }
       else {
-        document.getElementById('receptionist-view').classList.add('hidden');
-        document.getElementById('barman-view').classList.add('hidden');
         document.getElementById('standard-view').classList.remove('hidden');
         document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
         document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
@@ -263,100 +197,69 @@
     async function loadBarmanData() {
       const today = new Date().toISOString().split('T')[0];
 
-      // 1. Fetch Sales Today
       const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', 'Bar').gte('created_at', today);
       let cash = 0, credit = 0;
-      if (orders) {
-        orders.forEach(o => {
-          if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount);
-          else cash += Number(o.total_amount);
-        });
-      }
+      if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
       document.getElementById('bar-total-sales').textContent = `₦${(cash + credit).toLocaleString()}`;
       document.getElementById('bar-credit-sales').textContent = `₦${credit.toLocaleString()}`;
       document.getElementById('bar-cash-sales').textContent = `₦${cash.toLocaleString()}`;
 
-      // 2. Fetch Shift Status
       const { data: shifts } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', 'Bar').eq('status', 'Active').limit(1);
       const shiftStatusEl = document.getElementById('bar-shift-status');
-      if (shifts && shifts.length > 0) {
-        shiftStatusEl.textContent = "Active Shift";
-        shiftStatusEl.className = "text-lg font-bold text-emerald-400";
-      } else {
-        shiftStatusEl.textContent = "No Active Shift";
-        shiftStatusEl.className = "text-lg font-bold text-red-400";
-      }
+      if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; } 
+      else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
 
-      // 3. Fetch Low Stock
       const { data: lowStock } = await db.from('inventory').select('*').eq('department', 'Bar').lte('stock_quantity', 5);
       const banner = document.getElementById('bar-low-stock-banner');
-      if (lowStock && lowStock.length > 0) {
-        banner.classList.remove('hidden');
-        document.getElementById('bar-low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', ');
-      } else {
-        banner.classList.add('hidden');
-      }
+      if (lowStock && lowStock.length > 0) { banner.classList.remove('hidden'); document.getElementById('bar-low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', '); } 
+      else { banner.classList.add('hidden'); }
 
-      // 4. Fetch Rooms Owing Bar Bills (Checking out today)
       const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
       const list = document.getElementById('bar-room-bills-list');
-      
       if (departures && departures.length > 0) {
-        // Fetch their bar charges
-        const bookingIds = departures.map(d => d.id);
-        const { data: charges } = await db.from('folio_charges').select('booking_id, amount').eq('department', 'Bar').in('booking_id', bookingIds);
-        
-        let billsHtml = '';
-        let hasBills = false;
-        
+        const { data: charges } = await db.from('folio_charges').select('booking_id, amount').eq('department', 'Bar').in('booking_id', departures.map(d => d.id));
+        let billsHtml = '', hasBills = false;
         departures.forEach(d => {
-           const roomCharges = charges?.filter(c => c.booking_id === d.id) || [];
-           const totalOwed = roomCharges.reduce((sum, c) => sum + Number(c.amount), 0);
-           
-           if (totalOwed > 0) {
-             hasBills = true;
-             billsHtml += `
-               <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700">
-                 <div>
-                   <p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p>
-                   <p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p>
-                 </div>
-                 <div class="text-right">
-                   <p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p>
-                   <p class="text-[9px] text-slate-500 uppercase">Bar Bill</p>
-                 </div>
-               </div>`;
-           }
+           const totalOwed = (charges?.filter(c => c.booking_id === d.id) || []).reduce((sum, c) => sum + Number(c.amount), 0);
+           if (totalOwed > 0) { hasBills = true; billsHtml += `<div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">Bar Bill</p></div></div>`; }
         });
-        
         if (hasBills) list.innerHTML = billsHtml;
         else list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No bar bills owed by checking-out guests today.</p>';
-      } else {
-        list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>';
-      }
-      
+      } else { list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>'; }
       checkBarOrders();
     }
 
-    async function checkBarOrders() {
-      const { count } = await db.from('guest_orders').select('*', { count: 'exact', head: true }).eq('department', 'Bar').in('status', ['Pending', 'Preparing']);
-      const badge = document.getElementById('bar-order-badge');
-      if (count > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden');
+    // ================= WAITRESS LOGIC =================
+    async function loadWaitressData() {
+      const today = new Date().toISOString().split('T')[0];
+
+      const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', 'Kitchen').eq('created_by', currentUser.id).gte('created_at', today);
+      let cash = 0, credit = 0;
+      if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
+      document.getElementById('wait-total-sales').textContent = `₦${(cash + credit).toLocaleString()}`;
+      document.getElementById('wait-credit-sales').textContent = `₦${credit.toLocaleString()}`;
+      document.getElementById('wait-cash-sales').textContent = `₦${cash.toLocaleString()}`;
+
+      const { data: shifts } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', 'Waitress').eq('status', 'Active').limit(1);
+      const shiftStatusEl = document.getElementById('wait-shift-status');
+      if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; } 
+      else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
+
+      const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
+      const list = document.getElementById('wait-room-bills-list');
+      if (departures && departures.length > 0) {
+        const { data: charges } = await db.from('folio_charges').select('booking_id, amount').eq('department', 'Kitchen').in('booking_id', departures.map(d => d.id));
+        let billsHtml = '', hasBills = false;
+        departures.forEach(d => {
+           const totalOwed = (charges?.filter(c => c.booking_id === d.id) || []).reduce((sum, c) => sum + Number(c.amount), 0);
+           if (totalOwed > 0) { hasBills = true; billsHtml += `<div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">Food Bill</p></div></div>`; }
+        });
+        if (hasBills) list.innerHTML = billsHtml;
+        else list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No food bills owed by checking-out guests today.</p>';
+      } else { list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>'; }
     }
 
-    // ================= RECEPTIONIST LOGIC =================
-    async function loadReceptionistData() { /* ... Kept exactly the same as previous code ... */ }
-    async function loadMovements() { /* ... */ }
-    async function checkMinimartOrders() { /* ... */ }
-    function openAritModal(roomNum, status, guestName) { /* ... */ }
-    function closeAritModal() { /* ... */ }
-    function writeCard() { /* ... */ }
-
-    async function logout() { 
-      await db.auth.signOut(); 
-      window.location.replace('index.html'); 
-    }
-
+    async function logout() { await db.auth.signOut(); window.location.replace('index.html'); }
     init();
   </script>
 </body>
