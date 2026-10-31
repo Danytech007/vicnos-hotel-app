@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Track Order</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -14,73 +18,146 @@
     .fade-in { animation: fadeIn 0.4s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="p-4 flex flex-col items-center pb-24">
 
-  <!-- Header -->
-  <nav class="w-full max-w-md bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between mb-6 sticky top-4 z-50">
-    <div class="flex items-center gap-3">
-      <a href="guest-portal.html" id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
-      <div>
-        <h1 class="font-bold text-gray-900 text-lg leading-tight">Live Tracking</h1>
-        <p class="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Room <span id="nav-room-num">---</span></p>
+  <!-- CHECKOUT LOCKOUT SCREEN (Hidden by default) -->
+  <div id="checkout-lockout" class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-6 text-center fade-in">
+    <div class="bg-white/10 p-6 rounded-full mb-6">
+      <i data-lucide="door-closed" class="w-16 h-16 text-blue-400"></i>
+    </div>
+    <h1 class="text-2xl font-bold text-white mb-2">Session Expired</h1>
+    <p class="text-slate-400 text-sm mb-8">You have checked out or your session is invalid. Please scan your room QR code to view your orders.</p>
+    <a href="guest-portal.html" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">Return to Home</a>
+    <p class="text-xs text-slate-500 font-bold tracking-widest mt-10">POWERED BY DEKY</p>
+  </div>
+
+  <!-- MAIN APP (Hidden until auth verifies) -->
+  <div id="main-app" class="hidden w-full flex-col items-center">
+
+    <!-- Header -->
+    <nav class="w-full max-w-md bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between mb-6 sticky top-4 z-50">
+      <div class="flex items-center gap-3">
+        <button id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></button>
+        <div>
+          <h1 class="font-bold text-gray-900 text-lg leading-tight">Live Tracking</h1>
+          <p class="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Room <span id="nav-room-num">---</span></p>
+        </div>
       </div>
-    </div>
-    <div class="bg-blue-50 p-2 rounded-xl text-blue-600 animate-pulse">
-      <i data-lucide="radio" class="w-5 h-5"></i>
-    </div>
-  </nav>
-
-  <main class="w-full max-w-md space-y-6" id="orders-container">
-    <!-- Loading State -->
-    <div id="loading-state" class="text-center py-20">
-      <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p class="text-gray-500 text-sm font-medium">Checking for active orders...</p>
-    </div>
-
-    <!-- Empty State (Hidden by default) -->
-    <div id="empty-state" class="hidden text-center py-20 fade-in">
-      <div class="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-        <i data-lucide="utensils-crossed" class="w-10 h-10 text-gray-400"></i>
+      <div class="bg-blue-50 p-2 rounded-xl text-blue-600 animate-pulse">
+        <i data-lucide="radio" class="w-5 h-5"></i>
       </div>
-      <h2 class="text-xl font-bold text-gray-800 mb-2">No active orders</h2>
-      <p class="text-gray-500 text-sm mb-8 px-4">You don't have any food, drinks, or minimart orders in progress right now.</p>
-      <a href="room-service.html" id="order-now-btn" class="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
-        <i data-lucide="plus-circle" class="w-5 h-5"></i> Order Now
-      </a>
-    </div>
-  </main>
+    </nav>
 
-  <!-- Footer -->
-  <footer class="mt-auto pt-10 pb-6 text-center w-full max-w-md">
-    <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
-    <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
-  </footer>
+    <main class="w-full max-w-md space-y-6" id="orders-container">
+      <!-- Loading State -->
+      <div id="loading-state" class="text-center py-20">
+        <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p class="text-gray-500 text-sm font-medium">Checking for active orders...</p>
+      </div>
+
+      <!-- Empty State (Hidden by default) -->
+      <div id="empty-state" class="hidden text-center py-20 fade-in">
+        <div class="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i data-lucide="utensils-crossed" class="w-10 h-10 text-gray-400"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800 mb-2">No active orders</h2>
+        <p class="text-gray-500 text-sm mb-8 px-4">You don't have any food, drinks, or minimart orders in progress right now.</p>
+        <a id="order-now-btn" class="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i> Order Now
+        </a>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto pt-10 pb-6 text-center w-full max-w-md">
+      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+    </footer>
+
+  </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    // Get Room Number from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomNum = urlParams.get('room') || '101'; 
-    
-    // Set Dynamic Links
-    document.getElementById('nav-room-num').textContent = roomNum;
-    document.getElementById('back-btn').href = `guest-portal.html?room=${roomNum}`;
-    document.getElementById('order-now-btn').href = `room-service.html?room=${roomNum}`;
+    lucide.createIcons();
 
+    let guestSession = null;
     let ordersChannel = null;
 
+    // --- SECURE AUTHENTICATION ---
+    async function authenticateGuest() {
+        let savedGuest = localStorage.getItem('vicnos_guest_session');
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoom = urlParams.get('room');
+
+        if (!savedGuest) {
+            if (!urlRoom) return showLockout();
+            
+            const { data: roomData } = await db.from('rooms').select('id').eq('room_number', urlRoom).single();
+            if (!roomData) return showLockout();
+
+            const { data: booking } = await db.from('bookings')
+                .select('id, check_in_date, expected_check_out, guests(full_name)')
+                .eq('room_id', roomData.id).eq('status', 'Checked In').limit(1).single();
+
+            if (!booking) return showLockout();
+
+            savedGuest = {
+                booking_id: booking.id,
+                room_number: urlRoom,
+                guest_name: booking.guests.full_name
+            };
+            localStorage.setItem('vicnos_guest_session', JSON.stringify(savedGuest));
+        } else {
+            savedGuest = JSON.parse(savedGuest);
+            
+            // Verify status with DB
+            const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
+            if (!booking || booking.status !== 'Checked In') return showLockout();
+
+            // Prevent URL hacking
+            if (urlRoom && urlRoom !== savedGuest.room_number) {
+                window.history.replaceState(null, '', `?room=${savedGuest.room_number}`);
+            }
+        }
+
+        guestSession = savedGuest;
+        
+        // Load UI
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('flex');
+        document.getElementById('nav-room-num').textContent = guestSession.room_number;
+        
+        // Set Dynamic Links
+        document.getElementById('back-btn').onclick = () => window.location.href = `guest-portal.html?room=${guestSession.room_number}`;
+        document.getElementById('order-now-btn').href = `room-service.html?room=${guestSession.room_number}`;
+
+        // Start fetching & listening
+        loadActiveOrders();
+        setupRealtime();
+    }
+
+    function showLockout() {
+        localStorage.removeItem('vicnos_guest_session');
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('checkout-lockout').classList.remove('hidden');
+    }
+
+    // --- REAL-TIME ORDERS ---
     async function loadActiveOrders() {
-        // Fetch all active orders for this room that are not Delivered or Completed
+        if (!guestSession) return;
+
+        // Fetch all active orders for this secure room
         const { data: orders, error } = await db.from('guest_orders')
             .select('*')
-            .eq('room_number', roomNum)
+            .eq('room_number', guestSession.room_number)
             .not('status', 'in', '("Delivered","Completed","Cancelled")')
             .order('created_at', { ascending: false });
 
@@ -105,18 +182,16 @@
     }
 
     function generateOrderCard(order) {
-        // Map statuses to index for timeline coloring
         const statusMap = {
             'Pending': 0,
             'Preparing': 1,
             'Ready': 2,
-            'On the Way': 2, // Fallback just in case
+            'On the Way': 2, 
             'Delivered': 3,
             'Completed': 3
         };
         const currentStep = statusMap[order.status] !== undefined ? statusMap[order.status] : 0;
 
-        // Parse Items
         let itemsHtml = '';
         try {
             const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
@@ -131,7 +206,6 @@
             `).join('');
         } catch(e) { itemsHtml = '<p class="text-red-500 text-xs">Error loading items</p>'; }
 
-        // Department Styling
         let deptColor = 'bg-gray-100 text-gray-700';
         let deptIcon = 'utensils';
         if (order.department === 'Kitchen') { deptColor = 'bg-orange-100 text-orange-700'; deptIcon = 'chef-hat'; }
@@ -141,7 +215,6 @@
         const timeStr = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const activeStatusText = order.status === 'Ready' ? 'Ready for Delivery' : order.status;
 
-        // Timeline Step Class Generator
         const stepClass = (index) => index <= currentStep ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 text-gray-400 border-gray-200';
         const lineClass = (index) => index < currentStep ? 'bg-blue-600' : 'bg-gray-200';
 
@@ -173,9 +246,7 @@
 
                 <!-- Timeline (Horizontal) -->
                 <div class="relative flex justify-between mb-8 px-2">
-                    <!-- Background Line -->
                     <div class="absolute top-4 left-4 right-4 h-1 bg-gray-100 -z-10 rounded-full"></div>
-                    <!-- Active Line -->
                     <div class="absolute top-4 left-4 h-1 ${lineClass(1)} -z-10 rounded-full transition-all duration-500" style="width: ${currentStep === 0 ? '0%' : currentStep === 1 ? '33%' : currentStep === 2 ? '66%' : '100%'}"></div>
 
                     <!-- Step 1 -->
@@ -221,33 +292,25 @@
         `;
     }
 
-    // Setup Realtime WebSocket
     function setupRealtime() {
+        if (!guestSession) return;
         if (ordersChannel) db.removeChannel(ordersChannel);
         
-        ordersChannel = db.channel('track-order-room-' + roomNum)
+        ordersChannel = db.channel('track-order-room-' + guestSession.room_number)
             .on('postgres_changes', { 
-                event: '*', // Listen to Inserts, Updates, and Deletes
+                event: '*', 
                 schema: 'public', 
                 table: 'guest_orders',
-                filter: `room_number=eq.${roomNum}`
+                filter: `room_number=eq.${guestSession.room_number}`
             }, payload => {
                 console.log("Order update received:", payload);
-                loadActiveOrders(); // Re-render UI instantly
+                loadActiveOrders(); 
             })
             .subscribe();
     }
 
     // Initialize
-    loadActiveOrders();
-    setupRealtime();
+    authenticateGuest();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
