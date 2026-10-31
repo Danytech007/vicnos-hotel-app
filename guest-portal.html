@@ -91,7 +91,7 @@
                   <p id="ad-desc" class="text-indigo-100 text-[11px] font-medium mt-0.5 line-clamp-2">Ad Description</p>
                 </div>
               </div>
-              <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg">
+              <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg flex-shrink-0">
                 <i data-lucide="chevron-right" class="w-5 h-5"></i>
               </div>
             </div>
@@ -99,8 +99,33 @@
         </a>
       </div>
 
-      <!-- QUICK ACTIONS GRID (No Bottom Nav) -->
-      <div class="p-4 mt-2">
+      <!-- LATEST MEALS -->
+      <div class="mt-6 pl-4">
+        <div class="flex justify-between items-center pr-4 mb-3">
+          <h2 class="text-lg font-bold text-gray-800">Latest Meals</h2>
+          <a href="room-service.html" id="link-food-menu" class="text-xs font-bold text-blue-600">See Menu</a>
+        </div>
+        
+        <div class="flex gap-3 overflow-x-auto hide-scroll pb-4 pr-4" id="latest-meals-list">
+          <p class="text-gray-400 text-xs py-2">Loading meals...</p>
+        </div>
+      </div>
+
+      <!-- DYNAMIC HOTEL HIGHLIGHTS -->
+      <div class="mt-2 pl-4" id="highlights-section" style="display: none;">
+        <div class="flex justify-between items-center pr-4 mb-3">
+          <h2 class="text-lg font-bold text-gray-800">Hotel Highlights</h2>
+        </div>
+        
+        <div class="flex gap-3 overflow-x-auto hide-scroll pb-4 pr-4" id="highlights-list">
+          <!-- Loaded dynamically -->
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS GRID (Moved to the bottom as requested) -->
+      <div class="p-4 mt-4 border-t border-gray-100">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 px-1">Quick Actions</h2>
+        
         <div class="grid grid-cols-4 gap-y-6 gap-x-2">
           
           <a href="room-service.html" id="link-room-service" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
@@ -125,9 +150,10 @@
             <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">My<br>Bill</span>
           </a>
 
+          <!-- Catchy Compass Icon for Inside Life -->
           <a href="inside-life.html" id="link-local-hub" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
             <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shadow-sm border border-blue-100">
-              <i data-lucide="map" class="w-6 h-6 text-blue-600"></i>
+              <i data-lucide="compass" class="w-6 h-6 text-blue-600"></i>
             </div>
             <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Inside<br>Life</span>
           </a>
@@ -177,47 +203,8 @@
         </div>
       </div>
 
-      <!-- LATEST MEALS -->
-      <div class="mt-6 pl-4">
-        <div class="flex justify-between items-center pr-4 mb-3">
-          <h2 class="text-lg font-bold text-gray-800">Latest Meals</h2>
-          <a href="room-service.html" id="link-food-menu" class="text-xs font-bold text-blue-600">See Menu</a>
-        </div>
-        
-        <div class="flex gap-3 overflow-x-auto hide-scroll pb-4 pr-4" id="latest-meals-list">
-          <p class="text-gray-400 text-xs py-2">Loading meals...</p>
-        </div>
-      </div>
-
-      <!-- HOTEL HIGHLIGHTS -->
-      <div class="mt-2 pl-4">
-        <div class="flex justify-between items-center pr-4 mb-3">
-          <h2 class="text-lg font-bold text-gray-800">Hotel Highlights</h2>
-        </div>
-        
-        <div class="flex gap-3 overflow-x-auto hide-scroll pb-4 pr-4">
-          <div class="min-w-[240px] h-32 rounded-2xl relative overflow-hidden shadow-md flex-shrink-0 active:scale-95 transition-transform border border-gray-100">
-            <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-            <div class="absolute bottom-3 left-3 text-white">
-              <p class="font-bold text-sm leading-tight">Weekend Special</p>
-              <p class="text-[10px] text-gray-300">Live Band & Grill at the rooftop.</p>
-            </div>
-          </div>
-
-          <div class="min-w-[240px] h-32 rounded-2xl relative overflow-hidden shadow-md flex-shrink-0 active:scale-95 transition-transform border border-gray-100">
-            <img src="https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-            <div class="absolute bottom-3 left-3 text-white">
-              <p class="font-bold text-sm leading-tight">Spa Discount</p>
-              <p class="text-[10px] text-gray-300">20% off all massages today.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-auto pt-8 pb-8 text-center">
-        <div class="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
+      <!-- FOOTER AT THE VERY BOTTOM -->
+      <div class="mt-8 pt-6 pb-8 text-center border-t border-gray-100">
         <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
         <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
       </div>
@@ -303,6 +290,7 @@
 
         loadAd();
         loadLatestMeals();
+        loadHighlights();
     }
 
     async function loadAd() {
@@ -314,7 +302,7 @@
         container.classList.remove('hidden');
         document.getElementById('ad-title').textContent = ad.title;
         document.getElementById('ad-desc').textContent = ad.description;
-        document.getElementById('ad-link').href = ad.ad_link || '#'; // Attach Link
+        document.getElementById('ad-link').href = ad.ad_link || '#';
         
         if (ad.image_url) {
             document.getElementById('ad-image').src = ad.image_url;
@@ -346,6 +334,31 @@
             <div class="p-2">
                 <h3 class="font-bold text-gray-800 text-[10px] leading-tight line-clamp-1">${item.name}</h3>
                 <p class="font-extrabold text-blue-600 text-xs mt-1">₦${Number(item.price).toLocaleString()}</p>
+            </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadHighlights() {
+      const list = document.getElementById('highlights-list');
+      const section = document.getElementById('highlights-section');
+      
+      // Fetch from the new hotel_highlights table
+      const { data: highlights } = await db.from('hotel_highlights').select('*').eq('is_active', true).order('created_at', { ascending: false });
+
+      if (!highlights || highlights.length === 0) {
+        section.style.display = 'none'; // Hide the section if no highlights exist
+        return;
+      }
+
+      section.style.display = 'block';
+      list.innerHTML = highlights.map(h => `
+        <div class="min-w-[240px] h-32 rounded-2xl relative overflow-hidden shadow-md flex-shrink-0 active:scale-95 transition-transform border border-gray-100 fade-in">
+            <img src="${h.image_url || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600'}" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent"></div>
+            <div class="absolute bottom-3 left-3 text-white">
+              <p class="font-bold text-sm leading-tight mb-1">${h.title}</p>
+              <p class="text-[10px] text-gray-300 line-clamp-2">${h.description}</p>
             </div>
         </div>
       `).join('');

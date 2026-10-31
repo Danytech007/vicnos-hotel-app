@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Manage Hotel Highlights</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-slate-900 border-b border-slate-700/50 p-4 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div>
+        <h1 class="font-bold text-white text-lg leading-tight">Hotel Highlights</h1>
+        <p class="text-[10px] text-pink-400 uppercase tracking-widest font-bold">Manager Control</p>
+      </div>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-6 mt-4">
+    
+    <!-- Add Highlight Form -->
+    <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
+      <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="image-plus" class="w-5 h-5 text-pink-400"></i> Add New Highlight</h2>
+      <form id="highlight-form" class="space-y-4">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Title</label>
+          <input id="h-title" type="text" required placeholder="e.g. Weekend Special" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-pink-500">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Description</label>
+          <input id="h-desc" type="text" required placeholder="e.g. Live Band & Grill at the rooftop." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-pink-500">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Photo</label>
+          <input id="h-image" type="file" accept="image/*" required class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white text-sm outline-none">
+        </div>
+        <button type="submit" id="h-btn" class="w-full bg-pink-600 text-white font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Publish Highlight</button>
+      </form>
+      <p id="h-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
+    </div>
+
+    <!-- List Existing Highlights -->
+    <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
+      <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-pink-400"></i> Active Highlights</h2>
+      <div id="highlights-list" class="space-y-4">
+        <p class="text-center text-slate-500 animate-pulse">Loading highlights...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function uploadImage(file, bucketName) {
+        if (!file) return null;
+        const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true };
+        const compressedFile = await imageCompression(file, options);
+        const fileName = `${bucketName}-${Date.now()}.jpg`;
+        const { error } = await db.storage.from(bucketName).upload(fileName, compressedFile);
+        if (error) throw error;
+        const { data } = db.storage.from(bucketName).getPublicUrl(fileName);
+        return data.publicUrl;
+    }
+
+    async function loadHighlights() {
+        const list = document.getElementById('highlights-list');
+        const { data: highlights } = await db.from('hotel_highlights').select('*').order('created_at', { ascending: false });
+
+        if (!highlights || highlights.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-500">No highlights added yet.</p>';
+            return;
+        }
+
+        list.innerHTML = highlights.map(h => `
+            <div class="flex items-center gap-3 bg-slate-900 p-3 rounded-xl border border-slate-700 fade-in">
+                <img src="${h.image_url || 'https://via.placeholder.com/150'}" class="w-16 h-16 rounded-lg object-cover border border-slate-600 flex-shrink-0">
+                <div class="flex-1">
+                    <h3 class="font-bold text-white text-sm">${h.title}</h3>
+                    <p class="text-[11px] text-slate-400 line-clamp-1">${h.description}</p>
+                </div>
+                <button onclick="deleteHighlight('${h.id}')" class="bg-red-500/20 text-red-400 p-2 rounded-lg active:scale-95 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    async function deleteHighlight(id) {
+        if (!confirm("Delete this highlight?")) return;
+        await db.from('hotel_highlights').delete().eq('id', id);
+        loadHighlights();
+    }
+
+    document.getElementById('highlight-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('h-btn');
+        const msg = document.getElementById('h-msg');
+        btn.innerText = "Uploading..."; btn.disabled = true;
+
+        try {
+            const file = document.getElementById('h-image').files[0];
+            const imageUrl = await uploadImage(file, 'vendor_images');
+
+            await db.from('hotel_highlights').insert({
+                title: document.getElementById('h-title').value,
+                description: document.getElementById('h-desc').value,
+                image_url: imageUrl
+            });
+
+            msg.textContent = "✅ Highlight Added!";
+            document.getElementById('highlight-form').reset();
+            loadHighlights();
+        } catch (err) {
+            msg.textContent = "Error: " + err.message;
+            msg.className = "mt-2 text-center text-sm font-bold text-red-400";
+        } finally {
+            btn.innerText = "Publish Highlight"; btn.disabled = false;
+            setTimeout(() => {
+                msg.textContent = '';
+                msg.className = "mt-2 text-center text-sm font-bold text-green-400";
+            }, 3000);
+        }
+    });
+
+    loadHighlights();
+  </script>
+</body>
+</html>
