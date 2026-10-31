@@ -88,85 +88,6 @@
       </div>
     </div>
 
-    <!-- ADD / EDIT VENDOR -->
-    <div id="section-vendor" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
-      <h2 class="font-bold text-white mb-4 text-lg">Manually Add Vendor</h2>
-      <form id="vendor-form" class="space-y-4">
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Business Name</label>
-          <input id="v-name" type="text" required placeholder="e.g. Diamond Fashion" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Category</label>
-          <select id="v-category" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-            <option value="Local Street Food">Local Street Food (Suya, Pizza)</option>
-            <option value="Transport">Transport & Rides</option>
-            <option value="Fashion & Tailoring">Fashion & Tailoring</option>
-            <option value="Spa & Wellness">Spa & Wellness</option>
-            <option value="Shopping & Artisans">Shopping & Artisans</option>
-            <option value="Tours & Guides">Tours & Guides</option>
-            <option value="Romance & Gifts">Romance & Gifts</option>
-            <option value="Events">Events</option>
-            <option value="Tech & Essentials">Tech & Essentials</option>
-            <option value="Pharmacy & Wellness">Pharmacy & Wellness (Manpower)</option>
-            <option value="Financial Services">Currency Exchange</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Physical Business Address</label>
-          <input id="v-address" type="text" required placeholder="e.g. 12 Ekewan, Benin City" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Passport Photograph</label>
-          <input id="v-image" type="file" accept="image/*" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white text-sm outline-none">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">WhatsApp Number</label>
-          <input id="v-whatsapp" type="text" required placeholder="2348012345678" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-        </div>
-        <div class="border-t border-slate-700/50 pt-4 mt-4">
-            <p class="text-xs text-yellow-400 font-bold mb-3">Create Vendor Login Account</p>
-            <div class="space-y-3">
-                <div>
-                  <label class="block text-xs text-slate-400 mb-1">Vendor Email</label>
-                  <input id="v-email" type="email" required placeholder="vendor@email.com" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-                </div>
-                <div>
-                  <label class="block text-xs text-slate-400 mb-1">Temporary Password</label>
-                  <input id="v-password" type="text" required placeholder="Min 6 characters" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-                </div>
-            </div>
-        </div>
-        <button type="submit" id="v-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Save Vendor & Create Login</button>
-      </form>
-      <p id="v-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
-    </div>
-
-    <!-- ADD GUIDE -->
-    <div id="section-guide" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
-      <h2 class="font-bold text-white mb-4 text-lg">Add Elite Guide (₦50k Fee)</h2>
-      <form id="guide-form" class="space-y-4">
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Full Name</label>
-          <input id="g-name" type="text" required placeholder="e.g. Chinedu Okafor" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Bio / Skills</label>
-          <textarea id="g-bio" required placeholder="Fluent in English & French..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500"></textarea>
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Passport Photograph</label>
-          <input id="g-image" type="file" accept="image/*" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white text-sm outline-none">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">WhatsApp Number</label>
-          <input id="g-whatsapp" type="text" required placeholder="2348012345678" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
-        </div>
-        <button type="submit" id="g-btn" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl mt-2 active:scale-95 transition">Save Guide</button>
-      </form>
-      <p id="g-msg" class="mt-2 text-center text-sm font-bold text-green-400"></p>
-    </div>
-
     <!-- ADD / EDIT AD -->
     <div id="section-ad" class="tab-content hidden bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 fade-in">
       <h2 id="ad-form-title" class="font-bold text-white mb-4 text-lg">Add Sponsored Ad</h2>
@@ -178,6 +99,10 @@
         <div>
           <label class="block text-xs text-slate-400 mb-1">Short Description</label>
           <input id="a-desc" type="text" required placeholder="e.g. Learn Basic and Advanced technical analysis..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Destination Link (Website or WhatsApp)</label>
+          <input id="a-link" type="url" placeholder="e.g. https://wa.me/2348012345678" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-yellow-500">
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Ad Banner Image (Leave blank to keep existing when editing)</label>
@@ -204,7 +129,7 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    let editingAdId = null; // Tracks if we are editing an ad
+    let editingAdId = null; 
 
     window.history.replaceState({ tab: 'overview' }, '', '#overview');
     window.onpopstate = function(event) {
@@ -244,7 +169,6 @@
         if(tabId === 'manage-ads') loadAdminAds();
     }
 
-    // --- OVERVIEW ---
     async function loadOverview() {
         const cachedStats = localStorage.getItem('vicnos_admin_stats');
         if (cachedStats) {
@@ -267,14 +191,9 @@
         document.getElementById('stat-inquiries').textContent = iCount;
         document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
         
-        localStorage.setItem('vicnos_admin_stats', JSON.stringify({ 
-            vendors: vCount, 
-            inquiries: iCount, 
-            commission: totalComm 
-        }));
+        localStorage.setItem('vicnos_admin_stats', JSON.stringify({ vendors: vCount, inquiries: iCount, commission: totalComm }));
     }
 
-    // --- MANAGE VENDORS ---
     async function loadAdminVendors() {
         const list = document.getElementById('vendor-list-admin');
         const { data: vendors } = await db.from('vendors').select(`*, profiles (id)`).order('created_at', { ascending: false });
@@ -303,7 +222,6 @@
                             ${isActive ? 'ACTIVE' : 'INACTIVE'}
                         </span>
                     </div>
-                    
                     ${profileId ? `
                     <div class="flex gap-2">
                         <button onclick="resetVendorPassword('${profileId}', '${v.business_name}')" class="flex-1 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold border border-slate-700">Reset PW</button>
@@ -327,11 +245,7 @@
     async function resetVendorPassword(userId, name) {
         const newPassword = prompt(`Enter new password for ${name}:`);
         if (!newPassword || newPassword.length < 6) return alert("Password must be at least 6 characters.");
-        
-        const { data, error } = await db.functions.invoke('manage-staff', {
-            body: { action: 'reset_password', user_id: userId, new_password: newPassword }
-        });
-        
+        const { data, error } = await db.functions.invoke('manage-staff', { body: { action: 'reset_password', user_id: userId, new_password: newPassword } });
         if (error || data.error) alert("Error: " + (error?.message || data.error));
         else alert(`✅ Password reset for ${name}!`);
     }
@@ -339,22 +253,15 @@
     async function toggleVendorStatus(userId, vendorId, currentStatus) {
         const newStatus = !currentStatus;
         if (!confirm(`Are you sure you want to ${newStatus ? 'activate' : 'deactivate'} this vendor?`)) return;
-
-        const { data, error } = await db.functions.invoke('manage-staff', {
-            body: { action: 'toggle_active', user_id: userId, is_active: newStatus }
-        });
-        
+        const { data, error } = await db.functions.invoke('manage-staff', { body: { action: 'toggle_active', user_id: userId, is_active: newStatus } });
         if (error || data.error) return alert("Error: " + (error?.message || data.error));
-
         await db.from('vendors').update({ is_active: newStatus }).eq('id', vendorId);
         loadAdminVendors();
     }
 
     async function deleteVendor(userId, vendorId, name) {
         if (!confirm(`⚠️ Are you sure you want to PERMANENTLY delete ${name}?`)) return;
-        if (userId) {
-            await db.functions.invoke('manage-staff', { body: { action: 'delete_user', user_id: userId } });
-        }
+        if (userId) await db.functions.invoke('manage-staff', { body: { action: 'delete_user', user_id: userId } });
         await db.from('vendors').delete().eq('id', vendorId);
         loadAdminVendors();
     }
@@ -364,22 +271,13 @@
         if (!email) return;
         const password = prompt(`Enter temporary password for ${name} (min 6 chars):`);
         if (!password || password.length < 6) return alert("Password must be at least 6 characters.");
-
         const { data: authData, error: authError } = await db.auth.signUp({ email, password });
         if (authError) return alert("Error: " + authError.message);
-
-        await db.from('profiles').insert({
-            id: authData.user.id,
-            full_name: name,
-            role: 'vendor',
-            vendor_id: vendorId
-        });
-
+        await db.from('profiles').insert({ id: authData.user.id, full_name: name, role: 'vendor', vendor_id: vendorId });
         alert(`✅ Login created for ${name}!`);
         loadAdminVendors();
     }
 
-    // --- MANAGE ADS ---
     async function loadAdminAds() {
         const list = document.getElementById('ad-list-admin');
         const { data: ads } = await db.from('ads').select('*').order('created_at', { ascending: false });
@@ -391,7 +289,6 @@
 
         list.innerHTML = ads.map(ad => {
             const isLive = ad.is_active && ad.moderation_status === 'approved';
-            
             return `
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex flex-col gap-3 fade-in">
                     <div class="flex items-center gap-3">
@@ -404,9 +301,8 @@
                             </span>
                         </div>
                     </div>
-                    
                     <div class="flex gap-2">
-                        <button onclick="editAd('${ad.id}', '${ad.title.replace(/'/g, "\\'")}', '${ad.description.replace(/'/g, "\\'")}')" class="flex-1 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold border border-slate-700 flex items-center justify-center gap-1">
+                        <button onclick="editAd('${ad.id}', '${ad.title.replace(/'/g, "\\'")}', '${ad.description.replace(/'/g, "\\'")}', '${ad.ad_link || ''}')" class="flex-1 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold border border-slate-700 flex items-center justify-center gap-1">
                             <i data-lucide="edit" class="w-3 h-3"></i> Edit
                         </button>
                         <button onclick="toggleAdStatus('${ad.id}', ${ad.is_active})" class="flex-1 ${isLive ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'} py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
@@ -435,14 +331,14 @@
         loadAdminAds();
     }
 
-    function editAd(id, title, description) {
+    function editAd(id, title, description, link) {
         editingAdId = id;
         document.getElementById('ad-form-title').textContent = "Edit Sponsored Ad";
         document.getElementById('a-title').value = title;
         document.getElementById('a-desc').value = description;
+        document.getElementById('a-link').value = link;
         document.getElementById('a-btn').textContent = "Update Ad";
         document.getElementById('a-cancel-btn').classList.remove('hidden');
-        
         switchTab('ad');
     }
 
@@ -454,7 +350,6 @@
         document.getElementById('a-cancel-btn').classList.add('hidden');
     }
 
-    // --- FORMS ---
     document.getElementById('ad-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('a-btn');
@@ -465,14 +360,12 @@
         try {
             const file = document.getElementById('a-image').files[0];
             let imageUrl = null;
-            
-            if (file) {
-                imageUrl = await uploadImage(file, 'ad_images');
-            }
+            if (file) imageUrl = await uploadImage(file, 'ad_images');
 
             const adData = {
                 title: document.getElementById('a-title').value,
                 description: document.getElementById('a-desc').value,
+                ad_link: document.getElementById('a-link').value || null,
                 payment_status: 'paid',
                 moderation_status: 'approved',
                 is_active: true
@@ -481,12 +374,10 @@
             if (imageUrl) adData.image_url = imageUrl;
 
             if (editingAdId) {
-                // Update Existing Ad
                 const { error } = await db.from('ads').update(adData).eq('id', editingAdId);
                 if (error) throw error;
                 msg.textContent = "✅ Ad Updated Successfully!";
             } else {
-                // Insert New Ad
                 const { error } = await db.from('ads').insert(adData);
                 if (error) throw error;
                 msg.textContent = "✅ Ad Published!";
@@ -531,7 +422,6 @@
             });
 
             if (error || data.error) throw new Error(error?.message || data.error);
-
             msg.textContent = "✅ Vendor & Login Created Successfully!";
             document.getElementById('vendor-form').reset();
             loadAdminVendors();
@@ -541,42 +431,7 @@
             msg.className = "mt-2 text-center text-sm font-bold text-red-400";
         } finally {
             btn.innerText = "Save Vendor & Create Login"; btn.disabled = false;
-            setTimeout(() => {
-                msg.textContent = '';
-                msg.className = "mt-2 text-center text-sm font-bold text-green-400";
-            }, 4000);
-        }
-    });
-
-    document.getElementById('guide-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('g-btn');
-        const msg = document.getElementById('g-msg');
-        btn.innerText = "Saving..."; btn.disabled = true;
-
-        try {
-            const file = document.getElementById('g-image').files[0];
-            const imageUrl = await uploadImage(file, 'vendor_images');
-
-            await db.from('vip_guides').insert({
-                full_name: document.getElementById('g-name').value,
-                bio: document.getElementById('g-bio').value,
-                image_url: imageUrl,
-                whatsapp_number: document.getElementById('g-whatsapp').value,
-                is_active: true
-            });
-
-            msg.textContent = "✅ Guide Added!";
-            document.getElementById('guide-form').reset();
-        } catch (err) {
-            msg.textContent = "Error: " + err.message;
-            msg.className = "mt-2 text-center text-sm font-bold text-red-400";
-        } finally {
-            btn.innerText = "Save Guide"; btn.disabled = false;
-            setTimeout(() => {
-                msg.textContent = '';
-                msg.className = "mt-2 text-center text-sm font-bold text-green-400";
-            }, 4000);
+            setTimeout(() => { msg.textContent = ''; msg.className = "mt-2 text-center text-sm font-bold text-green-400"; }, 4000);
         }
     });
 
