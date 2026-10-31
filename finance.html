@@ -3,261 +3,406 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vicnos Hotel - Finance</title>
+  <title>Vicnos - Accountant Command Center</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    body { -webkit-tap-highlight-color: transparent; user-select: none; }
-    input, select, textarea { user-select: text; }
+    * { -webkit-tap-highlight-color: transparent; }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
-<body class="min-h-screen pb-24">
+<body class="min-h-screen pb-10">
 
-  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+  <!-- Header -->
+  <nav class="bg-slate-900 border-b border-slate-700/50 p-4 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center gap-3">
-      <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <a href="dashboard.html" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
       <div>
-        <h1 class="font-bold text-gray-900 text-lg leading-tight">Finance Overview</h1>
-        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Accountant Dashboard</p>
+        <h1 class="font-bold text-white text-lg leading-tight">Finance & Audit</h1>
+        <p class="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Accountant Portal</p>
       </div>
     </div>
-    <div class="bg-emerald-50 p-2 rounded-full text-emerald-600">
-      <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+    <div class="bg-emerald-500/20 p-2 rounded-xl text-emerald-400 border border-emerald-500/30">
+      <i data-lucide="shield-check" class="w-5 h-5"></i>
     </div>
   </nav>
 
-  <main class="p-4 max-w-3xl mx-auto space-y-6">
+  <!-- Tabs -->
+  <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[72px] z-40">
+    <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition">Overview</button>
+    <button onclick="switchTab('approvals')" id="tab-btn-approvals" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex items-center gap-2">
+      Shift Approvals <span id="approval-badge" class="hidden bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
+    </button>
+    <button onclick="switchTab('transfers')" id="tab-btn-transfers" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Stock Transfers</button>
+    <button onclick="switchTab('credits')" id="tab-btn-credits" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Unpaid Credits</button>
+  </div>
+
+  <main class="p-4 max-w-4xl mx-auto mt-4">
     
-    <!-- Live Operations (New) -->
-    <div class="grid grid-cols-2 gap-4">
-      <a href="order-board.html" class="bg-slate-900 p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col justify-between group active:scale-95 transition">
-        <div class="flex justify-between items-start mb-4">
-          <div class="bg-orange-500/20 p-2 rounded-xl text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div>
-          <i data-lucide="arrow-up-right" class="w-5 h-5 text-slate-500 group-hover:text-white transition"></i>
+    <!-- OVERVIEW TAB -->
+    <div id="section-overview" class="tab-content block fade-in">
+      
+      <!-- Date Filter -->
+      <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="w-full md:w-auto">
+          <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Search Audit Date</label>
+          <input type="date" id="audit-date" onchange="loadOverview()" class="bg-slate-900 border border-slate-600 p-2 rounded-lg text-white outline-none text-sm w-full">
         </div>
-        <div>
-          <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Live Orders</p>
-          <p id="live-orders-count" class="text-3xl font-black text-white">...</p>
-        </div>
-      </a>
+        <button onclick="loadOverview()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 px-4 rounded-lg w-full md:w-auto flex items-center justify-center gap-2 transition">
+          <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh Data
+        </button>
+      </div>
 
-      <a href="order-board.html" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between group active:scale-95 transition">
-        <div class="flex justify-between items-start mb-4">
-          <div class="bg-red-50 p-2 rounded-xl text-red-500"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
-          <i data-lucide="arrow-up-right" class="w-5 h-5 text-gray-400 group-hover:text-gray-800 transition"></i>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+            <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Revenue</p>
+            <p id="stat-revenue" class="text-2xl font-bold text-emerald-400">₦0</p>
         </div>
-        <div>
-          <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Low Stock</p>
-          <p id="low-stock-count" class="text-3xl font-black text-gray-900">...</p>
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+            <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Room Credits</p>
+            <p id="stat-credits" class="text-2xl font-bold text-amber-400">₦0</p>
         </div>
-      </a>
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+            <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Sales</p>
+            <p id="stat-total" class="text-2xl font-bold text-white">₦0</p>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 bg-gradient-to-br from-red-500/10 to-transparent">
+            <p class="text-[10px] text-red-400 uppercase font-bold mb-1">Pending Shifts</p>
+            <p id="stat-pending" class="text-2xl font-bold text-red-400">0</p>
+        </div>
+      </div>
+
+      <!-- Sales Breakdown -->
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-5 h-5 text-emerald-400"></i> Sales by Department</h2>
+        <div id="dept-sales-list" class="space-y-3">
+          <p class="text-center text-slate-500 text-sm animate-pulse">Loading department data...</p>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Daily Sales Breakdown -->
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emerald-600"></i> Today's Revenue</h2>
-        <span id="date-display" class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-lg"></span>
-      </div>
-      
-      <div class="space-y-3">
-        <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
-          <div class="flex items-center gap-3">
-            <div class="bg-blue-100 p-2 rounded-lg text-blue-600"><i data-lucide="door-closed" class="w-4 h-4"></i></div>
-            <span class="text-sm font-bold text-gray-700">Reception (Rooms)</span>
-          </div>
-          <span id="total-rooms" class="font-bold text-blue-600 text-lg">₦0</span>
-        </div>
-        <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
-          <div class="flex items-center gap-3">
-            <div class="bg-teal-100 p-2 rounded-lg text-teal-600"><i data-lucide="wine" class="w-4 h-4"></i></div>
-            <span class="text-sm font-bold text-gray-700">Bar</span>
-          </div>
-          <span id="total-bar" class="font-bold text-teal-600 text-lg">₦0</span>
-        </div>
-        <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
-          <div class="flex items-center gap-3">
-            <div class="bg-orange-100 p-2 rounded-lg text-orange-600"><i data-lucide="chef-hat" class="w-4 h-4"></i></div>
-            <span class="text-sm font-bold text-gray-700">Kitchen</span>
-          </div>
-          <span id="total-kitchen" class="font-bold text-orange-600 text-lg">₦0</span>
-        </div>
-        <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
-          <div class="flex items-center gap-3">
-            <div class="bg-purple-100 p-2 rounded-lg text-purple-600"><i data-lucide="shirt" class="w-4 h-4"></i></div>
-            <span class="text-sm font-bold text-gray-700">Minimart / Laundry</span>
-          </div>
-          <span id="total-other" class="font-bold text-purple-600 text-lg">₦0</span>
-        </div>
-        
-        <div class="flex justify-between items-center bg-emerald-900 p-5 rounded-2xl mt-4 shadow-lg">
-          <span class="text-sm font-bold text-emerald-300 uppercase tracking-wider">Total Revenue</span>
-          <span id="total-all" class="font-black text-white text-2xl">₦0</span>
+    <!-- APPROVALS TAB -->
+    <div id="section-approvals" class="tab-content hidden fade-in">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="check-square" class="w-5 h-5 text-indigo-400"></i> Pending Shift Handovers</h2>
+        <div id="approvals-list" class="space-y-4">
+          <p class="text-center text-slate-500 text-sm animate-pulse">Loading pending shifts...</p>
         </div>
       </div>
     </div>
 
-    <!-- Staff Credit (Unpaid) -->
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="hand-coins" class="w-5 h-5 text-red-600"></i> Staff Credit Log</h2>
-      </div>
-      
-      <!-- Form to add credit -->
-      <div class="flex flex-col md:flex-row gap-2 mb-6">
-        <select id="credit-staff" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-emerald-500 font-medium">
-          <option value="">Select Staff Member...</option>
-        </select>
-        <input id="credit-desc" type="text" placeholder="Item (e.g. Rice & Chicken)" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-emerald-500 font-medium">
-        <div class="flex gap-2 w-full md:w-auto">
-          <input id="credit-amt" type="number" placeholder="Amount (₦)" class="w-full md:w-32 px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-emerald-500 font-medium">
-          <button onclick="addCredit()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl font-bold active:scale-95 transition shadow-md"><i data-lucide="plus" class="w-5 h-5"></i></button>
+    <!-- TRANSFERS TAB -->
+    <div id="section-transfers" class="tab-content hidden fade-in">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="arrow-right-left" class="w-5 h-5 text-orange-400"></i> Storekeeper Transfers (Audit Trail)</h2>
+        <div id="transfers-list" class="space-y-3">
+          <p class="text-center text-slate-500 text-sm animate-pulse">Loading transfer history...</p>
         </div>
       </div>
+    </div>
 
-      <div id="credit-list" class="space-y-2 max-h-80 overflow-y-auto hide-scroll pr-1">
-        <p class="text-center text-gray-400 text-sm py-4 animate-pulse">Loading credit records...</p>
+    <!-- CREDITS TAB -->
+    <div id="section-credits" class="tab-content hidden fade-in">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Unpaid Guest Credits (Rooms)</h2>
+        <div id="credits-list" class="space-y-3">
+          <p class="text-center text-slate-500 text-sm animate-pulse">Loading guest credits...</p>
+        </div>
       </div>
     </div>
 
   </main>
 
-  <footer class="text-center text-xs text-gray-400 py-6">
-    Powered by <strong class="text-gray-600">DEKY</strong>
-  </footer>
-
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODUzMTU2MjN9.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU'; // Check this key
     const { createClient } = supabase;
-    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const db = createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU');
     lucide.createIcons();
 
-    async function loadFinance() {
-      // Set Date Display
-      document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-      
-      const today = new Date().toISOString().split('T')[0];
+    window.history.replaceState({ tab: 'overview' }, '', '#overview');
+    window.onpopstate = function(event) {
+      if (event.state && event.state.tab) switchTab(event.state.tab, false);
+      else switchTab('overview', false);
+    };
 
-      // Fetch Live Operational Counts (Parallel for speed)
-      const [ordersRes, stockRes] = await Promise.all([
-        db.from('guest_orders').select('*', { count: 'exact', head: true }).in('status', ['Pending', 'Preparing', 'Ready']),
-        db.from('inventory').select('id').lte('stock_quantity', 5)
-      ]);
+    function switchTab(tabId, pushHistory = true) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`section-${tabId}`).classList.remove('hidden');
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition';
+            if(btn.id === 'tab-btn-approvals') btn.classList.add('flex', 'items-center', 'gap-2');
+        });
+        document.getElementById(`tab-btn-${tabId}`).className = 'tab-btn bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition';
+        if(tabId === 'approvals') document.getElementById(`tab-btn-${tabId}`).classList.add('flex', 'items-center', 'gap-2');
+        
+        if (pushHistory) window.history.pushState({ tab: tabId }, '', `#${tabId}`);
 
-      document.getElementById('live-orders-count').textContent = ordersRes.count || 0;
-      document.getElementById('low-stock-count').textContent = stockRes.data ? stockRes.data.length : 0;
+        if (tabId === 'overview') loadOverview();
+        if (tabId === 'approvals') loadApprovals();
+        if (tabId === 'transfers') loadTransfers();
+        if (tabId === 'credits') loadCredits();
+    }
 
-      // Fetch POS Revenue (Optimized)
-      const { data: orders } = await db.from('pos_orders').select('department, total_amount').gte('created_at', today);
-      
-      let bar = 0, kitchen = 0, other = 0;
+    // --- OVERVIEW LOGIC ---
+    async function loadOverview() {
+      const dateInput = document.getElementById('audit-date');
+      if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+      }
+      const selectedDate = dateInput.value;
+      const startOfDay = new Date(selectedDate).toISOString();
+      const endOfDay = new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+      // 1. Fetch POS Orders for this date
+      const { data: orders } = await db.from('pos_orders')
+        .select('department, total_amount, payment_method, created_at')
+        .gte('created_at', startOfDay)
+        .lt('created_at', endOfDay);
+
+      let totalCash = 0, totalCredit = 0, deptTotals = {};
+
       if (orders) {
         orders.forEach(o => {
           const amt = Number(o.total_amount);
-          if (o.department === 'Bar') bar += amt;
-          else if (o.department === 'Kitchen') kitchen += amt;
-          else other += amt; // Minimart, Laundry, etc.
+          if (o.payment_method === 'Charge_to_Room') totalCredit += amt;
+          else totalCash += amt;
+
+          if(!deptTotals[o.department]) deptTotals[o.department] = 0;
+          deptTotals[o.department] += amt;
         });
       }
 
-      // Fetch Today's Bookings Revenue
-      const { data: bookings } = await db.from('bookings')
-        .select(`created_at, rooms(price_per_night)`)
-        .gte('created_at', today);
-
-      let rooms = 0;
-      if (bookings) {
-        bookings.forEach(b => {
-          if (b.rooms && b.rooms.price_per_night) rooms += Number(b.rooms.price_per_night);
-        });
-      }
+      // 2. Fetch Pending Shifts count
+      const { count: pendingCount } = await db.from('shifts')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'Pending_Approval');
 
       // Update UI
-      document.getElementById('total-bar').textContent = `₦${bar.toLocaleString()}`;
-      document.getElementById('total-kitchen').textContent = `₦${kitchen.toLocaleString()}`;
-      document.getElementById('total-other').textContent = `₦${other.toLocaleString()}`;
-      document.getElementById('total-rooms').textContent = `₦${rooms.toLocaleString()}`; 
-      
-      const total = bar + kitchen + other + rooms;
-      document.getElementById('total-all').textContent = `₦${total.toLocaleString()}`;
+      document.getElementById('stat-revenue').textContent = '₦' + totalCash.toLocaleString();
+      document.getElementById('stat-credits').textContent = '₦' + totalCredit.toLocaleString();
+      document.getElementById('stat-total').textContent = '₦' + (totalCash + totalCredit).toLocaleString();
+      document.getElementById('stat-pending').textContent = pendingCount || 0;
 
-      // Load Staff Dropdown
-      const { data: staff } = await db.from('profiles').select('id, full_name').neq('role', 'md');
-      const select = document.getElementById('credit-staff');
-      if (staff) {
-        staff.forEach(s => select.innerHTML += `<option value="${s.id}">${s.full_name}</option>`);
+      // Update Badge
+      const badge = document.getElementById('approval-badge');
+      if (pendingCount > 0) {
+        badge.textContent = pendingCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
       }
 
-      loadCredits();
+      // Render Dept Breakdown
+      const list = document.getElementById('dept-sales-list');
+      list.innerHTML = '';
+      const depts = ['Bar', 'Kitchen', 'Minimart', 'Reception', 'Laundry'];
+      
+      depts.forEach(d => {
+        const amt = deptTotals[d] || 0;
+        list.innerHTML += `
+          <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+            <span class="text-sm font-bold text-slate-300">${d}</span>
+            <span class="font-bold ${amt > 0 ? 'text-emerald-400' : 'text-slate-500'}">₦${amt.toLocaleString()}</span>
+          </div>
+        `;
+      });
     }
 
-    async function loadCredits() {
-      const list = document.getElementById('credit-list');
-      const { data: credits } = await db.from('staff_credits')
-        .select(`*, profiles(full_name)`)
-        .eq('status', 'Unpaid')
-        .order('created_at', { ascending: false });
+    // --- APPROVALS LOGIC ---
+    async function loadApprovals() {
+      const list = document.getElementById('approvals-list');
+      
+      // Fetch Pending Shifts with profile info
+      const { data: shifts } = await db.from('shifts')
+        .select(`*, profiles (full_name)`)
+        .eq('status', 'Pending_Approval')
+        .order('end_time', { ascending: true });
 
-      if (!credits || credits.length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4 font-medium">No unpaid staff credits right now.</p>';
+      if (!shifts || shifts.length === 0) {
+        list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending shift approvals right now. 🎉</p>';
         return;
       }
 
-      list.innerHTML = credits.map(c => `
-        <div class="flex justify-between items-center bg-red-50 p-4 rounded-xl border border-red-100">
+      // Fetch Handovers to link with shifts
+      const shiftIds = shifts.map(s => s.id);
+      const { data: handovers } = await db.from('shift_handovers')
+        .select('*')
+        .in('shift_id', shiftIds);
+
+      list.innerHTML = shifts.map(shift => {
+        const handover = handovers?.find(h => h.shift_id === shift.id);
+        
+        return `
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
+            <div class="flex justify-between items-start border-b border-slate-700 pb-3">
+              <div>
+                <h3 class="font-bold text-white text-sm">${shift.profiles?.full_name || 'Unknown Staff'} - ${shift.department}</h3>
+                <p class="text-[10px] text-slate-400 mt-1">Ended: ${new Date(shift.end_time).toLocaleString()}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[10px] text-slate-400 uppercase font-bold">Cash to Remit</p>
+                <p class="text-emerald-400 font-bold text-lg">₦${Number(shift.total_cash_sales).toLocaleString()}</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="bg-slate-800 p-2 rounded-lg">
+                <span class="text-slate-400">Room Credits:</span>
+                <span class="font-bold text-amber-400">₦${Number(shift.total_credit_sales).toLocaleString()}</span>
+              </div>
+              <div class="bg-slate-800 p-2 rounded-lg">
+                <span class="text-slate-400">Handover Status:</span>
+                <span class="font-bold ${handover ? 'text-indigo-400' : 'text-red-400'}">${handover ? 'Counted by Next Shift' : 'Awaiting Count'}</span>
+              </div>
+            </div>
+
+            ${handover ? `
+              <button onclick="viewDiscrepancies('${handover.id}')" class="w-full bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-xs font-bold hover:bg-indigo-600/30 transition">View Stock Count & Discrepancies</button>
+            ` : ''}
+
+            <button onclick="approveShift('${shift.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Approve & Close Shift</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function viewDiscrepancies(handoverId) {
+      const { data: handover } = await db.from('shift_handovers').select('*').eq('id', handoverId).single();
+      if (!handover) return;
+
+      let msg = "STOCK DISCREPANCY REPORT\n\n";
+      let hasDisc = false;
+      
+      handover.physical_counts.forEach(item => {
+        if (item.discrepancy !== 0) {
+          hasDisc = true;
+          const sign = item.discrepancy > 0 ? '+' : '';
+          msg += `${item.item_name}: Expected ${item.expected}, Counted ${item.physical} (Diff: ${sign}${item.discrepancy})\n`;
+        }
+      });
+
+      if (!hasDisc) msg += "Perfect count. No discrepancies found.";
+      
+      alert(msg);
+    }
+
+    async function approveShift(shiftId) {
+      if(!confirm("Are you sure you want to approve this shift? Make sure the cash has been physically received.")) return;
+
+      // Update Shift to Closed
+      await db.from('shifts').update({ status: 'Closed' }).eq('id', shiftId);
+      
+      // If there's a handover, approve it too
+      await db.from('shift_handovers').update({ status: 'Approved' }).eq('shift_id', shiftId);
+
+      alert("✅ Shift Approved and Closed.");
+      loadApprovals();
+      loadOverview(); // update count
+    }
+
+    // --- TRANSFERS LOGIC ---
+    async function loadTransfers() {
+      const list = document.getElementById('transfers-list');
+      
+      const { data: transfers } = await db.from('stock_transfers')
+        .select(`*, profiles (full_name)`)
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if (!transfers || transfers.length === 0) {
+        list.innerHTML = '<p class="text-center text-slate-500 py-6">No stock transfers recorded yet.</p>';
+        return;
+      }
+
+      list.innerHTML = transfers.map(t => `
+        <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700">
           <div>
-            <p class="font-bold text-sm text-red-900">${c.profiles.full_name}</p>
-            <p class="text-xs text-red-700 mt-0.5">${c.item_description}</p>
+            <p class="font-bold text-white text-sm">${t.quantity_added}x ${t.item_name}</p>
+            <p class="text-[10px] text-slate-400">Issued by: ${t.profiles?.full_name || 'Storekeeper'}</p>
           </div>
           <div class="text-right">
-            <p class="font-black text-red-900 text-lg">₦${Number(c.amount).toLocaleString()}</p>
-            <button onclick="clearCredit('${c.id}')" class="text-[10px] bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-lg mt-1 shadow-sm active:scale-95 transition">Mark Paid</button>
+            <span class="text-[10px] font-bold text-orange-400 bg-orange-500/20 px-2 py-1 rounded-md uppercase">To ${t.destination}</span>
+            <p class="text-[9px] text-slate-500 mt-1">${new Date(t.created_at).toLocaleString()}</p>
           </div>
         </div>
       `).join('');
     }
 
-    async function addCredit() {
-      const staffId = document.getElementById('credit-staff').value;
-      const desc = document.getElementById('credit-desc').value;
-      const amt = document.getElementById('credit-amt').value;
+    // --- CREDITS LOGIC ---
+    async function loadCredits() {
+      const list = document.getElementById('credits-list');
+      
+      // Fetch active checked-in bookings
+      const { data: bookings } = await db.from('bookings')
+        .select(`id, rooms(room_number), guests(full_name)`)
+        .eq('status', 'Checked In');
 
-      if (!staffId || !desc || !amt) return alert("Fill all fields");
+      if (!bookings || bookings.length === 0) {
+        list.innerHTML = '<p class="text-center text-slate-500 py-6">No active guests found.</p>';
+        return;
+      }
 
-      const { error } = await db.from('staff_credits').insert({
-        staff_id: staffId,
-        item_description: desc,
-        amount: amt,
-        status: 'Unpaid'
+      const bookingIds = bookings.map(b => b.id);
+      
+      // Fetch charges for these bookings
+      const { data: charges } = await db.from('folio_charges')
+        .select('booking_id, amount, department')
+        .in('booking_id', bookingIds);
+
+      if (!charges || charges.length === 0) {
+        list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
+        return;
+      }
+
+      // Aggregate credits by booking
+      const creditTotals = {};
+      charges.forEach(c => {
+        if(!creditTotals[c.booking_id]) creditTotals[c.booking_id] = 0;
+        creditTotals[c.booking_id] += Number(c.amount);
       });
 
-      if (error) return alert("Error adding credit: " + error.message);
+      list.innerHTML = '';
+      Object.keys(creditTotals).forEach(bId => {
+        const booking = bookings.find(b => b.id === bId);
+        const amt = creditTotals[bId];
+        
+        if (amt > 0 && booking) {
+          list.innerHTML += `
+            <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700">
+              <div>
+                <p class="font-bold text-white text-sm">Room ${booking.rooms.room_number}</p>
+                <p class="text-[10px] text-slate-400">${booking.guests.full_name}</p>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-amber-400">₦${amt.toLocaleString()}</p>
+                <p class="text-[9px] text-slate-500 uppercase">Unpaid</p>
+              </div>
+            </div>
+          `;
+        }
+      });
 
-      document.getElementById('credit-desc').value = '';
-      document.getElementById('credit-amt').value = '';
-      loadCredits();
+      if (list.innerHTML === '') list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
     }
 
-    async function clearCredit(id) {
-      if (!confirm("Has this staff member paid?")) return;
-      await db.from('staff_credits').update({ status: 'Paid' }).eq('id', id);
-      loadCredits();
-    }
-
-    loadFinance();
+    // Initialize
+    loadOverview();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
