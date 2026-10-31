@@ -142,6 +142,7 @@
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out');
       const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); 
       const highlightBtn = btn('#', 'sparkles', 'text-yellow-400', 'bg-yellow-500/20', 'Highlights', 'openHighlights()');
+      const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
 
       if (role === 'super_admin') {
           buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network');
@@ -154,12 +155,12 @@
       else if (['md', 'admin', 'manager'].includes(role)) {
         buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights');
         buttons += highlightBtn;
+        buttons += auditBtn;
         buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In');
         buttons += btn('rooms.html?view=checkout', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
         buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
         buttons += orderBtn;
         buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager');
-        buttons += btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Finance');
         buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
         buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms');
         buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff');
@@ -172,7 +173,7 @@
       } 
       else if (role === 'accountant') {
         buttons += highlightBtn;
-        buttons += btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Finance');
+        buttons += auditBtn;
         buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
         buttons += orderBtn; 
         buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List');
@@ -198,6 +199,7 @@
       }
       else if (role === 'supervisor') {
         buttons += highlightBtn;
+        buttons += auditBtn;
         buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms');
         buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
         buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock');

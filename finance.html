@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vicnos - Accountant Command Center</title>
+  <title>Vicnos - Management & Finance Portal</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
@@ -22,13 +22,12 @@
 </head>
 <body class="min-h-screen pb-10">
 
-  <!-- Header -->
   <nav class="bg-slate-900 border-b border-slate-700/50 p-4 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center gap-3">
       <a href="dashboard.html" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
       <div>
-        <h1 class="font-bold text-white text-lg leading-tight">Finance & Audit</h1>
-        <p class="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Accountant Portal</p>
+        <h1 class="font-bold text-white text-lg leading-tight">Audit & Finance</h1>
+        <p class="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Management Portal</p>
       </div>
     </div>
     <div class="bg-emerald-500/20 p-2 rounded-xl text-emerald-400 border border-emerald-500/30">
@@ -36,7 +35,6 @@
     </div>
   </nav>
 
-  <!-- Tabs -->
   <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[72px] z-40">
     <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition">Overview</button>
     <button onclick="switchTab('approvals')" id="tab-btn-approvals" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex items-center gap-2">
@@ -48,10 +46,7 @@
 
   <main class="p-4 max-w-4xl mx-auto mt-4">
     
-    <!-- OVERVIEW TAB -->
     <div id="section-overview" class="tab-content block fade-in">
-      
-      <!-- Date Filter -->
       <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="w-full md:w-auto">
           <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Search Audit Date</label>
@@ -81,17 +76,14 @@
         </div>
       </div>
 
-      <!-- Sales Breakdown -->
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-5 h-5 text-emerald-400"></i> Sales by Department</h2>
         <div id="dept-sales-list" class="space-y-3">
           <p class="text-center text-slate-500 text-sm animate-pulse">Loading department data...</p>
         </div>
       </div>
-
     </div>
 
-    <!-- APPROVALS TAB -->
     <div id="section-approvals" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="check-square" class="w-5 h-5 text-indigo-400"></i> Pending Shift Handovers</h2>
@@ -101,7 +93,6 @@
       </div>
     </div>
 
-    <!-- TRANSFERS TAB -->
     <div id="section-transfers" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="arrow-right-left" class="w-5 h-5 text-orange-400"></i> Storekeeper Transfers (Audit Trail)</h2>
@@ -111,7 +102,6 @@
       </div>
     </div>
 
-    <!-- CREDITS TAB -->
     <div id="section-credits" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Unpaid Guest Credits (Rooms)</h2>
@@ -129,9 +119,9 @@
     }
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODUzMTU2MjN9.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU'; // Check this key
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
-    const db = createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU');
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
     window.history.replaceState({ tab: 'overview' }, '', '#overview');
@@ -159,19 +149,16 @@
         if (tabId === 'credits') loadCredits();
     }
 
-    // --- OVERVIEW LOGIC ---
     async function loadOverview() {
       const dateInput = document.getElementById('audit-date');
-      if (!dateInput.value) {
-        dateInput.value = new Date().toISOString().split('T')[0];
-      }
+      if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+      
       const selectedDate = dateInput.value;
       const startOfDay = new Date(selectedDate).toISOString();
       const endOfDay = new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString();
 
-      // 1. Fetch POS Orders for this date
       const { data: orders } = await db.from('pos_orders')
-        .select('department, total_amount, payment_method, created_at')
+        .select('department, total_amount, payment_method')
         .gte('created_at', startOfDay)
         .lt('created_at', endOfDay);
 
@@ -182,33 +169,22 @@
           const amt = Number(o.total_amount);
           if (o.payment_method === 'Charge_to_Room') totalCredit += amt;
           else totalCash += amt;
-
           if(!deptTotals[o.department]) deptTotals[o.department] = 0;
           deptTotals[o.department] += amt;
         });
       }
 
-      // 2. Fetch Pending Shifts count
-      const { count: pendingCount } = await db.from('shifts')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'Pending_Approval');
+      const { count: pendingCount } = await db.from('shifts').select('*', { count: 'exact', head: true }).eq('status', 'Pending_Approval');
 
-      // Update UI
       document.getElementById('stat-revenue').textContent = '₦' + totalCash.toLocaleString();
       document.getElementById('stat-credits').textContent = '₦' + totalCredit.toLocaleString();
       document.getElementById('stat-total').textContent = '₦' + (totalCash + totalCredit).toLocaleString();
       document.getElementById('stat-pending').textContent = pendingCount || 0;
 
-      // Update Badge
       const badge = document.getElementById('approval-badge');
-      if (pendingCount > 0) {
-        badge.textContent = pendingCount;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
+      if (pendingCount > 0) { badge.textContent = pendingCount; badge.classList.remove('hidden'); } 
+      else { badge.classList.add('hidden'); }
 
-      // Render Dept Breakdown
       const list = document.getElementById('dept-sales-list');
       list.innerHTML = '';
       const depts = ['Bar', 'Kitchen', 'Minimart', 'Reception', 'Laundry'];
@@ -224,30 +200,20 @@
       });
     }
 
-    // --- APPROVALS LOGIC ---
     async function loadApprovals() {
       const list = document.getElementById('approvals-list');
-      
-      // Fetch Pending Shifts with profile info
-      const { data: shifts } = await db.from('shifts')
-        .select(`*, profiles (full_name)`)
-        .eq('status', 'Pending_Approval')
-        .order('end_time', { ascending: true });
+      const { data: shifts } = await db.from('shifts').select(`*, profiles (full_name)`).eq('status', 'Pending_Approval').order('end_time', { ascending: true });
 
       if (!shifts || shifts.length === 0) {
         list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending shift approvals right now. 🎉</p>';
         return;
       }
 
-      // Fetch Handovers to link with shifts
       const shiftIds = shifts.map(s => s.id);
-      const { data: handovers } = await db.from('shift_handovers')
-        .select('*')
-        .in('shift_id', shiftIds);
+      const { data: handovers } = await db.from('shift_handovers').select('*').in('shift_id', shiftIds);
 
       list.innerHTML = shifts.map(shift => {
         const handover = handovers?.find(h => h.shift_id === shift.id);
-        
         return `
           <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
             <div class="flex justify-between items-start border-b border-slate-700 pb-3">
@@ -260,22 +226,11 @@
                 <p class="text-emerald-400 font-bold text-lg">₦${Number(shift.total_cash_sales).toLocaleString()}</p>
               </div>
             </div>
-            
             <div class="grid grid-cols-2 gap-2 text-xs">
-              <div class="bg-slate-800 p-2 rounded-lg">
-                <span class="text-slate-400">Room Credits:</span>
-                <span class="font-bold text-amber-400">₦${Number(shift.total_credit_sales).toLocaleString()}</span>
-              </div>
-              <div class="bg-slate-800 p-2 rounded-lg">
-                <span class="text-slate-400">Handover Status:</span>
-                <span class="font-bold ${handover ? 'text-indigo-400' : 'text-red-400'}">${handover ? 'Counted by Next Shift' : 'Awaiting Count'}</span>
-              </div>
+              <div class="bg-slate-800 p-2 rounded-lg"><span class="text-slate-400">Credits:</span> <span class="font-bold text-amber-400">₦${Number(shift.total_credit_sales).toLocaleString()}</span></div>
+              <div class="bg-slate-800 p-2 rounded-lg"><span class="text-slate-400">Verification:</span> <span class="font-bold ${handover ? 'text-indigo-400' : 'text-red-400'}">${handover ? 'Counted' : 'Missing'}</span></div>
             </div>
-
-            ${handover ? `
-              <button onclick="viewDiscrepancies('${handover.id}')" class="w-full bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-xs font-bold hover:bg-indigo-600/30 transition">View Stock Count & Discrepancies</button>
-            ` : ''}
-
+            ${handover ? `<button onclick="viewDiscrepancies('${handover.id}')" class="w-full bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-xs font-bold hover:bg-indigo-600/30 transition">View Stock Count & Discrepancies</button>` : ''}
             <button onclick="approveShift('${shift.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Approve & Close Shift</button>
           </div>
         `;
@@ -286,49 +241,32 @@
       const { data: handover } = await db.from('shift_handovers').select('*').eq('id', handoverId).single();
       if (!handover) return;
 
-      let msg = "STOCK DISCREPANCY REPORT\n\n";
+      let msg = "STOCK & CASH DISCREPANCY REPORT\n\n";
       let hasDisc = false;
-      
       handover.physical_counts.forEach(item => {
         if (item.discrepancy !== 0) {
           hasDisc = true;
-          const sign = item.discrepancy > 0 ? '+' : '';
-          msg += `${item.item_name}: Expected ${item.expected}, Counted ${item.physical} (Diff: ${sign}${item.discrepancy})\n`;
+          msg += `${item.item_name}: Expected ${item.expected}, Counted ${item.physical} (Diff: ${item.discrepancy > 0 ? '+' : ''}${item.discrepancy})\n`;
         }
       });
-
       if (!hasDisc) msg += "Perfect count. No discrepancies found.";
-      
       alert(msg);
     }
 
     async function approveShift(shiftId) {
-      if(!confirm("Are you sure you want to approve this shift? Make sure the cash has been physically received.")) return;
-
-      // Update Shift to Closed
+      if(!confirm("Approve this shift? Ensure you have received the physical cash.")) return;
       await db.from('shifts').update({ status: 'Closed' }).eq('id', shiftId);
-      
-      // If there's a handover, approve it too
       await db.from('shift_handovers').update({ status: 'Approved' }).eq('shift_id', shiftId);
-
       alert("✅ Shift Approved and Closed.");
       loadApprovals();
-      loadOverview(); // update count
+      loadOverview();
     }
 
-    // --- TRANSFERS LOGIC ---
     async function loadTransfers() {
       const list = document.getElementById('transfers-list');
-      
-      const { data: transfers } = await db.from('stock_transfers')
-        .select(`*, profiles (full_name)`)
-        .order('created_at', { ascending: false })
-        .limit(30);
+      const { data: transfers } = await db.from('stock_transfers').select(`*, profiles (full_name)`).order('created_at', { ascending: false }).limit(30);
 
-      if (!transfers || transfers.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-500 py-6">No stock transfers recorded yet.</p>';
-        return;
-      }
+      if (!transfers || transfers.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No stock transfers recorded yet.</p>';
 
       list.innerHTML = transfers.map(t => `
         <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700">
@@ -344,44 +282,23 @@
       `).join('');
     }
 
-    // --- CREDITS LOGIC ---
     async function loadCredits() {
       const list = document.getElementById('credits-list');
-      
-      // Fetch active checked-in bookings
-      const { data: bookings } = await db.from('bookings')
-        .select(`id, rooms(room_number), guests(full_name)`)
-        .eq('status', 'Checked In');
+      const { data: bookings } = await db.from('bookings').select(`id, rooms(room_number), guests(full_name)`).eq('status', 'Checked In');
 
-      if (!bookings || bookings.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-500 py-6">No active guests found.</p>';
-        return;
-      }
+      if (!bookings || bookings.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No active guests found.</p>';
 
-      const bookingIds = bookings.map(b => b.id);
-      
-      // Fetch charges for these bookings
-      const { data: charges } = await db.from('folio_charges')
-        .select('booking_id, amount, department')
-        .in('booking_id', bookingIds);
+      const { data: charges } = await db.from('folio_charges').select('booking_id, amount').in('booking_id', bookings.map(b => b.id));
 
-      if (!charges || charges.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
-        return;
-      }
+      if (!charges || charges.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
 
-      // Aggregate credits by booking
       const creditTotals = {};
-      charges.forEach(c => {
-        if(!creditTotals[c.booking_id]) creditTotals[c.booking_id] = 0;
-        creditTotals[c.booking_id] += Number(c.amount);
-      });
+      charges.forEach(c => { if(!creditTotals[c.booking_id]) creditTotals[c.booking_id] = 0; creditTotals[c.booking_id] += Number(c.amount); });
 
       list.innerHTML = '';
       Object.keys(creditTotals).forEach(bId => {
         const booking = bookings.find(b => b.id === bId);
         const amt = creditTotals[bId];
-        
         if (amt > 0 && booking) {
           list.innerHTML += `
             <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700">
@@ -397,11 +314,9 @@
           `;
         }
       });
-
       if (list.innerHTML === '') list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
     }
 
-    // Initialize
     loadOverview();
   </script>
 </body>

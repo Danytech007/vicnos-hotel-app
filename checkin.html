@@ -2,36 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Reception & Check-In</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
   <style>
     * { -webkit-tap-highlight-color: transparent; }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
     .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="min-h-screen flex flex-col">
 
   <!-- Top Navigation -->
   <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center gap-2">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center overflow-x-auto hide-scroll">
+      <div class="flex items-center gap-2 flex-shrink-0">
         <div class="bg-blue-600 p-2 rounded-lg text-white"><i data-lucide="concierge-bell" class="w-5 h-5"></i></div>
         <div>
           <h1 class="font-bold text-gray-900 leading-tight">Front Desk</h1>
           <p class="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Reception</p>
         </div>
       </div>
-      <div class="flex gap-2">
-        <button onclick="switchTab('checkin')" id="tab-btn-checkin" class="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition">Check-In</button>
-        <button onclick="switchTab('sales')" id="tab-btn-sales" class="px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">Minimart & Sales</button>
-        <a href="dashboard.html" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 ml-2 flex items-center gap-1"><i data-lucide="arrow-left" class="w-4 h-4"></i> Exit</a>
+      <div class="flex gap-2 ml-4">
+        <button onclick="switchTab('checkin')" id="tab-btn-checkin" class="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition whitespace-nowrap">Check-In</button>
+        <button onclick="switchTab('sales')" id="tab-btn-sales" class="px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition whitespace-nowrap">Minimart & Sales</button>
+        <button onclick="switchTab('shift')" id="tab-btn-shift" class="px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition whitespace-nowrap">Shift Handover</button>
+        <a href="dashboard.html" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 ml-2 flex items-center gap-1 whitespace-nowrap"><i data-lucide="arrow-left" class="w-4 h-4"></i> Exit</a>
       </div>
     </div>
   </nav>
@@ -52,7 +59,7 @@
 
         <form id="checkin-form" class="space-y-6">
           
-          <!-- Room Selection (Only shows if opened from Dashboard without a specific room) -->
+          <!-- Room Selection -->
           <div id="room-select-container" class="hidden bg-blue-50 p-4 rounded-xl border border-blue-200">
             <label class="block text-sm font-bold text-blue-800 mb-1">Select Available Room</label>
             <select id="room-select" class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl outline-none font-semibold text-gray-700">
@@ -226,6 +233,99 @@
       </div>
     </div>
 
+    <!-- ================= TAB 3: SHIFT HANDOVER ================= -->
+    <div id="tab-shift" class="hidden space-y-5 fade-in">
+      
+      <!-- Active Shift Dashboard -->
+      <div id="active-shift-panel" class="hidden space-y-4">
+        <div class="bg-slate-900 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden">
+          <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl"></div>
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Active Shift Sales</h2>
+          <p id="live-total" class="text-4xl font-extrabold text-white">₦0</p>
+          
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t border-slate-700 pt-4">
+            <div class="md:col-span-1">
+              <p class="text-[10px] text-slate-400 font-bold uppercase">Room Bookings</p>
+              <p id="live-bookings" class="text-sm font-bold text-indigo-400">₦0</p>
+            </div>
+            <div class="md:col-span-1">
+              <p class="text-[10px] text-slate-400 font-bold uppercase">Minimart Cash</p>
+              <p id="live-mm-cash" class="text-sm font-bold text-emerald-400">₦0</p>
+            </div>
+            <div class="md:col-span-1">
+              <p class="text-[10px] text-slate-400 font-bold uppercase">Minimart Credits</p>
+              <p id="live-mm-credit" class="text-sm font-bold text-amber-400">₦0</p>
+            </div>
+            <div class="md:col-span-1 flex items-end">
+              <p class="text-[10px] text-slate-400 font-bold uppercase mr-2">Total Cash:</p>
+              <p id="live-total-cash" class="text-sm font-bold text-white">₦0</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-3">
+          <button onclick="generateShiftPDF()" class="flex-1 bg-white border-2 border-blue-600 text-blue-600 py-3 rounded-xl font-bold active:scale-95 transition flex items-center justify-center gap-2">
+            <i data-lucide="download" class="w-5 h-5"></i> Report
+          </button>
+          <button onclick="endShift()" class="flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition">End Shift</button>
+        </div>
+      </div>
+
+      <!-- Start Shift (Incoming Verification) -->
+      <div id="start-shift-panel" class="hidden bg-white p-5 rounded-3xl shadow-sm border border-gray-200">
+        <div class="text-center mb-6">
+          <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="clipboard-check" class="w-8 h-8 text-indigo-600"></i>
+          </div>
+          <h2 class="text-xl font-bold text-gray-900 mb-1">Start New Shift</h2>
+          <p class="text-xs text-gray-500">Verify the physical stock left by the previous shift.</p>
+        </div>
+        
+        <!-- Cash Verification -->
+        <div id="cash-verification-panel" class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-left mb-6 hidden">
+          <p class="text-xs font-bold text-gray-500 uppercase mb-2">Previous Shift Cash</p>
+          <div class="flex justify-between items-center py-1 mb-2">
+            <span class="text-sm text-gray-700">Expected Cash:</span>
+            <span id="prev-cash" class="font-bold text-gray-900">₦0</span>
+          </div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Physical Cash Received (₦)</label>
+          <input type="number" id="physical-cash" oninput="calcCashDisc()" placeholder="Enter amount counted" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-indigo-500 font-bold text-lg">
+          <p id="cash-disc-msg" class="text-xs font-bold text-transparent mt-1 text-right">0</p>
+        </div>
+
+        <!-- Minimart Stock Verification -->
+        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Minimart Stock Verification</p>
+        <div class="overflow-x-auto max-h-[40vh] mb-4 border rounded-xl">
+          <table class="w-full text-left text-sm text-gray-600">
+            <thead class="text-xs uppercase bg-gray-100 text-gray-500 sticky top-0">
+              <tr>
+                <th class="px-3 py-2">Minimart Item</th>
+                <th class="px-3 py-2 text-center">Expected</th>
+                <th class="px-3 py-2 text-center">Physical</th>
+                <th class="px-3 py-2 text-center">Diff</th>
+              </tr>
+            </thead>
+            <tbody id="start-shift-table-body"></tbody>
+          </table>
+        </div>
+
+        <button onclick="submitOpeningCount()" id="start-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition">Confirm Count & Start Shift</button>
+      </div>
+
+      <!-- Pending Shift Panel -->
+      <div id="pending-shift-panel" class="hidden bg-white p-8 rounded-3xl shadow-sm border border-gray-200 text-center">
+        <div class="bg-amber-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="hourglass" class="w-10 h-10 text-amber-500"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Shift Ended</h2>
+        <p class="text-sm text-gray-500 mb-6">Your shift is closed and pending Accountant approval.</p>
+        <button onclick="generateShiftPDF()" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 mx-auto">
+          <i data-lucide="download" class="w-5 h-5"></i> Download Report
+        </button>
+      </div>
+
+    </div>
+
   </main>
 
   <footer class="text-center text-xs text-gray-500 py-4 mt-auto border-t bg-white">
@@ -233,30 +333,29 @@
   </footer>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
+    // ==========================================
+    // HOTEL CONFIGURATION
+    // ==========================================
+    const HOTEL_ACCEPTS_CASH = false; // Set to true if the hotel uses physical cash
+
     const urlParams = new URLSearchParams(window.location.search);
     let selectedRoomId = urlParams.get('id');
     let selectedRoomNum = urlParams.get('room');
     let currentUser = null;
 
-    // --- TAB SWITCHING ---
-    function switchTab(tab) {
-      document.getElementById('tab-checkin').classList.add('hidden');
-      document.getElementById('tab-sales').classList.add('hidden');
-      
-      document.getElementById('tab-btn-checkin').className = "px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
-      document.getElementById('tab-btn-sales').className = "px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
-
-      document.getElementById(`tab-${tab}`).classList.remove('hidden');
-      document.getElementById(`tab-btn-${tab}`).className = "px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition";
-
-      if (tab === 'sales') loadSalesDashboard();
-    }
+    let activeShift = null;
+    let lastPendingShift = null;
+    let shiftSales = { bookings: 0, cash: 0, credit: 0, total: 0 };
 
     // --- INIT PAGE ---
     async function initPage() {
@@ -264,9 +363,10 @@
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
 
-      // Check for ?dept=Minimart in URL to auto-open Sales tab (if coming from POS)
-      if (urlParams.get('dept') === 'Minimart' || window.location.hash === '#sales') {
-        switchTab('sales');
+      if (urlParams.get('dept') === 'Minimart' || window.location.hash === '#sales') switchTab('sales');
+
+      if (HOTEL_ACCEPTS_CASH) {
+          document.getElementById('cash-verification-panel').classList.remove('hidden');
       }
 
       if (selectedRoomId) {
@@ -301,6 +401,275 @@
           }
         });
       }
+
+      checkShiftStatus();
+    }
+
+    // --- TAB SWITCHING ---
+    function switchTab(tab) {
+      ['checkin', 'sales', 'shift'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`tab-btn-${t}`).className = "px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition whitespace-nowrap";
+      });
+
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).className = "px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition whitespace-nowrap";
+
+      if (tab === 'sales') loadSalesDashboard();
+    }
+
+    // --- SHIFT LOGIC ---
+    async function checkShiftStatus() {
+      document.getElementById('start-shift-panel').classList.add('hidden');
+      document.getElementById('active-shift-panel').classList.add('hidden');
+      document.getElementById('pending-shift-panel').classList.add('hidden');
+
+      // 1. Check if I have an Active shift
+      const { data: myActive } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', 'Reception').eq('status', 'Active').limit(1);
+      
+      if (myActive && myActive.length > 0) {
+        activeShift = myActive[0];
+        document.getElementById('active-shift-panel').classList.remove('hidden');
+        loadLiveSales();
+        return;
+      }
+
+      // 2. Check if I have a Pending shift
+      const { data: myPending } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', 'Reception').eq('status', 'Pending_Approval').limit(1);
+      
+      if (myPending && myPending.length > 0) {
+        activeShift = myPending[0];
+        document.getElementById('pending-shift-panel').classList.remove('hidden');
+        return;
+      }
+
+      // 3. I have no shift. Look for previous person's pending shift to verify.
+      const { data: prevShift } = await db.from('shifts')
+        .select('*')
+        .eq('department', 'Reception')
+        .eq('status', 'Pending_Approval')
+        .order('end_time', { ascending: false })
+        .limit(1);
+
+      if (prevShift && prevShift.length > 0) {
+        lastPendingShift = prevShift[0];
+        document.getElementById('prev-cash').textContent = `₦${Number(lastPendingShift.total_cash_sales).toLocaleString()}`;
+      }
+
+      document.getElementById('start-shift-panel').classList.remove('hidden');
+      loadMinimartOpeningCount();
+    }
+
+    async function loadMinimartOpeningCount() {
+      const tbody = document.getElementById('start-shift-table-body');
+      tbody.innerHTML = '';
+
+      const { data: items } = await db.from('inventory').select('*').eq('department', 'Minimart');
+      
+      if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">No minimart items found.</td></tr>';
+        return;
+      }
+
+      items.forEach(item => {
+        const expected = item.stock_quantity;
+        tbody.innerHTML += `
+          <tr class="border-b border-gray-100">
+            <td class="px-3 py-3 font-bold text-gray-800 text-xs">${item.item_name}</td>
+            <td class="px-3 py-3 text-center text-gray-500 font-bold text-xs">${expected}</td>
+            <td class="px-3 py-3 text-center">
+              <input type="number" id="open-phys-${item.id}" oninput="calcOpenDisc('${item.id}', ${expected})" placeholder="${expected}" class="w-16 bg-gray-50 border border-gray-300 rounded-lg p-1.5 text-center text-gray-800 outline-none focus:border-indigo-500 font-bold text-xs">
+            </td>
+            <td class="px-3 py-3 text-center">
+              <span id="open-disc-${item.id}" class="text-xs font-bold text-gray-400">0</span>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function calcOpenDisc(itemId, expected) {
+      const input = document.getElementById(`open-phys-${itemId}`);
+      const discSpan = document.getElementById(`open-disc-${itemId}`);
+      const physical = parseInt(input.value);
+
+      if (isNaN(physical)) {
+        discSpan.textContent = '0';
+        discSpan.className = 'text-xs font-bold text-gray-400';
+        return;
+      }
+
+      const diff = physical - expected;
+      if (diff === 0) {
+        discSpan.textContent = '0';
+        discSpan.className = 'text-xs font-bold text-emerald-600';
+      } else if (diff < 0) {
+        discSpan.textContent = `${diff}`;
+        discSpan.className = 'text-xs font-bold text-red-600';
+      } else {
+        discSpan.textContent = `+${diff}`;
+        discSpan.className = 'text-xs font-bold text-amber-600';
+      }
+    }
+
+    function calcCashDisc() {
+      if (!HOTEL_ACCEPTS_CASH) return;
+      const expected = lastPendingShift ? Number(lastPendingShift.total_cash_sales) : 0;
+      const physical = parseFloat(document.getElementById('physical-cash').value) || 0;
+      const disc = physical - expected;
+      const msg = document.getElementById('cash-disc-msg');
+
+      if (document.getElementById('physical-cash').value === '') {
+        msg.textContent = '0';
+        msg.className = 'text-xs font-bold text-transparent mt-1 text-right';
+        return;
+      }
+
+      if (disc === 0) {
+        msg.textContent = 'Cash is Perfect ✅';
+        msg.className = 'text-xs font-bold text-emerald-600 mt-1 text-right';
+      } else if (disc < 0) {
+        msg.textContent = `Missing ₦${Math.abs(disc).toLocaleString()} ❌`;
+        msg.className = 'text-xs font-bold text-red-600 mt-1 text-right';
+      } else {
+        msg.textContent = `Extra ₦${disc.toLocaleString()} ⚠️`;
+        msg.className = 'text-xs font-bold text-amber-600 mt-1 text-right';
+      }
+    }
+
+    async function submitOpeningCount() {
+      const rows = document.querySelectorAll('[id^="open-phys-"]');
+      let physicalCounts = [];
+      let hasEmpty = false;
+
+      rows.forEach(input => {
+        if (!input.value) hasEmpty = true;
+        const itemId = input.id.replace('open-phys-', '');
+        const itemName = input.closest('tr').querySelector('td').textContent;
+        const expected = parseInt(input.placeholder);
+        const physical = parseInt(input.value) || 0;
+        
+        physicalCounts.push({ item_id: itemId, item_name: itemName, expected, physical, discrepancy: physical - expected });
+      });
+
+      if (hasEmpty) return alert("Please enter the physical count for ALL items.");
+
+      let physicalCash = 0;
+      if (HOTEL_ACCEPTS_CASH) {
+        physicalCash = parseFloat(document.getElementById('physical-cash').value);
+        if (isNaN(physicalCash)) return alert("Please enter the physical cash amount.");
+        
+        const expectedCash = lastPendingShift ? Number(lastPendingShift.total_cash_sales) : 0;
+        physicalCounts.push({ item_name: 'Cash Remittance', expected: expectedCash, physical: physicalCash, discrepancy: physicalCash - expectedCash });
+      }
+
+      const btn = document.getElementById('start-btn');
+      btn.textContent = "Verifying..."; btn.disabled = true;
+
+      try {
+        if (lastPendingShift) {
+          await db.from('shift_handovers').insert({
+            shift_id: lastPendingShift.id,
+            user_id: currentUser.id, 
+            department: 'Reception',
+            physical_counts: physicalCounts,
+            status: 'Pending'
+          });
+        }
+
+        await db.from('shifts').insert({
+          user_id: currentUser.id,
+          department: 'Reception',
+          status: 'Active'
+        });
+
+        alert("✅ Handover verified. Shift started!");
+        checkShiftStatus();
+
+      } catch (err) {
+        alert("Error: " + err.message);
+        btn.textContent = "Confirm Count & Start Shift"; btn.disabled = false;
+      }
+    }
+
+    async function loadLiveSales() {
+      if (!activeShift) return;
+
+      // 1. Fetch Bookings (Room revenue)
+      const { data: bookings } = await db.from('bookings')
+        .select('id, rooms(price_per_night)')
+        .eq('created_by', currentUser.id)
+        .gte('created_at', activeShift.start_time);
+
+      let bookingTotal = 0;
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.rooms && b.rooms.price_per_night) bookingTotal += Number(b.rooms.price_per_night);
+        });
+      }
+      
+      // 2. Fetch Minimart Sales
+      const { data: mmOrders } = await db.from('pos_orders')
+        .select('*')
+        .eq('department', 'Minimart')
+        .eq('created_by', currentUser.id)
+        .gte('created_at', activeShift.start_time);
+
+      let mmCash = 0, mmCredit = 0;
+      if (mmOrders) {
+        mmOrders.forEach(o => {
+          if (o.payment_method === 'Charge_to_Room') mmCredit += Number(o.total_amount);
+          else mmCash += Number(o.total_amount);
+        });
+      }
+
+      const totalCash = bookingTotal + mmCash;
+      const totalSales = totalCash + mmCredit;
+      shiftSales = { bookings: bookingTotal, cash: mmCash, credit: mmCredit, total: totalSales };
+
+      document.getElementById('live-bookings').textContent = `₦${bookingTotal.toLocaleString()}`;
+      document.getElementById('live-mm-cash').textContent = `₦${mmCash.toLocaleString()}`;
+      document.getElementById('live-mm-credit').textContent = `₦${mmCredit.toLocaleString()}`;
+      document.getElementById('live-total-cash').textContent = `₦${totalCash.toLocaleString()}`;
+      document.getElementById('live-total').textContent = `₦${totalSales.toLocaleString()}`;
+    }
+
+    async function endShift() {
+      if (!confirm("End shift and submit for Accountant approval?")) return;
+
+      await db.from('shifts').update({
+        status: 'Pending_Approval',
+        end_time: new Date().toISOString(),
+        total_cash_sales: shiftSales.bookings + shiftSales.cash, // Total cash = Bookings + Minimart cash
+        total_credit_sales: shiftSales.credit
+      }).eq('id', activeShift.id);
+
+      alert("✅ Shift ended. Please hand over the remaining stock to the next receptionist.");
+      checkShiftStatus();
+    }
+
+    function generateShiftPDF() {
+      if (!activeShift) return;
+
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div style="padding: 20px; font-family: sans-serif;">
+          <h2 style="text-align: center;">Vicnos Hotel - Reception Shift Report</h2>
+          <p><strong>Date:</strong> ${new Date(activeShift.start_time).toLocaleString()}</p>
+          <p><strong>Status:</strong> ${activeShift.status}</p>
+          <hr style="margin: 20px 0;">
+          <h3>Sales Summary</h3>
+          <p><strong>Room Bookings:</strong> ₦${shiftSales.bookings.toLocaleString()}</p>
+          <p><strong>Minimart Cash:</strong> ₦${shiftSales.cash.toLocaleString()}</p>
+          <p><strong>Minimart Credits (To Room):</strong> ₦${shiftSales.credit.toLocaleString()}</p>
+          <hr style="margin: 10px 0;">
+          <p><strong>Total Cash to Remit:</strong> ₦${(shiftSales.bookings + shiftSales.cash).toLocaleString()}</p>
+          <p><strong>Total Sales:</strong> ₦${shiftSales.total.toLocaleString()}</p>
+          <br>
+          <p style="text-align: center; font-size: 10px;">Powered by DEKY</p>
+        </div>
+      `;
+      html2pdf().set({ filename: `Reception_Shift_${new Date().toISOString().split('T')[0]}.pdf` }).from(element).save();
     }
 
     // --- CHECK-IN SUBMISSION ---
@@ -370,7 +739,6 @@
     async function loadSalesDashboard() {
       const today = new Date().toISOString().split('T')[0];
 
-      // 1. Fetch Today's Bookings
       const { data: bookings } = await db.from('bookings')
         .select('id, rooms(price_per_night)')
         .gte('created_at', today);
@@ -386,7 +754,6 @@
       document.getElementById('booking-revenue').innerText = '₦' + bookTotal.toLocaleString();
       document.getElementById('booking-count').innerText = `${bookCount} Check-in${bookCount === 1 ? '' : 's'} today`;
 
-      // 2. Fetch Today's Minimart Sales
       const { data: sales } = await db.from('pos_orders')
         .select('total_amount, payment_method')
         .eq('department', 'Minimart')
@@ -414,12 +781,5 @@
 
     initPage();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
