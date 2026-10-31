@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - INSIDE LIFE</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -16,148 +20,257 @@
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     .fade-in { animation: fadeIn 0.5s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="pb-10">
 
-  <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
-    <div class="flex items-center gap-2">
-      <a href="guest-portal.html" id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></a>
-      <span class="font-bold text-gray-900 tracking-widest text-sm ml-2">INSIDE LIFE</span>
+  <!-- CHECKOUT LOCKOUT SCREEN (Hidden by default) -->
+  <div id="checkout-lockout" class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-6 text-center fade-in">
+    <div class="bg-white/10 p-6 rounded-full mb-6">
+      <i data-lucide="door-closed" class="w-16 h-16 text-blue-400"></i>
     </div>
-    <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
-      <p class="text-[9px] uppercase text-blue-500 font-bold tracking-wider">Room</p>
-      <p id="nav-room-num" class="font-bold text-blue-700 leading-none text-lg">---</p>
-    </div>
-  </nav>
+    <h1 class="text-2xl font-bold text-white mb-2">Session Expired</h1>
+    <p class="text-slate-400 text-sm mb-8">You have checked out or your session is invalid. Please scan your room QR code to access Inside Life.</p>
+    <a href="guest-portal.html" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">Return to Home</a>
+  </div>
 
-  <main class="flex-grow max-w-md mx-auto w-full fade-in flex flex-col">
-    
-    <div class="px-5 pt-6 pb-4">
-      <h1 class="text-3xl font-bold text-gray-800 mb-1">The VIP Marketplace</h1>
-      <p class="text-sm text-gray-500">Everything you need, curated for your stay.</p>
-    </div>
+  <!-- MAIN APP -->
+  <div id="main-app" class="hidden flex-col flex-grow">
 
-    <!-- ULTRA-VIP GUIDES -->
-    <div class="px-4 mb-8">
-      <div class="bg-slate-900 rounded-3xl p-5 shadow-2xl relative overflow-hidden">
-        <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500/20 rounded-full blur-2xl"></div>
-        
-        <div class="flex items-center gap-2 mb-2 relative z-10">
-          <i data-lucide="crown" class="w-5 h-5 text-yellow-400"></i>
-          <h2 class="text-white font-bold text-lg">Elite Local Guides</h2>
-        </div>
-        <p class="text-slate-400 text-xs mb-4 relative z-10">Hire a vetted, professional English-speaking guide for business, shopping, or city tours. <span class="text-yellow-400 font-bold">(₦50,000 Connection Fee)</span></p>
-        
-        <div class="flex gap-3 overflow-x-auto hide-scroll pb-2 relative z-10" id="vip-guides-list">
-          <p class="text-slate-500 text-xs py-4">Loading Elite Guides...</p>
-        </div>
+    <nav class="bg-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+      <div class="flex items-center gap-2">
+        <button id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></button>
+        <span class="font-bold text-gray-900 tracking-widest text-sm ml-2">INSIDE LIFE</span>
       </div>
-    </div>
+      <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
+        <p class="text-[9px] uppercase text-blue-500 font-bold tracking-wider">Room</p>
+        <p id="nav-room-num" class="font-bold text-blue-700 leading-none text-lg">---</p>
+      </div>
+    </nav>
 
-    <!-- EXPANDED CATEGORY GRID -->
-    <div class="px-4">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">All Services</h2>
+    <main class="flex-grow max-w-md mx-auto w-full fade-in flex flex-col">
       
-      <div class="grid grid-cols-3 gap-3">
-        
-        <!-- 1. Local Street Food (Replaced Food & Drinks) -->
-        <div onclick="goToCategory('Local Street Food')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-orange-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="flame" class="w-5 h-5 text-orange-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Local Street<br>Food</h3>
-        </div>
-
-        <!-- 2. Transport -->
-        <div onclick="goToCategory('Transport')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-blue-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="car" class="w-5 h-5 text-blue-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Transport<br>& Rides</h3>
-        </div>
-
-        <!-- 3. Fashion & Tailoring -->
-        <div onclick="goToCategory('Fashion & Tailoring')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-pink-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="scissors" class="w-5 h-5 text-pink-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Fashion &<br>Tailoring</h3>
-        </div>
-
-        <!-- 4. Spa & Wellness -->
-        <div onclick="goToCategory('Spa & Wellness')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-teal-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="heart-pulse" class="w-5 h-5 text-teal-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Spa &<br>Wellness</h3>
-        </div>
-
-        <!-- 5. Pharmacy & Wellness (Manpower) -->
-        <div onclick="goToCategory('Pharmacy & Wellness')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-emerald-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="pill" class="w-5 h-5 text-emerald-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Pharmacy &<br>Wellness</h3>
-        </div>
-
-        <!-- 6. Shopping & Artisans -->
-        <div onclick="goToCategory('Shopping & Artisans')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-purple-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-purple-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Shopping &<br>Artisans</h3>
-        </div>
-
-        <!-- 7. Tours & Guides -->
-        <div onclick="goToCategory('Tours & Guides')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-indigo-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="map" class="w-5 h-5 text-indigo-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Tours &<br>Guides</h3>
-        </div>
-
-        <!-- 8. Romance & Gifts -->
-        <div onclick="goToCategory('Romance & Gifts')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-red-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="gift" class="w-5 h-5 text-red-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Romance &<br>Gifts</h3>
-        </div>
-
-        <!-- 9. Events -->
-        <div onclick="goToCategory('Events')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-yellow-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="calendar" class="w-5 h-5 text-yellow-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Party &<br>Events</h3>
-        </div>
-
-        <!-- 10. Tech & Essentials -->
-        <div onclick="goToCategory('Tech & Essentials')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-slate-200 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="smartphone" class="w-5 h-5 text-slate-700"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Tech &<br>Essentials</h3>
-        </div>
-
-        <!-- 11. Financial Services -->
-        <div onclick="goToCategory('Financial Services')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
-            <div class="bg-green-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="banknote" class="w-5 h-5 text-green-600"></i></div>
-            <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Currency<br>Exchange</h3>
-        </div>
-
+      <div class="px-5 pt-6 pb-4">
+        <h1 class="text-3xl font-bold text-gray-800 mb-1">The VIP Marketplace</h1>
+        <p class="text-sm text-gray-500">Everything you need, curated for your stay.</p>
       </div>
-    </div>
 
-    <div class="mt-auto pt-10 pb-6 text-center">
-      <div class="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
-      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
-      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
-    </div>
+      <!-- MINI SHOP: LIVE VENDOR PRODUCTS -->
+      <div class="px-4 mb-8">
+        <div class="flex justify-between items-end mb-3">
+          <h2 class="text-xl font-bold text-gray-800">Fresh from the Mini Shop</h2>
+          <span class="text-xs font-bold text-blue-600">Live</span>
+        </div>
+        
+        <div class="flex gap-3 overflow-x-auto hide-scroll pb-4" id="minishop-list">
+          <p class="text-gray-500 text-xs py-4 animate-pulse">Loading products...</p>
+        </div>
+      </div>
 
-  </main>
+      <!-- ULTRA-VIP GUIDES -->
+      <div class="px-4 mb-8">
+        <div class="bg-slate-900 rounded-3xl p-5 shadow-2xl relative overflow-hidden">
+          <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500/20 rounded-full blur-2xl"></div>
+          
+          <div class="flex items-center gap-2 mb-2 relative z-10">
+            <i data-lucide="crown" class="w-5 h-5 text-yellow-400"></i>
+            <h2 class="text-white font-bold text-lg">Elite Local Guides</h2>
+          </div>
+          <p class="text-slate-400 text-xs mb-4 relative z-10">Hire a vetted, professional guide for business, shopping, or city tours. <span class="text-yellow-400 font-bold">(₦50,000 Connection Fee)</span></p>
+          
+          <div class="flex gap-3 overflow-x-auto hide-scroll pb-2 relative z-10" id="vip-guides-list">
+            <p class="text-slate-500 text-xs py-4">Loading Elite Guides...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPANDED CATEGORY GRID -->
+      <div class="px-4">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Browse Categories</h2>
+        
+        <div class="grid grid-cols-3 gap-3">
+          
+          <div onclick="goToCategory('Local Street Food')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-orange-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="flame" class="w-5 h-5 text-orange-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Local Street<br>Food</h3>
+          </div>
+
+          <div onclick="goToCategory('Transport')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-blue-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="car" class="w-5 h-5 text-blue-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Transport<br>& Rides</h3>
+          </div>
+
+          <div onclick="goToCategory('Fashion & Tailoring')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-pink-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="scissors" class="w-5 h-5 text-pink-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Fashion &<br>Tailoring</h3>
+          </div>
+
+          <div onclick="goToCategory('Spa & Wellness')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-teal-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="heart-pulse" class="w-5 h-5 text-teal-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Spa &<br>Wellness</h3>
+          </div>
+
+          <div onclick="goToCategory('Pharmacy & Wellness')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-emerald-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="pill" class="w-5 h-5 text-emerald-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Pharmacy &<br>Wellness</h3>
+          </div>
+
+          <div onclick="goToCategory('Shopping & Artisans')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-purple-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-purple-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Shopping &<br>Artisans</h3>
+          </div>
+
+          <div onclick="goToCategory('Tours & Guides')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-indigo-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="map" class="w-5 h-5 text-indigo-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Tours &<br>Guides</h3>
+          </div>
+
+          <div onclick="goToCategory('Romance & Gifts')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-red-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="gift" class="w-5 h-5 text-red-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Romance &<br>Gifts</h3>
+          </div>
+
+          <div onclick="goToCategory('Events')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-yellow-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="calendar" class="w-5 h-5 text-yellow-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Party &<br>Events</h3>
+          </div>
+
+          <div onclick="goToCategory('Tech & Essentials')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-slate-200 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="smartphone" class="w-5 h-5 text-slate-700"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Tech &<br>Essentials</h3>
+          </div>
+
+          <div onclick="goToCategory('Financial Services')" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition flex flex-col items-center justify-center text-center h-28">
+              <div class="bg-green-100 w-10 h-10 rounded-full flex items-center justify-center mb-2"><i data-lucide="banknote" class="w-5 h-5 text-green-600"></i></div>
+              <h3 class="font-bold text-gray-800 text-[11px] leading-tight">Currency<br>Exchange</h3>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="mt-auto pt-10 pb-6 text-center">
+        <div class="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
+        <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+        <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+      </div>
+
+    </main>
+  </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomNum = urlParams.get('room') || '101'; 
-    
-    document.getElementById('nav-room-num').textContent = roomNum;
-    document.getElementById('back-btn').href = `guest-portal.html?room=${roomNum}`;
+    let guestSession = null;
+
+    // --- SECURE AUTHENTICATION ---
+    async function authenticateGuest() {
+        let savedGuest = localStorage.getItem('vicnos_guest_session');
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoom = urlParams.get('room');
+
+        if (!savedGuest) {
+            if (!urlRoom) return showLockout();
+            
+            const { data: roomData } = await db.from('rooms').select('id').eq('room_number', urlRoom).single();
+            if (!roomData) return showLockout();
+
+            const { data: booking } = await db.from('bookings')
+                .select('id, guests(full_name)')
+                .eq('room_id', roomData.id).eq('status', 'Checked In').limit(1).single();
+
+            if (!booking) return showLockout();
+
+            savedGuest = {
+                booking_id: booking.id,
+                room_number: urlRoom,
+                guest_name: booking.guests.full_name
+            };
+            localStorage.setItem('vicnos_guest_session', JSON.stringify(savedGuest));
+        } else {
+            savedGuest = JSON.parse(savedGuest);
+            
+            const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
+            if (!booking || booking.status !== 'Checked In') return showLockout();
+
+            if (urlRoom && urlRoom !== savedGuest.room_number) {
+                window.history.replaceState(null, '', `?room=${savedGuest.room_number}`);
+            }
+        }
+
+        guestSession = savedGuest;
+        
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('flex');
+        document.getElementById('nav-room-num').textContent = guestSession.room_number;
+        document.getElementById('back-btn').onclick = () => window.location.href = `guest-portal.html?room=${guestSession.room_number}`;
+
+        loadMiniShop();
+        loadVIPGuides();
+    }
+
+    function showLockout() {
+        localStorage.removeItem('vicnos_guest_session');
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('checkout-lockout').classList.remove('hidden');
+    }
 
     function goToCategory(category) {
         const encodedCategory = encodeURIComponent(category);
-        window.location.href = `vendor-list.html?category=${encodedCategory}&room=${roomNum}`;
+        window.location.href = `vendor-list.html?category=${encodedCategory}&room=${guestSession.room_number}`;
     }
 
+    // --- LOAD MINI SHOP (Vendor Products) ---
+    async function loadMiniShop() {
+        const list = document.getElementById('minishop-list');
+        
+        // Fetch products from active vendors
+        const { data: products, error } = await db.from('vendor_products')
+            .select(`
+                *,
+                vendors!inner (business_name, whatsapp_number, is_active)
+            `)
+            .eq('vendors.is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        if (error || !products || products.length === 0) {
+            list.innerHTML = '<p class="text-slate-500 text-xs py-4">No products in the mini shop right now.</p>';
+            return;
+        }
+
+        list.innerHTML = products.map(p => {
+            const vendorWa = p.vendors.whatsapp_number.replace(/[^0-9]/g, ''); // Clean number
+            const waText = encodeURIComponent(`Hello ${p.vendors.business_name}, I want to order "${p.name}" (₦${Number(p.price).toLocaleString()}) from my room ${guestSession.room_number}.`);
+            const waLink = `https://wa.me/${vendorWa}?text=${waText}`;
+
+            return `
+                <div class="min-w-[140px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-shrink-0 flex flex-col fade-in">
+                    <img src="${p.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'}" class="w-full h-24 object-cover bg-gray-50">
+                    <div class="p-3 flex flex-col flex-1 justify-between">
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-xs leading-tight line-clamp-2">${p.name}</h3>
+                            <p class="text-[9px] text-blue-500 font-bold mt-1">${p.vendors.business_name}</p>
+                        </div>
+                        <div class="mt-2">
+                            <p class="font-extrabold text-gray-900 text-sm mb-1">₦${Number(p.price).toLocaleString()}</p>
+                            <a href="${waLink}" target="_blank" class="block w-full text-center bg-green-500 text-white text-[10px] font-bold py-1.5 rounded-lg active:scale-95 transition">Order Now</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // --- LOAD VIP GUIDES ---
     async function loadVIPGuides() {
         const list = document.getElementById('vip-guides-list');
         const { data: guides } = await db.from('vip_guides').select('*').eq('is_active', true);
@@ -181,14 +294,8 @@
         alert(`Initiating ₦50,000 Paystack Checkout for ${name}...`);
     }
 
-    loadVIPGuides();
+    // Initialize
+    authenticateGuest();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
