@@ -65,6 +65,14 @@
       </div>
     </div>
 
+    <!-- SHIFT APPROVALS TAB -->
+    <div id="section-approvals" class="tab-content hidden fade-in">
+      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="check-square" class="w-5 h-5 text-indigo-400"></i> Pending Shift Handovers</h2>
+        <div id="approvals-list" class="space-y-4"><p class="text-center text-slate-500 text-sm animate-pulse">Loading pending shifts...</p></div>
+      </div>
+    </div>
+
     <!-- STOCK REQUESTS TAB -->
     <div id="section-stockreq" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
@@ -76,11 +84,6 @@
     <!-- BAD STOCK APPROVALS TAB -->
     <div id="section-badstock" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50"><h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="alert-octagon" class="w-5 h-5 text-red-400"></i> Pending Bad Stock (Breakages)</h2><div id="badstock-list" class="space-y-4"><p class="text-center text-slate-500 text-sm animate-pulse">Loading reports...</p></div></div>
-    </div>
-
-    <!-- SHIFT APPROVALS TAB -->
-    <div id="section-approvals" class="tab-content hidden fade-in">
-      <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50"><h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="check-square" class="w-5 h-5 text-indigo-400"></i> Pending Shift Handovers</h2><div id="approvals-list" class="space-y-4"><p class="text-center text-slate-500 text-sm animate-pulse">Loading pending shifts...</p></div></div>
     </div>
 
     <!-- TRANSFERS TAB -->
@@ -129,6 +132,7 @@
       const { data: orders } = await db.from('pos_orders').select('department, total_amount, payment_method').gte('created_at', startOfDay).lt('created_at', endOfDay);
       let totalCash = 0, totalCredit = 0, deptTotals = {};
       if (orders) orders.forEach(o => { const amt = Number(o.total_amount); if (o.payment_method === 'Charge_to_Room') totalCredit += amt; else totalCash += amt; if(!deptTotals[o.department]) deptTotals[o.department] = 0; deptTotals[o.department] += amt; });
+      
       const { count: pendingCount } = await db.from('shifts').select('*', { count: 'exact', head: true }).eq('status', 'Pending_Approval');
       const { count: badStockCount } = await db.from('bad_stock_requests').select('*', { count: 'exact', head: true }).eq('status', 'Pending');
       const { count: stockReqCount } = await db.from('stock_restock_requests').select('*', { count: 'exact', head: true }).eq('status', 'Pending');
@@ -149,53 +153,39 @@
       else { lowStockList.innerHTML = '<p class="text-center text-slate-500 text-sm py-4">All stock levels are healthy.</p>'; }
     }
 
+    // THIS IS THE FIXED FUNCTION YOU PROVIDED
+    async function loadApprovals() {
+      const list = document.getElementById('approvals-list');
+      const { data: shifts, error } = await db.from('shifts').select('*').eq('status', 'Pending_Approval').order('end_time', { ascending: true });
+      
+      if (error) { list.innerHTML = `<p class="text-center text-red-500 py-6">Error: ${error.message}</p>`; return; }
+      if (!shifts || shifts.length === 0) { list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending shift approvals right now. 🎉</p>'; return; }
+      
+      const shiftIds = shifts.map(s => s.id);
+      const { data: handovers } = await db.from('shift_handovers').select('*').in('shift_id', shiftIds);
+      const { data: profiles } = await db.from('profiles').select('id, full_name');
+      
+      list.innerHTML = shifts.map(shift => {
+        const handover = handovers?.find(h => h.shift_id === shift.id);
+        const staff = profiles?.find(p => p.id === shift.user_id);
+        return `<div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3"><div class="flex justify-between items-start border-b border-slate-700 pb-3"><div><h3 class="font-bold text-white text-sm">${staff?.full_name || 'Unknown Staff'} - ${shift.department}</h3><p class="text-[10px] text-slate-400 mt-1">Ended: ${new Date(shift.end_time).toLocaleString()}</p></div><div class="text-right"><p class="text-[10px] text-slate-400 uppercase font-bold">Cash to Remit</p><p class="text-emerald-400 font-bold text-lg">₦${Number(shift.total_cash_sales).toLocaleString()}</p></div></div><div class="grid grid-cols-2 gap-2 text-xs"><div class="bg-slate-800 p-2 rounded-lg"><span class="text-slate-400">Credits:</span> <span class="font-bold text-amber-400">₦${Number(shift.total_credit_sales).toLocaleString()}</span></div><div class="bg-slate-800 p-2 rounded-lg"><span class="text-slate-400">Verification:</span> <span class="font-bold ${handover ? 'text-indigo-400' : 'text-red-400'}">${handover ? 'Counted' : 'Missing'}</span></div></div>${handover ? `<button onclick="viewDiscrepancies('${handover.id}')" class="w-full bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-xs font-bold hover:bg-indigo-600/30 transition">View Stock Count & Discrepancies</button>` : ''}<button onclick="approveShift('${shift.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Approve & Close Shift</button></div>`;
+      }).join('');
+    }
+
     async function loadStockRequests() {
       const list = document.getElementById('stockreq-list');
       const { data: reqs } = await db.from('stock_restock_requests').select(`*, profiles (full_name)`).eq('status', 'Pending').order('created_at', { ascending: false });
-      
       if (!reqs || reqs.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending stock requests right now. 🎉</p>';
-      
-      list.innerHTML = reqs.map(r => `
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
-          <div class="flex justify-between items-start border-b border-slate-700 pb-3">
-            <div>
-              <h3 class="font-bold text-white text-sm">${r.profiles?.full_name || 'Staff'} - ${r.department}</h3>
-              <p class="text-[10px] text-slate-400 mt-1">${new Date(r.created_at).toLocaleString()}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-[10px] text-indigo-400 uppercase font-bold">Requested</p>
-              <p class="text-indigo-400 font-bold text-lg">${r.quantity}x ${r.item_name}</p>
-            </div>
-          </div>
-          <div class="flex gap-2">
-            <button onclick="approveStockReq('${r.id}', '${r.item_name}', ${r.price || 0}, ${r.quantity}, '${r.department}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Approve & Add to Inventory</button>
-            <button onclick="rejectStockReq('${r.id}')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Reject</button>
-          </div>
-        </div>
-      `).join('');
+      list.innerHTML = reqs.map(r => `<div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3"><div class="flex justify-between items-start border-b border-slate-700 pb-3"><div><h3 class="font-bold text-white text-sm">${r.profiles?.full_name || 'Staff'} - ${r.department}</h3><p class="text-[10px] text-slate-400 mt-1">${new Date(r.created_at).toLocaleString()}</p></div><div class="text-right"><p class="text-[10px] text-indigo-400 uppercase font-bold">Requested</p><p class="text-indigo-400 font-bold text-lg">${r.quantity}x ${r.item_name}</p></div></div><div class="flex gap-2"><button onclick="approveStockReq('${r.id}', '${r.item_name}', ${r.price || 0}, ${r.quantity}, '${r.department}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Approve & Add to Inventory</button><button onclick="rejectStockReq('${r.id}')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Reject</button></div></div>`).join('');
     }
 
     async function approveStockReq(reqId, itemName, price, qty, dept) {
       if(!confirm("Approve this request? This will add the items to the live inventory.")) return;
-      
       const { data: existingItem } = await db.from('inventory').select('*').eq('item_name', itemName).eq('department', dept).maybeSingle();
-      
-      if (existingItem) {
-        // Restock existing item
-        await db.from('inventory').update({ 
-          stock_quantity: existingItem.stock_quantity + qty,
-          opening_stock: (existingItem.opening_stock || 0) + qty
-        }).eq('id', existingItem.id);
-      } else {
-        // Create new item
-        await db.from('inventory').insert({
-          item_name: itemName, price: price, department: dept, stock_quantity: qty, opening_stock: qty
-        });
-      }
-      
+      if (existingItem) { await db.from('inventory').update({ stock_quantity: existingItem.stock_quantity + qty, opening_stock: (existingItem.opening_stock || 0) + qty }).eq('id', existingItem.id); } 
+      else { await db.from('inventory').insert({ item_name: itemName, price: price, department: dept, stock_quantity: qty, opening_stock: qty }); }
       await db.from('stock_restock_requests').update({ status: 'Approved' }).eq('id', reqId);
-      alert("✅ Approved. Stock has been added to the system.");
-      loadStockRequests(); loadOverview();
+      alert("✅ Approved. Stock has been added to the system."); loadStockRequests(); loadOverview();
     }
 
     async function rejectStockReq(reqId) {
@@ -204,15 +194,64 @@
       loadStockRequests(); loadOverview();
     }
 
-    // --- BAD STOCK, APPROVALS, TRANSFERS, CREDITS (Same as previous code) ---
-    async function loadBadStock() { /* Same as previous code */ }
-    async function approveBadStock() { /* Same as previous code */ }
-    async function rejectBadStock() { /* Same as previous code */ }
-    async function loadApprovals() { /* Same as previous code */ }
-    async function viewDiscrepancies() { /* Same as previous code */ }
-    async function approveShift() { /* Same as previous code */ }
-    async function loadTransfers() { /* Same as previous code */ }
-    async function loadCredits() { /* Same as previous code */ }
+    async function loadBadStock() {
+      const list = document.getElementById('badstock-list');
+      const { data: requests } = await db.from('bad_stock_requests').select(`*, profiles (full_name)`).eq('status', 'Pending').order('created_at', { ascending: false });
+      if (!requests || requests.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending bad stock reports. 🎉</p>';
+      list.innerHTML = requests.map(req => `<div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col gap-3"><div class="flex justify-between items-start border-b border-slate-700 pb-3"><div><h3 class="font-bold text-white text-sm">${req.profiles?.full_name || 'Staff'} - ${req.department}</h3><p class="text-[10px] text-slate-400 mt-1">${new Date(req.created_at).toLocaleString()}</p></div><div class="text-right"><p class="text-[10px] text-red-400 uppercase font-bold">Bad Stock</p><p class="text-red-400 font-bold text-lg">${req.quantity}x ${req.item_name}</p></div></div><p class="text-xs text-slate-300"><span class="font-bold text-slate-400">Reason:</span> ${req.reason}</p><div class="flex gap-2"><button onclick="approveBadStock('${req.id}', '${req.item_name}', ${req.quantity}, '${req.department}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Approve & Deduct Stock</button><button onclick="rejectBadStock('${req.id}')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-xs font-bold shadow-md transition">Reject</button></div></div>`).join('');
+    }
+
+    async function approveBadStock(reqId, itemName, qty, dept) {
+      if(!confirm("Approve this? This will permanently deduct the stock from the system.")) return;
+      const { data: item } = await db.from('inventory').select('*').eq('item_name', itemName).eq('department', dept).single();
+      if (item) await db.from('inventory').update({ stock_quantity: item.stock_quantity - qty }).eq('id', item.id);
+      await db.from('bad_stock_requests').update({ status: 'Approved' }).eq('id', reqId);
+      alert("✅ Approved. Stock has been deducted."); loadBadStock(); loadOverview();
+    }
+
+    async function rejectBadStock(reqId) {
+      if(!confirm("Reject this bad stock report? Stock will NOT be deducted.")) return;
+      await db.from('bad_stock_requests').update({ status: 'Rejected' }).eq('id', reqId);
+      loadBadStock(); loadOverview();
+    }
+
+    async function viewDiscrepancies(handoverId) {
+      const { data: handover } = await db.from('shift_handovers').select('*').eq('id', handoverId).single();
+      if (!handover) return;
+      let msg = "STOCK & CASH DISCREPANCY REPORT\n\n", hasDisc = false;
+      handover.physical_counts.forEach(item => { if (item.discrepancy !== 0) { hasDisc = true; msg += `${item.item_name}: Expected ${item.expected}, Counted ${item.physical} (Diff: ${item.discrepancy > 0 ? '+' : ''}${item.discrepancy})\n`; } });
+      if (!hasDisc) msg += "Perfect count. No discrepancies found.";
+      alert(msg);
+    }
+
+    async function approveShift(shiftId) {
+      if(!confirm("Approve this shift? Ensure you have received the physical cash.")) return;
+      await db.from('shifts').update({ status: 'Closed' }).eq('id', shiftId);
+      await db.from('shift_handovers').update({ status: 'Approved' }).eq('shift_id', shiftId);
+      alert("✅ Shift Approved and Closed."); loadApprovals(); loadOverview();
+    }
+
+    async function loadTransfers() {
+      const list = document.getElementById('transfers-list');
+      const { data: transfers } = await db.from('stock_transfers').select(`*, profiles (full_name)`).order('created_at', { ascending: false }).limit(30);
+      if (!transfers || transfers.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No stock transfers recorded yet.</p>';
+      list.innerHTML = transfers.map(t => `<div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">${t.quantity_added}x ${t.item_name}</p><p class="text-[10px] text-slate-400">Issued by: ${t.profiles?.full_name || 'Storekeeper'}</p></div><div class="text-right"><span class="text-[10px] font-bold text-orange-400 bg-orange-500/20 px-2 py-1 rounded-md uppercase">To ${t.destination}</span><p class="text-[9px] text-slate-500 mt-1">${new Date(t.created_at).toLocaleString()}</p></div></div>`).join('');
+    }
+
+    async function loadCredits() {
+      const list = document.getElementById('credits-list');
+      const { data: bookings } = await db.from('bookings').select(`id, rooms(room_number), guests(full_name)`).eq('status', 'Checked In');
+      if (!bookings || bookings.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No active guests found.</p>';
+      const { data: charges } = await db.from('folio_charges').select('booking_id, amount').in('booking_id', bookings.map(b => b.id));
+      if (!charges || charges.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
+      const creditTotals = {}; charges.forEach(c => { if(!creditTotals[c.booking_id]) creditTotals[c.booking_id] = 0; creditTotals[c.booking_id] += Number(c.amount); });
+      list.innerHTML = '';
+      Object.keys(creditTotals).forEach(bId => {
+        const booking = bookings.find(b => b.id === bId); const amt = creditTotals[bId];
+        if (amt > 0 && booking) list.innerHTML += `<div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${booking.rooms.room_number}</p><p class="text-[10px] text-slate-400">${booking.guests.full_name}</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${amt.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">Unpaid</p></div></div>`;
+      });
+      if (list.innerHTML === '') list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
+    }
 
     loadOverview();
   </script>

@@ -28,16 +28,13 @@
         <p id="station-name" class="text-[10px] text-slate-400 uppercase tracking-widest">Loading...</p>
       </div>
     </div>
-    
     <div class="flex items-center gap-2">
       <select id="department" onchange="changeStation()" class="hidden bg-slate-900 text-white text-sm font-bold border border-slate-600 p-2 rounded-lg outline-none transition">
         <option value="Bar">🍻 Bar</option>
         <option value="Kitchen">🍳 Kitchen</option>
         <option value="Minimart">🛒 Minimart</option>
       </select>
-      <button onclick="logout()" class="bg-red-500/20 text-red-400 p-2 rounded-xl hover:bg-red-500/30 transition flex items-center gap-2 text-sm font-bold">
-        <i data-lucide="log-out" class="w-4 h-4"></i> Logout
-      </button>
+      <button onclick="logout()" class="bg-red-500/20 text-red-400 p-2 rounded-xl hover:bg-red-500/30 transition flex items-center gap-2 text-sm font-bold"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</button>
     </div>
   </header>
 
@@ -48,21 +45,12 @@
   </div>
 
   <main class="max-w-6xl w-full mx-auto flex-1">
-
-    <!-- POS TAB -->
     <div id="tab-pos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700 flex flex-col h-[75vh]">
         <h2 id="menu-title" class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="utensils"></i> Menu</h2>
-        
-        <!-- Category Filters -->
         <div id="category-filters" class="flex gap-2 overflow-x-auto hide-scroll mb-3 pb-2 border-b border-slate-700 min-h-[40px]"></div>
-        
-        <!-- Menu Grid -->
-        <div id="menu-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-2">
-          <p class="text-slate-500 col-span-full text-center py-4 animate-pulse">Fetching items from database...</p>
-        </div>
+        <div id="menu-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-2"><p class="text-slate-500 col-span-full text-center py-4 animate-pulse">Fetching items...</p></div>
       </div>
-
       <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700 flex flex-col h-[75vh]">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="shopping-cart"></i> Current Order</h2>
         <div id="cart-items" class="flex-1 overflow-y-auto space-y-2 pr-2"><p class="text-slate-500 text-sm text-center mt-10">No items added yet.</p></div>
@@ -78,14 +66,10 @@
         </div>
       </div>
     </div>
-
-    <!-- ORDERS TAB -->
     <div id="tab-orders" class="hidden bg-slate-800/60 p-5 rounded-2xl border border-slate-700 min-h-[60vh]">
       <div class="flex justify-between items-center mb-4"><h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell"></i> Live Orders</h2><button onclick="loadLiveOrders()" class="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button></div>
       <div id="live-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
-
-    <!-- SHIFT TAB -->
     <div id="tab-shift" class="hidden space-y-4">
        <div id="active-shift-dashboard" class="hidden space-y-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -94,48 +78,14 @@
           <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700"><p class="text-[10px] text-slate-400 uppercase font-bold">Total Sales</p><p id="shift-total" class="text-xl font-bold text-white mt-1">₦0</p></div>
           <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 flex flex-col justify-center gap-2"><button onclick="generateShiftPDF()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded-lg">PDF</button><button onclick="endShift()" class="w-full bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold py-2 rounded-lg">End Shift</button></div>
         </div>
-        
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="md:col-span-2 bg-slate-800/60 p-5 rounded-2xl border border-slate-700">
-            <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="clipboard-list"></i> Shift Summary</h2>
-            <table class="w-full text-left text-sm text-slate-300">
-              <thead class="text-xs uppercase bg-slate-900 text-slate-400"><tr><th class="px-4 py-3">Item</th><th class="px-4 py-3 text-center">Sold</th><th class="px-4 py-3 text-center">Expected</th></tr></thead>
-              <tbody id="shift-inventory-body"></tbody>
-            </table>
-          </div>
-          <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700">
-            <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="alert-triangle" class="text-red-400"></i> Bad Stock</h2>
-            <form id="bad-stock-form" class="space-y-3">
-              <input type="text" id="bs-item" required placeholder="Item Name" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white">
-              <input type="number" id="bs-qty" required placeholder="Qty" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white">
-              <input type="text" id="bs-reason" required placeholder="Reason" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white">
-              <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold">Submit</button>
-            </form>
-            <p id="bs-msg" class="mt-2 text-center text-xs font-bold text-emerald-400"></p>
-          </div>
+          <div class="md:col-span-2 bg-slate-800/60 p-5 rounded-2xl border border-slate-700"><h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="clipboard-list"></i> Shift Summary</h2><table class="w-full text-left text-sm text-slate-300"><thead class="text-xs uppercase bg-slate-900 text-slate-400"><tr><th class="px-4 py-3">Item</th><th class="px-4 py-3 text-center">Sold</th><th class="px-4 py-3 text-center">Expected</th></tr></thead><tbody id="shift-inventory-body"></tbody></table></div>
+          <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700"><h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="alert-triangle" class="text-red-400"></i> Bad Stock</h2><form id="bad-stock-form" class="space-y-3"><input type="text" id="bs-item" required placeholder="Item Name" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white"><input type="number" id="bs-qty" required placeholder="Qty" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white"><input type="text" id="bs-reason" required placeholder="Reason" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-xl text-white"><button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold">Submit</button></form><p id="bs-msg" class="mt-2 text-center text-xs font-bold text-emerald-400"></p></div>
         </div>
       </div>
-      
-      <div id="start-shift-panel" class="hidden bg-slate-800/60 p-5 rounded-2xl border border-slate-700 text-center">
-        <h2 class="text-xl font-bold text-white mb-4">Start New Shift</h2>
-        <p class="text-sm text-slate-400 mb-6">Verify physical stock.</p>
-        <div class="overflow-x-auto mb-4">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="text-xs uppercase bg-slate-900 text-slate-400"><tr><th class="px-4 py-3">Item</th><th class="px-4 py-3 text-center">Expected</th><th class="px-4 py-3 text-center">Physical</th><th class="px-4 py-3 text-center">Diff</th></tr></thead>
-            <tbody id="start-shift-table-body"></tbody>
-          </table>
-        </div>
-        <button onclick="submitOpeningCount()" id="start-shift-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold">Confirm & Start</button>
-        <p id="start-shift-msg" class="mt-2 text-xs font-bold text-red-400"></p>
-      </div>
-      
-      <div id="pending-shift-panel" class="hidden bg-slate-800/60 p-8 rounded-2xl border border-slate-700 text-center">
-        <h2 class="text-xl font-bold text-white mb-2">Shift Ended</h2>
-        <p class="text-sm text-slate-400 mb-6">Pending approval.</p>
-        <button onclick="generateShiftPDF()" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold">Download PDF</button>
-      </div>
+      <div id="start-shift-panel" class="hidden bg-slate-800/60 p-5 rounded-2xl border border-slate-700 text-center"><h2 class="text-xl font-bold text-white mb-4">Start New Shift</h2><p class="text-sm text-slate-400 mb-6">Verify physical stock.</p><div class="overflow-x-auto mb-4"><table class="w-full text-left text-sm text-slate-300"><thead class="text-xs uppercase bg-slate-900 text-slate-400"><tr><th class="px-4 py-3">Item</th><th class="px-4 py-3 text-center">Expected</th><th class="px-4 py-3 text-center">Physical</th><th class="px-4 py-3 text-center">Diff</th></tr></thead><tbody id="start-shift-table-body"></tbody></table></div><button onclick="submitOpeningCount()" id="start-shift-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold">Confirm & Start</button><p id="start-shift-msg" class="mt-2 text-xs font-bold text-red-400"></p></div>
+      <div id="pending-shift-panel" class="hidden bg-slate-800/60 p-8 rounded-2xl border border-slate-700 text-center"><h2 class="text-xl font-bold text-white mb-2">Shift Ended</h2><p class="text-sm text-slate-400 mb-6">Pending approval.</p><button onclick="generateShiftPDF()" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold">Download PDF</button></div>
     </div>
-
   </main>
 
   <div id="receipt-area" class="hidden text-black font-mono text-xs p-2">
@@ -209,10 +159,7 @@
       }
     }
 
-    function logout() { 
-      localStorage.clear(); 
-      db.auth.signOut().then(() => window.location.href = 'index.html'); 
-    }
+    function logout() { localStorage.clear(); db.auth.signOut().then(() => window.location.href = 'index.html'); }
 
     function changeStation() {
       currentDepartment = document.getElementById('department').value;
@@ -233,20 +180,12 @@
       if (tab === 'shift') checkShiftStatus();
     }
 
-    // --- MENU & CATEGORIES ---
     async function loadPOS() {
-      if (currentDepartment === 'Kitchen') return;
-      
+      if (currentDepartment === 'Kitchen') return; // Kitchen only has orders, no manual POS
       const grid = document.getElementById('menu-grid');
       grid.innerHTML = '<p class="text-slate-500 col-span-full text-center py-4 animate-pulse">Fetching items...</p>';
-      
       const { data: items, error } = await db.from('inventory').select('*').eq('department', currentDepartment);
-      
-      if (error) { 
-        grid.innerHTML = `<p class="text-red-400 col-span-full text-center py-4 font-bold">Database Error: ${error.message}</p>`;
-        return; 
-      }
-      
+      if (error) { grid.innerHTML = `<p class="text-red-400 col-span-full text-center py-4 font-bold">Database Error: ${error.message}</p>`; return; }
       allInventoryItems = items || [];
       renderCategoryFilters();
       renderMenuGrid('All');
@@ -256,46 +195,23 @@
     function renderCategoryFilters() {
       const filterContainer = document.getElementById('category-filters');
       if (allInventoryItems.length === 0) { filterContainer.innerHTML = ''; return; }
-      
       const categories = ['All', ...new Set(allInventoryItems.map(item => item.category || 'Uncategorized'))];
-      
-      filterContainer.innerHTML = categories.map(cat => `
-        <button onclick="renderMenuGrid('${cat}', this)" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${cat === 'All' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}">
-          ${cat}
-        </button>
-      `).join('');
+      filterContainer.innerHTML = categories.map(cat => `<button onclick="renderMenuGrid('${cat}', this)" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${cat === 'All' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}">${cat}</button>`).join('');
     }
 
     function renderMenuGrid(category, btnElement) {
       const grid = document.getElementById('menu-grid');
-      
-      document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.className = "cat-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition bg-slate-700 text-slate-300 hover:bg-slate-600";
-      });
+      document.querySelectorAll('.cat-btn').forEach(btn => { btn.className = "cat-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition bg-slate-700 text-slate-300 hover:bg-slate-600"; });
       if (btnElement) btnElement.className = "cat-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition bg-indigo-600 text-white";
-
       const filtered = category === 'All' ? allInventoryItems : allInventoryItems.filter(i => (i.category || 'Uncategorized') === category);
-
       grid.innerHTML = '';
-      if (filtered.length === 0) {
-        grid.innerHTML = '<p class="text-slate-500 col-span-full text-center py-4">No items available in this category.</p>';
-        return;
-      }
-
+      if (filtered.length === 0) { grid.innerHTML = '<p class="text-slate-500 col-span-full text-center py-4">No items available in this category.</p>'; return; }
       filtered.forEach(item => {
         const isLow = item.stock_quantity <= 5, isOut = item.stock_quantity <= 0;
-        grid.innerHTML += `
-          <button onclick="addToCart('${item.id}')" ${isOut ? 'disabled' : ''} class="bg-slate-700/50 p-3 rounded-xl flex flex-col items-center justify-center border ${isOut ? 'border-red-900 opacity-50' : 'border-slate-600 hover:bg-slate-600'} transition relative text-center h-24 shadow-sm">
-            ${isLow && !isOut ? `<span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>` : ''}
-            <span class="font-bold text-xs text-white line-clamp-2">${item.item_name}</span>
-            <span class="text-[10px] mt-1 text-indigo-400 font-bold">₦${item.price.toLocaleString()}</span>
-            <span class="text-[9px] mt-auto ${isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-slate-400'}">${item.stock_quantity} left</span>
-          </button>
-        `;
+        grid.innerHTML += `<button onclick="addToCart('${item.id}')" ${isOut ? 'disabled' : ''} class="bg-slate-700/50 p-3 rounded-xl flex flex-col items-center justify-center border ${isOut ? 'border-red-900 opacity-50' : 'border-slate-600 hover:bg-slate-600'} transition relative text-center h-24 shadow-sm">${isLow && !isOut ? `<span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>` : ''}<span class="font-bold text-xs text-white line-clamp-2">${item.item_name}</span><span class="text-[10px] mt-1 text-indigo-400 font-bold">₦${item.price.toLocaleString()}</span><span class="text-[9px] mt-auto ${isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-slate-400'}">${item.stock_quantity} left</span></button>`;
       });
     }
 
-    // --- CART LOGIC ---
     function addToCart(id) {
       const item = allInventoryItems.find(i => i.id === id);
       if(item.stock_quantity <= 0) return alert('Out of stock!');
@@ -311,11 +227,7 @@
       if (cart.length === 0) cartDiv.innerHTML = '<p class="text-slate-500 text-sm text-center mt-10">No items added yet.</p>';
       cart.forEach((c, index) => {
         total += c.price * c.qty;
-        cartDiv.innerHTML += `
-          <div class="flex justify-between items-center bg-slate-900 p-2 rounded-lg border border-slate-700">
-            <div><p class="font-bold text-sm text-white">${c.item_name}</p><p class="text-xs text-slate-400">${c.qty} x ₦${c.price.toLocaleString()}</p></div>
-            <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-          </div>`;
+        cartDiv.innerHTML += `<div class="flex justify-between items-center bg-slate-900 p-2 rounded-lg border border-slate-700"><div><p class="font-bold text-sm text-white">${c.item_name}</p><p class="text-xs text-slate-400">${c.qty} x ₦${c.price.toLocaleString()}</p></div><button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
       });
       lucide.createIcons(); document.getElementById('cart-total').innerText = '₦' + total.toLocaleString();
     }
@@ -339,9 +251,8 @@
       rooms.forEach(r => { select.innerHTML += `<option value="${r.id}">Room ${r.room_number}</option>`; });
     }
 
-    // --- SHIFT LOGIC ---
+    // --- SHIFT LOGIC (Enabled for Kitchen too now) ---
     async function checkShiftStatus() {
-      if (currentDepartment === 'Kitchen') return; 
       document.getElementById('start-shift-panel').classList.add('hidden');
       document.getElementById('active-shift-dashboard').classList.add('hidden');
       document.getElementById('pending-shift-panel').classList.add('hidden');
@@ -377,12 +288,7 @@
       const tbody = document.getElementById('shift-inventory-body');
       const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).order('item_name');
       if (!items || items.length === 0) return tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-500">No items.</td></tr>';
-      tbody.innerHTML = items.map(item => `
-          <tr class="border-b border-slate-700">
-            <td class="px-4 py-3 font-bold text-white">${item.item_name}</td>
-            <td class="px-4 py-3 text-center text-indigo-400">--</td>
-            <td class="px-4 py-3 text-center font-bold text-amber-400">${item.stock_quantity}</td>
-          </tr>`).join('');
+      tbody.innerHTML = items.map(item => `<tr class="border-b border-slate-700"><td class="px-4 py-3 font-bold text-white">${item.item_name}</td><td class="px-4 py-3 text-center text-indigo-400">--</td><td class="px-4 py-3 text-center font-bold text-amber-400">${item.stock_quantity}</td></tr>`).join('');
     }
 
     async function loadOpeningCountTable() {
@@ -390,13 +296,7 @@
       const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment);
       if (!items || items.length === 0) return tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">No items to count.</td></tr>';
       items.forEach(item => {
-        tbody.innerHTML += `
-          <tr class="border-b border-slate-700">
-            <td class="px-4 py-3 font-bold text-white">${item.item_name}</td>
-            <td class="px-4 py-3 text-center text-slate-400 font-bold">${item.stock_quantity}</td>
-            <td class="px-4 py-3 text-center"><input type="number" id="open-phys-${item.id}" oninput="calcOpenDisc('${item.id}', ${item.stock_quantity})" placeholder="${item.stock_quantity}" class="w-20 bg-slate-900 border border-slate-600 rounded-lg p-2 text-center text-white outline-none focus:border-indigo-500 transition"></td>
-            <td class="px-4 py-3 text-center"><span id="open-disc-${item.id}" class="text-sm font-bold text-slate-500">0</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr class="border-b border-slate-700"><td class="px-4 py-3 font-bold text-white">${item.item_name}</td><td class="px-4 py-3 text-center text-slate-400 font-bold">${item.stock_quantity}</td><td class="px-4 py-3 text-center"><input type="number" id="open-phys-${item.id}" oninput="calcOpenDisc('${item.id}', ${item.stock_quantity})" placeholder="${item.stock_quantity}" class="w-20 bg-slate-900 border border-slate-600 rounded-lg p-2 text-center text-white outline-none focus:border-indigo-500 transition"></td><td class="px-4 py-3 text-center"><span id="open-disc-${item.id}" class="text-sm font-bold text-slate-500">0</span></td></tr>`;
       });
     }
 
@@ -436,20 +336,7 @@
     function generateShiftPDF() { 
       if(!activeShift) return;
       const element = document.createElement('div');
-      element.innerHTML = `
-        <div style="padding: 20px; font-family: sans-serif;">
-          <h2 style="text-align: center;">Vicnos Hotel - Shift Report</h2>
-          <p><strong>Department:</strong> ${currentDepartment}</p>
-          <p><strong>Staff:</strong> ${currentUser.email}</p>
-          <p><strong>Start Time:</strong> ${new Date(activeShift.start_time).toLocaleString()}</p>
-          <hr style="margin: 20px 0;">
-          <h3>Sales Summary</h3>
-          <p><strong>Cash Sales:</strong> ₦${shiftSales.cash.toLocaleString()}</p>
-          <p><strong>Room Credits:</strong> ₦${shiftSales.credit.toLocaleString()}</p>
-          <p><strong>Total Sales:</strong> ₦${shiftSales.total.toLocaleString()}</p>
-          <br>
-          <p style="text-align: center; font-size: 10px;">Powered by DEKY</p>
-        </div>`;
+      element.innerHTML = `<div style="padding: 20px; font-family: sans-serif;"><h2 style="text-align: center;">Vicnos Hotel - Shift Report</h2><p><strong>Department:</strong> ${currentDepartment}</p><p><strong>Staff:</strong> ${currentUser.email}</p><p><strong>Start Time:</strong> ${new Date(activeShift.start_time).toLocaleString()}</p><hr style="margin: 20px 0;"><h3>Sales Summary</h3><p><strong>Cash Sales:</strong> ₦${shiftSales.cash.toLocaleString()}</p><p><strong>Room Credits:</strong> ₦${shiftSales.credit.toLocaleString()}</p><p><strong>Total Sales:</strong> ₦${shiftSales.total.toLocaleString()}</p><br><p style="text-align: center; font-size: 10px;">Powered by DEKY</p></div>`;
       html2pdf().set({ margin: 0.5, filename: `Shift_Report_${currentDepartment}.pdf` }).from(element).save();
     }
 
@@ -483,11 +370,7 @@
       
       list.innerHTML = orders.map(order => {
         let itemsHtml = ''; try { itemsHtml = (typeof order.items === 'string' ? JSON.parse(order.items) : order.items).map(i => `<li>${i.qty}x ${i.name}</li>`).join(''); } catch(e) {}
-        return `
-          <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col justify-between">
-            <div><h3 class="text-white font-bold text-lg">Room ${order.room_number}</h3><ul class="text-sm text-slate-300 mb-2 list-disc pl-4">${itemsHtml}</ul></div>
-            <div class="flex gap-2"><button onclick="db.from('guest_orders').update({status:'Completed'}).eq('id','${order.id}').then(loadLiveOrders)" class="flex-1 bg-emerald-600 text-white text-xs font-bold py-2 rounded-lg">Deliver</button></div>
-          </div>`;
+        return `<div class="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col justify-between"><div><h3 class="text-white font-bold text-lg">Room ${order.room_number}</h3><ul class="text-sm text-slate-300 mb-2 list-disc pl-4">${itemsHtml}</ul></div><div class="flex gap-2"><button onclick="db.from('guest_orders').update({status:'Completed'}).eq('id','${order.id}').then(loadLiveOrders)" class="flex-1 bg-emerald-600 text-white text-xs font-bold py-2 rounded-lg">Deliver</button></div></div>`;
       }).join('');
     }
 
