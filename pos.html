@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vicnos Hotel - Staff Portal (POS & Orders)</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -18,18 +20,17 @@
     ::-webkit-scrollbar-track { background: #1e293b; }
     ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 font-sans flex flex-col">
 
   <header class="max-w-6xl w-full mx-auto flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="store" class="text-indigo-400"></i> Vicnos Staff Portal</h1>
-      <p class="text-xs text-slate-400 mt-1">Bar, Kitchen, & Minimart</p>
+      <h1 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="store" class="text-indigo-400"></i> Vicnos Portal</h1>
+      <p class="text-xs text-slate-400 mt-1">Station Operations</p>
     </div>
     <div class="flex items-center gap-4">
-      <select id="department" onchange="changeStation()" class="bg-slate-800 text-white font-bold border border-slate-700 p-2 rounded-lg outline-none">
+      <!-- The Dropdown (Will be locked based on role) -->
+      <select id="department" onchange="changeStation()" class="bg-slate-800 text-white font-bold border border-slate-700 p-2 rounded-lg outline-none disabled:opacity-50 transition">
         <option value="Bar">🍻 Bar</option>
         <option value="Kitchen">🍳 Kitchen</option>
         <option value="Minimart">🛒 Minimart</option>
@@ -48,13 +49,10 @@
 
   <main class="max-w-6xl w-full mx-auto flex-1">
 
-    <!-- ================= POS / SELL TAB ================= -->
     <div id="tab-pos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col h-[75vh]">
         <h2 id="menu-title" class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="utensils"></i> Loading Menu...</h2>
-        <div id="menu-grid" class="grid grid-cols-2 gap-3 overflow-y-auto pr-2">
-          <!-- Items load here -->
-        </div>
+        <div id="menu-grid" class="grid grid-cols-2 gap-3 overflow-y-auto pr-2"></div>
       </div>
 
       <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col h-[75vh]">
@@ -86,22 +84,17 @@
       </div>
     </div>
 
-    <!-- ================= LIVE ORDERS TAB ================= -->
     <div id="tab-orders" class="hidden">
       <div class="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 min-h-[60vh]">
         <div class="flex justify-between items-center mb-4">
           <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell"></i> Live Guest Orders</h2>
           <button onclick="loadLiveOrders()" class="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
         </div>
-        <div id="live-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Orders load here -->
-        </div>
+        <div id="live-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
     </div>
 
-    <!-- ================= STOCK & HANDOVER TAB ================= -->
     <div id="tab-stock" class="hidden space-y-4">
-      
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
           <p class="text-xs text-slate-400 uppercase font-bold">Total Sales Today</p>
@@ -137,9 +130,7 @@
                 <th class="px-4 py-3 text-center">Action</th>
               </tr>
             </thead>
-            <tbody id="stock-table-body">
-              <!-- Rows load here -->
-            </tbody>
+            <tbody id="stock-table-body"></tbody>
           </table>
         </div>
       </div>
@@ -154,9 +145,7 @@
   <div id="add-stock-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl p-6">
       <h3 class="text-lg font-bold text-white mb-4">Add Stock</h3>
-      <select id="add-stock-item" class="w-full mb-3 p-3 bg-slate-900 border border-slate-600 text-white rounded-lg outline-none">
-        <!-- Items load here -->
-      </select>
+      <select id="add-stock-item" class="w-full mb-3 p-3 bg-slate-900 border border-slate-600 text-white rounded-lg outline-none"></select>
       <input type="number" id="add-stock-qty" placeholder="Quantity received" class="w-full mb-4 p-3 bg-slate-900 border border-slate-600 text-white rounded-lg outline-none" min="1">
       <div class="flex gap-2">
         <button onclick="closeAddStockModal()" class="flex-1 py-2 rounded-lg font-bold text-slate-300 bg-slate-700 hover:bg-slate-600">Cancel</button>
@@ -186,6 +175,10 @@
   </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
@@ -198,24 +191,35 @@
     let currentPaymentMethod = 'Cash';
     let currentDepartment = 'Bar';
     let currentTab = 'pos';
-    let ordersInterval = null;
 
-    // Auth & Init
     async function init() {
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
 
-      // Check if URL parameter forces a department (e.g., ?dept=Minimart from Reception)
-      const urlDept = new URLSearchParams(window.location.search).get('dept');
-      if (urlDept) {
-        document.getElementById('department').value = urlDept;
+      // --- ROLE LOCK LOGIC ---
+      const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+      const role = profile ? profile.role : 'staff';
+      const deptSelect = document.getElementById('department');
+
+      if (role === 'chef') {
+          deptSelect.value = 'Kitchen';
+          deptSelect.disabled = true; // Lock it
+          deptSelect.classList.add('opacity-50', 'cursor-not-allowed');
+          document.getElementById('tab-btn-pos').classList.add('hidden'); // Chefs don't sell, hide POS tab
+          switchTab('orders');
+      } else if (role === 'barman') {
+          deptSelect.value = 'Bar';
+          deptSelect.disabled = true;
+          deptSelect.classList.add('opacity-50', 'cursor-not-allowed');
+      } else if (role === 'receptionist') {
+          deptSelect.value = 'Minimart';
+          deptSelect.disabled = true;
+          deptSelect.classList.add('opacity-50', 'cursor-not-allowed');
       } else {
-        // Default to Kitchen if role is chef
-        const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
-        if (profile && profile.role === 'chef') {
-          document.getElementById('department').value = 'Kitchen';
-        }
+          // Admin / Manager can switch freely
+          const urlDept = new URLSearchParams(window.location.search).get('dept');
+          if (urlDept) deptSelect.value = urlDept;
       }
 
       changeStation();
@@ -229,7 +233,6 @@
       currentDepartment = document.getElementById('department').value;
       document.getElementById('menu-title').innerHTML = `<i data-lucide="utensils"></i> ${currentDepartment} Menu`;
       
-      // Kitchen doesn't sell directly, hide POS tab
       if (currentDepartment === 'Kitchen') {
         document.getElementById('tab-btn-pos').classList.add('hidden');
         if (currentTab === 'pos') switchTab('orders');
@@ -258,7 +261,6 @@
       if (tab === 'orders') loadLiveOrders();
     }
 
-    // ================= POS LOGIC =================
     async function loadPOS() {
       if (currentDepartment === 'Kitchen') return;
       
@@ -420,7 +422,6 @@
         }).eq('id', item.id);
       }
 
-      // Print Logic
       document.getElementById('r-date').innerText = new Date().toLocaleString();
       document.getElementById('r-dept').innerText = currentDepartment;
       document.getElementById('r-total').innerText = '₦' + total.toLocaleString();
@@ -449,10 +450,10 @@
       }, 100);
     }
 
-    // ================= LIVE ORDERS LOGIC =================
     async function loadLiveOrders() {
       const list = document.getElementById('live-orders-list');
       
+      // Fetches ONLY the orders for the current department (e.g. only Kitchen if you are Chef)
       const { data: orders, error } = await db.from('guest_orders')
         .select('*')
         .eq('department', currentDepartment)
@@ -521,7 +522,6 @@
       loadLiveOrders();
     }
 
-    // ================= STOCK & HANDOVER LOGIC =================
     async function loadStockData() {
       const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).order('item_name');
       inventory = items || [];
@@ -580,11 +580,8 @@
     async function submitCount(itemId) {
       const phys = parseInt(document.getElementById(`physical-${itemId}`).value) || 0;
       const bad = parseInt(document.getElementById(`bad-${itemId}`).value) || 0;
-      
       const item = inventory.find(i => i.id === itemId);
-      
-      const expected = item.stock_quantity;
-      const discrepancy = expected - phys - bad;
+      const discrepancy = item.stock_quantity - phys - bad;
 
       const { error } = await db.from('inventory').update({
         physical_count: phys,
@@ -632,12 +629,5 @@
 
     init();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>
