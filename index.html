@@ -26,7 +26,14 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <div class="w-full max-w-md fade-in" id="login-container" style="display: none;">
+  <!-- Loading Screen (Shows while checking session) -->
+  <div id="loading-screen" class="flex flex-col items-center justify-center">
+    <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-slate-400 text-sm font-bold animate-pulse">Loading Vicnos...</p>
+  </div>
+
+  <!-- MAIN LOGIN CONTAINER -->
+  <div id="login-container" class="hidden w-full max-w-md fade-in">
     
     <!-- Logo Area -->
     <div class="text-center mb-8">
@@ -63,9 +70,12 @@
       <p id="message" class="mt-4 text-center text-sm font-medium"></p>
     </div>
 
-    <!-- Vendor Signup Link -->
-    <div class="text-center mt-6">
-        <a href="vendor-signup.html" class="text-xs text-blue-300 hover:text-white transition">Are you a local vendor? Join the DEKY Network here.</a>
+    <!-- Guest & Vendor Links -->
+    <div class="flex flex-col gap-3 mt-6 text-center">
+        <a href="guest-login.html" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+            <i data-lucide="smartphone" class="w-4 h-4"></i> I am a Hotel Guest
+        </a>
+        <a href="vendor-signup.html" class="text-xs text-blue-300 hover:text-white transition mt-2">Are you a local vendor? Join the DEKY Network here.</a>
     </div>
 
     <!-- DEKY Branding -->
@@ -75,14 +85,8 @@
     </p>
   </div>
 
-  <!-- Loading Screen (Shows while checking session) -->
-  <div id="loading-screen" class="flex flex-col items-center justify-center">
-    <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-    <p class="text-slate-400 text-sm font-bold animate-pulse">Loading Vicnos...</p>
-  </div>
-
   <script>
-    // 1. Register Service Worker for Speed Caching
+    // 1. Register Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
@@ -95,63 +99,45 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    // 2. The Role Routing Logic (Centralized)
     function routeUser(role) {
       if (role === 'vendor') {
         window.location.replace('vendor-dashboard.html');
-      } else if (['super_admin', 'admin', 'manager', 'md', 'accountant', 'receptionist', 'supervisor'].includes(role)) {
+      } else if (['super_admin', 'admin', 'manager', 'md', 'accountant', 'receptionist', 'supervisor', 'chef', 'barman', 'waitress', 'housekeeping', 'store_keeper', 'laundry', 'security', 'blogger'].includes(role)) {
         window.location.replace('dashboard.html');
-      } else if (['barman', 'waitress', 'chef'].includes(role)) {
-        window.location.replace('pos.html'); 
-      } else if (role === 'housekeeping') {
-        window.location.replace('rooms.html'); 
-      } else if (role === 'store_keeper') {
-        window.location.replace('store.html'); 
-      } else if (role === 'blogger') {
-        window.location.replace('blog-manager.html'); 
-      } else if (role === 'security') {
-        window.location.replace('security-dashboard.html');
-      } else if (role === 'laundry') {
-        window.location.replace('laundry.html');
       } else {
         window.location.replace('dashboard.html'); 
       }
     }
 
-    // 3. Check for Instant Session (Speed)
     async function checkSession() {
       const { data: { session } } = await db.auth.getSession();
       
       if (session) {
-        // Check local storage first for INSTANT routing
         const cachedRole = localStorage.getItem('vicnos_role');
         if (cachedRole) {
           routeUser(cachedRole);
-          return; // Stop execution, we are redirecting
+          return; 
         }
 
-        // If no cache, fetch from DB (with a fast timeout)
         const { data: profile } = await db.from('profiles').select('role, is_active').eq('id', session.user.id).single();
         
         if (profile && profile.is_active !== false) {
-          localStorage.setItem('vicnos_role', profile.role); // Cache it for next time
+          localStorage.setItem('vicnos_role', profile.role); 
           routeUser(profile.role);
         } else {
-          // Invalid or deactivated profile, show login
           document.getElementById('loading-screen').classList.add('hidden');
           document.getElementById('login-container').style.display = 'block';
         }
       } else {
-        // No session, show login form
         document.getElementById('loading-screen').classList.add('hidden');
         document.getElementById('login-container').style.display = 'block';
+        
         // Trap the back button so they can't go to a cached dashboard page
         window.history.pushState(null, null, window.location.href);
         window.onpopstate = function () { window.history.go(1); };
       }
     }
 
-    // 4. Login Function
     async function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
@@ -189,7 +175,6 @@
         return;
       }
 
-      // SUCCESS: Cache role and route
       localStorage.setItem('vicnos_role', profile.role);
       
       message.textContent = 'Login successful!';
@@ -198,7 +183,6 @@
       setTimeout(() => routeUser(profile.role), 500);
     }
 
-    // Run session check on load
     checkSession();
   </script>
 </body>
