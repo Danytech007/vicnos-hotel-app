@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Guest Login</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- QR Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="items-center justify-center p-4">
+
+  <!-- Loading Screen (Checks for existing session) -->
+  <div id="loading-screen" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-[200]">
+    <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-gray-500 font-bold animate-pulse">Checking your reservation...</p>
+  </div>
+
+  <!-- MAIN LOGIN UI -->
+  <div id="login-container" class="hidden w-full max-w-sm fade-in">
+    
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-600 text-white rounded-3xl shadow-xl shadow-blue-500/30 mb-4 transform -rotate-6">
+        <i data-lucide="hotel" class="w-10 h-10"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome to Vicnos</h1>
+      <p class="text-sm text-gray-500 font-medium">Access your room service, bill, and local marketplace.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100">
+      
+      <!-- SCAN BUTTON -->
+      <button onclick="startScanner()" id="scan-btn" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 mb-6">
+        <i data-lucide="scan-line" class="w-5 h-5"></i> Scan Room QR Code
+      </button>
+
+      <div class="flex items-center gap-3 mb-6">
+        <div class="h-px bg-gray-200 flex-1"></div>
+        <span class="text-xs text-gray-400 font-bold uppercase">Or Enter Manually</span>
+        <div class="h-px bg-gray-200 flex-1"></div>
+      </div>
+
+      <!-- MANUAL ROOM ENTRY -->
+      <form id="manual-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Room Number</label>
+          <input id="room-input" type="text" required placeholder="e.g. 106" class="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-center text-2xl font-black text-gray-800 outline-none focus:border-blue-500 focus:bg-white transition tracking-widest">
+        </div>
+        <button type="submit" id="submit-btn" class="w-full bg-blue-100 text-blue-700 py-4 rounded-xl font-bold active:scale-95 transition">
+          Access My Portal
+        </button>
+      </form>
+      <p id="error-msg" class="mt-4 text-center text-sm font-bold text-red-500"></p>
+    </div>
+
+    <div class="mt-8 text-center">
+      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
+      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+    </div>
+  </div>
+
+  <!-- QR Scanner Modal -->
+  <div id="scanner-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden items-center justify-center z-[250] p-4 flex-col">
+    <div class="w-full max-w-sm">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-white font-bold text-lg">Scan Room QR</h2>
+        <button onclick="closeScanner()" class="bg-white/20 p-2 rounded-full text-white hover:bg-white/30"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      <div id="reader" class="w-full rounded-2xl overflow-hidden border-2 border-blue-500 bg-black"></div>
+      <p class="text-center text-white/70 text-sm mt-4">Point your camera at the QR code on your desk or TV.</p>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let qrScanner = null;
+
+    // 1. Check if they already have a session
+    async function checkSession() {
+      let savedGuest = localStorage.getItem('vicnos_guest_session');
+      
+      if (savedGuest) {
+        try {
+          savedGuest = JSON.parse(savedGuest);
+          // Verify with DB to ensure they haven't checked out
+          const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
+          
+          if (booking && booking.status === 'Checked In') {
+            // Valid session! Go straight to portal
+            window.location.replace(`guest-portal.html?room=${savedGuest.room_number}`);
+            return;
+          } else {
+            // They checked out or booking is invalid
+            localStorage.removeItem('vicnos_guest_session');
+          }
+        } catch (e) {
+          localStorage.removeItem('vicnos_guest_session');
+        }
+      }
+      
+      // No valid session found, show login UI
+      document.getElementById('loading-screen').classList.add('hidden');
+      document.getElementById('login-container').classList.remove('hidden');
+    }
+
+    // 2. Manual Form Submit
+    document.getElementById('manual-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const roomNum = document.getElementById('room-input').value.trim();
+      if (roomNum) processLogin(roomNum);
+    });
+
+    // 3. QR Scanner Logic
+    function startScanner() {
+      document.getElementById('scanner-modal').classList.remove('hidden');
+      document.getElementById('scanner-modal').classList.add('flex');
+      
+      qrScanner = new Html5Qrcode("reader");
+      
+      qrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          // QR code contains something like "VICNOS-ROOM-106"
+          if (decodedText.includes("VICNOS-ROOM-")) {
+            const roomNum = decodedText.replace("VICNOS-ROOM-", "");
+            closeScanner();
+            processLogin(roomNum);
+          } else if (!isNaN(decodedText)) {
+            // If they just put the number in the QR
+            closeScanner();
+            processLogin(decodedText);
+          } else {
+            alert("Invalid QR Code. Please scan the Vicnos Room Code.");
+          }
+        },
+        (errorMessage) => { /* Ignore focusing errors */ }
+      ).catch((err) => alert("Camera error: " + err));
+    }
+
+    function closeScanner() {
+      if (qrScanner) {
+        qrScanner.stop().then(() => {
+          document.getElementById('scanner-modal').classList.add('hidden');
+          document.getElementById('scanner-modal').classList.remove('flex');
+        }).catch(e => console.log(e));
+      } else {
+        document.getElementById('scanner-modal').classList.add('hidden');
+        document.getElementById('scanner-modal').classList.remove('flex');
+      }
+    }
+
+    // 4. The Core Login Logic
+    async function processLogin(roomNum) {
+      const btn = document.getElementById('scan-btn');
+      const submitBtn = document.getElementById('submit-btn');
+      const errMsg = document.getElementById('error-msg');
+      
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Verifying...`;
+      btn.disabled = true; submitBtn.disabled = true;
+      errMsg.textContent = '';
+
+      try {
+        // Check if room exists
+        const { data: roomData, error: roomErr } = await db.from('rooms').select('id').eq('room_number', roomNum).single();
+        if (roomErr || !roomData) throw new Error("Room not found. Please check the number and try again.");
+
+        // Check if there is an active checked-in booking for this room
+        const { data: booking, error: bookErr } = await db.from('bookings')
+          .select('id, check_in_date, expected_check_out, guests(full_name)')
+          .eq('room_id', roomData.id)
+          .eq('status', 'Checked In')
+          .limit(1)
+          .maybeSingle();
+
+        if (bookErr || !booking) throw new Error("This room is not currently checked in. Please contact the front desk.");
+
+        // Success! Save the secure session token
+        const sessionData = {
+          booking_id: booking.id,
+          room_number: roomNum,
+          guest_name: booking.guests.full_name,
+          check_in: booking.check_in_date,
+          check_out: booking.expected_check_out
+        };
+        
+        localStorage.setItem('vicnos_guest_session', JSON.stringify(sessionData));
+        
+        // Redirect to the portal
+        window.location.replace(`guest-portal.html?room=${roomNum}`);
+
+      } catch (err) {
+        errMsg.textContent = err.message;
+        btn.innerHTML = `<i data-lucide="scan-line" class="w-5 h-5"></i> Scan Room QR Code`;
+        btn.disabled = false; submitBtn.disabled = false;
+      }
+    }
+
+    // Initialize
+    checkSession();
+  </script>
+</body>
+</html>

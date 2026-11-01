@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos - Room QR Codes</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; }
+      .qr-card { page-break-inside: avoid; border: 2px dashed #ccc; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+
+  <div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-8 no-print">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Room QR Codes</h1>
+        <p class="text-sm text-gray-500">Print and place these in the rooms.</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="window.location.href='dashboard.html'" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">Back</button>
+        <button onclick="window.print()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2">
+          <i data-lucide="printer" class="w-4 h-4"></i> Print All
+        </button>
+      </div>
+    </div>
+
+    <div id="qr-grid" class="grid grid-cols-2 md:grid-cols-3 gap-6">
+      <p class="text-center text-gray-500 col-span-full">Loading rooms...</p>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function loadQRs() {
+      const grid = document.getElementById('qr-grid');
+      
+      // Fetch all rooms
+      const { data: rooms, error } = await db.from('rooms').select('*').order('room_number');
+      
+      if (error || !rooms || rooms.length === 0) {
+        grid.innerHTML = '<p class="text-red-500">Error loading rooms.</p>';
+        return;
+      }
+
+      grid.innerHTML = rooms.map(r => {
+        // The QR code contains "VICNOS-ROOM-XXX"
+        const qrData = `VICNOS-ROOM-${r.room_number}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrData}`;
+        
+        return `
+          <div class="qr-card bg-white p-6 rounded-2xl flex flex-col items-center shadow-sm text-center">
+            <img src="${qrUrl}" alt="QR Code" class="w-48 h-48 mb-4">
+            <h2 class="text-2xl font-black text-gray-900">Room ${r.room_number}</h2>
+            <p class="text-xs text-gray-500 mt-2 font-medium">Scan to access<br>Room Service & Bill</p>
+            <p class="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase">Powered by DEKY</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    loadQRs();
+  </script>
+</body>
+</html>
