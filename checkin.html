@@ -4,370 +4,139 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Reception & Check-In</title>
-  
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#f8fafc">
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  
   <style>
     * { -webkit-tap-highlight-color: transparent; }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
     .hide-scroll::-webkit-scrollbar { display: none; }
-    .fade-in { animation: fadeIn 0.3s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- Top Navigation -->
   <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center overflow-x-auto hide-scroll">
-      <div class="flex items-center gap-2 flex-shrink-0">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-2">
         <div class="bg-blue-600 p-2 rounded-lg text-white"><i data-lucide="concierge-bell" class="w-5 h-5"></i></div>
-        <div>
-          <h1 class="font-bold text-gray-900 leading-tight">Front Desk</h1>
-          <p class="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Reception</p>
-        </div>
+        <div><h1 class="font-bold text-gray-900 leading-tight">Front Desk</h1><p class="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Reception</p></div>
       </div>
-      <div class="flex gap-2 ml-4">
-        <button onclick="switchTab('checkin')" id="tab-btn-checkin" class="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition whitespace-nowrap">Check-In</button>
-        <button onclick="switchTab('sales')" id="tab-btn-sales" class="px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition whitespace-nowrap">Minimart & Sales</button>
-        <button onclick="switchTab('shift')" id="tab-btn-shift" class="px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition whitespace-nowrap">Shift Handover</button>
-        <a href="dashboard.html" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 ml-2 flex items-center gap-1 whitespace-nowrap"><i data-lucide="arrow-left" class="w-4 h-4"></i> Exit</a>
+      <div class="flex gap-2">
+        <button onclick="switchTab('checkin')" id="tab-btn-checkin" class="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition">Check-In</button>
+        <button onclick="switchTab('sales')" id="tab-btn-sales" class="px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">Minimart & Sales</button>
+        <a href="dashboard.html" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 ml-2 flex items-center gap-1"><i data-lucide="arrow-left" class="w-4 h-4"></i> Exit</a>
       </div>
     </div>
   </nav>
 
   <main class="flex-grow max-w-5xl w-full mx-auto p-4 pb-12">
     
-    <!-- ================= TAB 1: CHECK-IN FORM ================= -->
     <div id="tab-checkin" class="fade-in">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 w-full max-w-3xl mx-auto">
         
         <div class="text-center mb-6 border-b pb-4">
-          <div class="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-            <i data-lucide="key" class="w-8 h-8 text-blue-600"></i>
-          </div>
+          <div class="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="key" class="w-8 h-8 text-blue-600"></i></div>
           <h1 class="text-2xl font-bold text-gray-800">Guest Check-In Form</h1>
           <p class="text-gray-500 text-sm mt-1">Room <span id="display-room" class="font-bold text-blue-600 text-lg">...</span></p>
         </div>
 
         <form id="checkin-form" class="space-y-6">
           
-          <!-- Room Selection -->
           <div id="room-select-container" class="hidden bg-blue-50 p-4 rounded-xl border border-blue-200">
             <label class="block text-sm font-bold text-blue-800 mb-1">Select Available Room</label>
-            <select id="room-select" class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl outline-none font-semibold text-gray-700">
-              <option value="">-- Choose an Available Room --</option>
-            </select>
+            <select id="room-select" class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl outline-none font-semibold text-gray-700"><option value="">-- Choose an Available Room --</option></select>
           </div>
 
-          <!-- SECTION 1: GUEST INFORMATION -->
           <div>
             <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Guest Information</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="md:col-span-2">
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name *</label>
-                <input id="guest-name" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Date of Birth</label>
-                <input id="guest-dob" type="date" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none text-gray-600 transition">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Sex</label>
-                <select id="guest-sex" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none text-gray-600 transition">
-                  <option value="">Select...</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Nationality</label>
-                <input id="guest-nationality" type="text" placeholder="e.g. Nigerian" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">City / State</label>
-                <input id="guest-city" type="text" placeholder="e.g. Benin City" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Home Address</label>
-                <input id="guest-address" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Phone Number *</label>
-                <input id="guest-phone" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Occupation</label>
-                <input id="guest-occupation" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Means of Identity (ID Type & Number)</label>
-                <input id="guest-id" type="text" placeholder="e.g. NIN, Driver's License, Passport" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-              </div>
+              <div class="md:col-span-2"><label class="block text-xs font-semibold text-gray-500 mb-1">Full Name *</label><input id="guest-name" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition"></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Date of Birth</label><input id="guest-dob" type="date" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 outline-none"></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Sex</label><select id="guest-sex" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 outline-none"><option value="">Select...</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Nationality</label><input id="guest-nationality" type="text" placeholder="e.g. Nigerian" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">City / State</label><input id="guest-city" type="text" placeholder="e.g. Benin City" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"></div>
+              <div class="md:col-span-2"><label class="block text-xs font-semibold text-gray-500 mb-1">Home Address</label><input id="guest-address" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Phone Number *</label><input id="guest-phone" type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Occupation</label><input id="guest-occupation" type="text" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"></div>
+              <div class="md:col-span-2"><label class="block text-xs font-semibold text-gray-500 mb-1">Means of Identity (ID Type & Number)</label><input id="guest-id" type="text" placeholder="e.g. NIN, Driver's License" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"></div>
             </div>
           </div>
 
-          <!-- SECTION 2: ADDITIONAL GUEST -->
           <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Additional Guest (If Applicable)</h3>
+            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Additional Guest</h3>
             <div class="grid grid-cols-2 gap-4">
-              <div class="col-span-2">
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name</label>
-                <input id="add-name" type="text" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Relation to Primary Guest</label>
-                <input id="add-relation" type="text" placeholder="e.g. Spouse, Child" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Age & Sex</label>
-                <input id="add-age-sex" type="text" placeholder="e.g. 30, Female" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition">
-              </div>
+              <div class="col-span-2"><label class="block text-xs font-semibold text-gray-500 mb-1">Full Name</label><input id="add-name" type="text" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none"></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Relation</label><input id="add-relation" type="text" placeholder="e.g. Spouse" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none"></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Age & Sex</label><input id="add-age-sex" type="text" placeholder="e.g. 30, F" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none"></div>
             </div>
           </div>
 
-          <!-- SECTION 3: STAY DETAILS & PAYMENT -->
           <div>
-            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Stay Details & Payment</h3>
+            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1">Stay Details</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Expected Checkout Date *</label>
-                <input id="checkout-date" type="date" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Room Rate (₦)</label>
-                <input id="room-rate" type="number" readonly class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold">
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Payment Method</label>
-                <select id="payment-method" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition">
-                  <option value="POS">POS</option>
-                  <option value="Card">Card</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Cash">Cash</option>
-                </select>
-              </div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Expected Checkout Date *</label><input id="checkout-date" type="date" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">Room Rate (₦)</label><input id="room-rate" type="number" readonly class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold"></div>
+              <div class="md:col-span-2"><label class="block text-xs font-semibold text-gray-500 mb-1">Payment Method</label><select id="payment-method" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"><option value="POS">POS</option><option value="Card">Card</option><option value="Transfer">Bank Transfer</option><option value="Cash">Cash</option></select></div>
             </div>
           </div>
 
-          <!-- SECTION 4: RULES -->
           <div class="bg-red-50 p-4 rounded-xl border border-red-200">
             <label class="flex items-start gap-3 cursor-pointer">
-              <input id="agree-rules" type="checkbox" required class="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
-              <span class="text-xs text-red-800 leading-tight">
-                <strong>I agree to the Hotel Rules & Regulations.</strong> Check-in is 2pm, check-out is 11:55am. Failure to check out at the appointed time attracts 50% of the room rate. No smoking, no pets, no cult activities, no parties. Quiet time is 11pm - 6am. Breaking items will amount to fines.
-              </span>
+              <input id="agree-rules" type="checkbox" required class="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300">
+              <span class="text-xs text-red-800 leading-tight"><strong>I agree to the Hotel Rules.</strong> Check-in is 2pm, check-out is 11:55am. Failure attracts 50% extra. No smoking, pets, or parties.</span>
             </label>
           </div>
 
-          <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all mt-2 flex justify-center items-center gap-2">
-            <i data-lucide="check-circle" class="w-5 h-5"></i> Complete Check-In & Assign Key
-          </button>
+          <button type="submit" id="submit-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-[0.98] transition flex justify-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Complete Check-In</button>
         </form>
         <p id="message" class="mt-4 text-center text-sm font-bold"></p>
       </div>
     </div>
 
-    <!-- ================= TAB 2: MINIMART & SALES ================= -->
     <div id="tab-sales" class="hidden fade-in">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        <!-- Today's Bookings -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-          <div class="flex items-center gap-3 mb-4 border-b pb-4">
-            <div class="bg-indigo-100 p-2 rounded-lg text-indigo-600"><i data-lucide="door-open" class="w-6 h-6"></i></div>
-            <div>
-              <h2 class="font-bold text-gray-800">Booking Revenue</h2>
-              <p class="text-xs text-gray-500">Total collected today</p>
-            </div>
-          </div>
-          <p id="booking-revenue" class="text-4xl font-black text-gray-900">₦0</p>
-          <p id="booking-count" class="text-sm text-gray-500 mt-2 font-medium">0 Check-ins today</p>
-        </div>
-
-        <!-- Today's Minimart Sales -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-          <div class="flex items-center gap-3 mb-4 border-b pb-4">
-            <div class="bg-emerald-100 p-2 rounded-lg text-emerald-600"><i data-lucide="shopping-cart" class="w-6 h-6"></i></div>
-            <div>
-              <h2 class="font-bold text-gray-800">Minimart Revenue</h2>
-              <p class="text-xs text-gray-500">Total sales today</p>
-            </div>
-          </div>
-          <p id="minimart-revenue" class="text-4xl font-black text-gray-900">₦0</p>
-          <div class="flex justify-between text-xs text-gray-500 mt-4 font-medium border-t pt-2">
-            <span>Cash: <span id="mm-cash" class="text-gray-800 font-bold">₦0</span></span>
-            <span>To Room: <span id="mm-credit" class="text-amber-600 font-bold">₦0</span></span>
-          </div>
-        </div>
-
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200"><div class="flex items-center gap-3 mb-4 border-b pb-4"><div class="bg-indigo-100 p-2 rounded-lg text-indigo-600"><i data-lucide="door-open" class="w-6 h-6"></i></div><div><h2 class="font-bold text-gray-800">Booking Revenue</h2><p class="text-xs text-gray-500">Total today</p></div></div><p id="booking-revenue" class="text-4xl font-black text-gray-900">₦0</p><p id="booking-count" class="text-sm text-gray-500 mt-2 font-medium">0 Check-ins</p></div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200"><div class="flex items-center gap-3 mb-4 border-b pb-4"><div class="bg-emerald-100 p-2 rounded-lg text-emerald-600"><i data-lucide="shopping-cart" class="w-6 h-6"></i></div><div><h2 class="font-bold text-gray-800">Minimart Revenue</h2><p class="text-xs text-gray-500">Total today</p></div></div><p id="minimart-revenue" class="text-4xl font-black text-gray-900">₦0</p><div class="flex justify-between text-xs text-gray-500 mt-4 font-medium border-t pt-2"><span>Cash: <span id="mm-cash" class="text-gray-800 font-bold">₦0</span></span><span>To Room: <span id="mm-credit" class="text-amber-600 font-bold">₦0</span></span></div></div>
       </div>
-
       <div class="mt-6 flex flex-col md:flex-row gap-4">
-        <a href="pos.html?dept=Minimart" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between transition active:scale-[0.98] group">
-          <div>
-            <h3 class="font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">Open Minimart POS</h3>
-            <p class="text-sm text-slate-400">Sell items, manage stock, and log handovers.</p>
-          </div>
-          <div class="bg-white/10 p-3 rounded-full group-hover:bg-blue-600 transition-colors">
-            <i data-lucide="arrow-right" class="w-6 h-6"></i>
-          </div>
-        </a>
-        
-        <a href="stock-manager.html" class="flex-1 bg-white border border-gray-200 hover:border-gray-300 p-6 rounded-2xl shadow-sm flex items-center justify-between transition active:scale-[0.98] group">
-          <div>
-            <h3 class="font-bold text-lg text-gray-800 mb-1">Stock Manager</h3>
-            <p class="text-sm text-gray-500">Submit physical counts for Admin approval.</p>
-          </div>
-          <div class="bg-gray-100 p-3 rounded-full group-hover:bg-gray-200 transition-colors">
-            <i data-lucide="package" class="w-6 h-6 text-gray-600"></i>
-          </div>
-        </a>
+        <a href="pos.html?dept=Minimart" class="flex-1 bg-slate-900 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between group"><div><h3 class="font-bold text-lg mb-1">Open Minimart POS</h3><p class="text-sm text-slate-400">Sell items & manage stock.</p></div><div class="bg-white/10 p-3 rounded-full group-hover:bg-blue-600"><i data-lucide="arrow-right" class="w-6 h-6"></i></div></a>
+        <a href="stock-manager.html" class="flex-1 bg-white border border-gray-200 p-6 rounded-2xl shadow-sm flex items-center justify-between group"><div><h3 class="font-bold text-lg text-gray-800 mb-1">Stock Manager</h3><p class="text-sm text-gray-500">Submit physical counts.</p></div><div class="bg-gray-100 p-3 rounded-full group-hover:bg-gray-200"><i data-lucide="package" class="w-6 h-6 text-gray-600"></i></div></a>
       </div>
     </div>
-
-    <!-- ================= TAB 3: SHIFT HANDOVER ================= -->
-    <div id="tab-shift" class="hidden space-y-5 fade-in">
-      
-      <!-- Active Shift Dashboard -->
-      <div id="active-shift-panel" class="hidden space-y-4">
-        <div class="bg-slate-900 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden">
-          <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl"></div>
-          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Active Shift Sales</h2>
-          <p id="live-total" class="text-4xl font-extrabold text-white">₦0</p>
-          
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t border-slate-700 pt-4">
-            <div class="md:col-span-1">
-              <p class="text-[10px] text-slate-400 font-bold uppercase">Room Bookings</p>
-              <p id="live-bookings" class="text-sm font-bold text-indigo-400">₦0</p>
-            </div>
-            <div class="md:col-span-1">
-              <p class="text-[10px] text-slate-400 font-bold uppercase">Minimart Cash</p>
-              <p id="live-mm-cash" class="text-sm font-bold text-emerald-400">₦0</p>
-            </div>
-            <div class="md:col-span-1">
-              <p class="text-[10px] text-slate-400 font-bold uppercase">Minimart Credits</p>
-              <p id="live-mm-credit" class="text-sm font-bold text-amber-400">₦0</p>
-            </div>
-            <div class="md:col-span-1 flex items-end">
-              <p class="text-[10px] text-slate-400 font-bold uppercase mr-2">Total Cash:</p>
-              <p id="live-total-cash" class="text-sm font-bold text-white">₦0</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-3">
-          <button onclick="generateShiftPDF()" class="flex-1 bg-white border-2 border-blue-600 text-blue-600 py-3 rounded-xl font-bold active:scale-95 transition flex items-center justify-center gap-2">
-            <i data-lucide="download" class="w-5 h-5"></i> Report
-          </button>
-          <button onclick="endShift()" class="flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition">End Shift</button>
-        </div>
-      </div>
-
-      <!-- Start Shift (Incoming Verification) -->
-      <div id="start-shift-panel" class="hidden bg-white p-5 rounded-3xl shadow-sm border border-gray-200">
-        <div class="text-center mb-6">
-          <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-            <i data-lucide="clipboard-check" class="w-8 h-8 text-indigo-600"></i>
-          </div>
-          <h2 class="text-xl font-bold text-gray-900 mb-1">Start New Shift</h2>
-          <p class="text-xs text-gray-500">Verify the physical stock left by the previous shift.</p>
-        </div>
-        
-        <!-- Cash Verification -->
-        <div id="cash-verification-panel" class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-left mb-6 hidden">
-          <p class="text-xs font-bold text-gray-500 uppercase mb-2">Previous Shift Cash</p>
-          <div class="flex justify-between items-center py-1 mb-2">
-            <span class="text-sm text-gray-700">Expected Cash:</span>
-            <span id="prev-cash" class="font-bold text-gray-900">₦0</span>
-          </div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">Physical Cash Received (₦)</label>
-          <input type="number" id="physical-cash" oninput="calcCashDisc()" placeholder="Enter amount counted" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-indigo-500 font-bold text-lg">
-          <p id="cash-disc-msg" class="text-xs font-bold text-transparent mt-1 text-right">0</p>
-        </div>
-
-        <!-- Minimart Stock Verification -->
-        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Minimart Stock Verification</p>
-        <div class="overflow-x-auto max-h-[40vh] mb-4 border rounded-xl">
-          <table class="w-full text-left text-sm text-gray-600">
-            <thead class="text-xs uppercase bg-gray-100 text-gray-500 sticky top-0">
-              <tr>
-                <th class="px-3 py-2">Minimart Item</th>
-                <th class="px-3 py-2 text-center">Expected</th>
-                <th class="px-3 py-2 text-center">Physical</th>
-                <th class="px-3 py-2 text-center">Diff</th>
-              </tr>
-            </thead>
-            <tbody id="start-shift-table-body"></tbody>
-          </table>
-        </div>
-
-        <button onclick="submitOpeningCount()" id="start-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition">Confirm Count & Start Shift</button>
-      </div>
-
-      <!-- Pending Shift Panel -->
-      <div id="pending-shift-panel" class="hidden bg-white p-8 rounded-3xl shadow-sm border border-gray-200 text-center">
-        <div class="bg-amber-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <i data-lucide="hourglass" class="w-10 h-10 text-amber-500"></i>
-        </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Shift Ended</h2>
-        <p class="text-sm text-gray-500 mb-6">Your shift is closed and pending Accountant approval.</p>
-        <button onclick="generateShiftPDF()" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 mx-auto">
-          <i data-lucide="download" class="w-5 h-5"></i> Download Report
-        </button>
-      </div>
-
-    </div>
-
   </main>
 
-  <footer class="text-center text-xs text-gray-500 py-4 mt-auto border-t bg-white">
-    Powered by <strong class="text-gray-700">DEKY</strong>
-  </footer>
+  <footer class="text-center text-xs text-gray-500 py-4 mt-auto border-t bg-white">Powered by <strong class="text-gray-700">DEKY</strong></footer>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
-    }
-
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    // ==========================================
-    // HOTEL CONFIGURATION
-    // ==========================================
-    const HOTEL_ACCEPTS_CASH = false; // Set to true if the hotel uses physical cash
-
     const urlParams = new URLSearchParams(window.location.search);
     let selectedRoomId = urlParams.get('id');
     let selectedRoomNum = urlParams.get('room');
     let currentUser = null;
 
-    let activeShift = null;
-    let lastPendingShift = null;
-    let shiftSales = { bookings: 0, cash: 0, credit: 0, total: 0 };
+    function switchTab(tab) {
+      document.getElementById('tab-checkin').classList.add('hidden'); document.getElementById('tab-sales').classList.add('hidden');
+      document.getElementById('tab-btn-checkin').className = "px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+      document.getElementById('tab-btn-sales').className = "px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).className = "px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition";
+      if (tab === 'sales') loadSalesDashboard();
+    }
 
-    // --- INIT PAGE ---
     async function initPage() {
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
-
       if (urlParams.get('dept') === 'Minimart' || window.location.hash === '#sales') switchTab('sales');
-
-      if (HOTEL_ACCEPTS_CASH) {
-          document.getElementById('cash-verification-panel').classList.remove('hidden');
-      }
 
       if (selectedRoomId) {
         document.getElementById('display-room').textContent = selectedRoomNum;
@@ -375,405 +144,69 @@
       } else {
         document.getElementById('display-room').textContent = "Select Below";
         document.getElementById('room-select-container').classList.remove('hidden');
-        
         const { data: availRooms } = await db.from('rooms').select('*').eq('status', 'Available').order('room_number');
         const select = document.getElementById('room-select');
-        
-        if(!availRooms || availRooms.length === 0) {
-            select.innerHTML = '<option value="">No rooms available</option>';
-        } else {
-            availRooms.forEach(r => {
-                select.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} - ₦${Number(r.price_per_night).toLocaleString()}</option>`;
-            });
+        if(!availRooms || availRooms.length === 0) { select.innerHTML = '<option value="">No rooms available</option>'; } 
+        else {
+            availRooms.forEach(r => { select.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} - ₦${Number(r.price_per_night).toLocaleString()}</option>`; });
         }
-
         select.addEventListener('change', (e) => {
           const opt = e.target.options[e.target.selectedIndex];
-          if(opt.value) {
-              selectedRoomId = opt.value;
-              selectedRoomNum = opt.dataset.num;
-              document.getElementById('room-rate').value = opt.dataset.price;
-              document.getElementById('display-room').textContent = selectedRoomNum;
-          } else {
-              selectedRoomId = null;
-              document.getElementById('room-rate').value = '';
-              document.getElementById('display-room').textContent = "Select Below";
-          }
+          if(opt.value) { selectedRoomId = opt.value; selectedRoomNum = opt.dataset.num; document.getElementById('room-rate').value = opt.dataset.price; document.getElementById('display-room').textContent = selectedRoomNum; } 
+          else { selectedRoomId = null; document.getElementById('room-rate').value = ''; document.getElementById('display-room').textContent = "Select Below"; }
         });
       }
-
-      checkShiftStatus();
     }
 
-    // --- TAB SWITCHING ---
-    function switchTab(tab) {
-      ['checkin', 'sales', 'shift'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        document.getElementById(`tab-btn-${t}`).className = "px-4 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition whitespace-nowrap";
-      });
-
-      document.getElementById(`tab-${tab}`).classList.remove('hidden');
-      document.getElementById(`tab-btn-${tab}`).className = "px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white transition whitespace-nowrap";
-
-      if (tab === 'sales') loadSalesDashboard();
-    }
-
-    // --- SHIFT LOGIC ---
-    async function checkShiftStatus() {
-      document.getElementById('start-shift-panel').classList.add('hidden');
-      document.getElementById('active-shift-panel').classList.add('hidden');
-      document.getElementById('pending-shift-panel').classList.add('hidden');
-
-      // 1. Check if I have an Active shift
-      const { data: myActive } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', 'Reception').eq('status', 'Active').limit(1);
-      
-      if (myActive && myActive.length > 0) {
-        activeShift = myActive[0];
-        document.getElementById('active-shift-panel').classList.remove('hidden');
-        loadLiveSales();
-        return;
-      }
-
-      // 2. Check if I have a Pending shift
-      const { data: myPending } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', 'Reception').eq('status', 'Pending_Approval').limit(1);
-      
-      if (myPending && myPending.length > 0) {
-        activeShift = myPending[0];
-        document.getElementById('pending-shift-panel').classList.remove('hidden');
-        return;
-      }
-
-      // 3. I have no shift. Look for previous person's pending shift to verify.
-      const { data: prevShift } = await db.from('shifts')
-        .select('*')
-        .eq('department', 'Reception')
-        .eq('status', 'Pending_Approval')
-        .order('end_time', { ascending: false })
-        .limit(1);
-
-      if (prevShift && prevShift.length > 0) {
-        lastPendingShift = prevShift[0];
-        document.getElementById('prev-cash').textContent = `₦${Number(lastPendingShift.total_cash_sales).toLocaleString()}`;
-      }
-
-      document.getElementById('start-shift-panel').classList.remove('hidden');
-      loadMinimartOpeningCount();
-    }
-
-    async function loadMinimartOpeningCount() {
-      const tbody = document.getElementById('start-shift-table-body');
-      tbody.innerHTML = '';
-
-      const { data: items } = await db.from('inventory').select('*').eq('department', 'Minimart');
-      
-      if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">No minimart items found.</td></tr>';
-        return;
-      }
-
-      items.forEach(item => {
-        const expected = item.stock_quantity;
-        tbody.innerHTML += `
-          <tr class="border-b border-gray-100">
-            <td class="px-3 py-3 font-bold text-gray-800 text-xs">${item.item_name}</td>
-            <td class="px-3 py-3 text-center text-gray-500 font-bold text-xs">${expected}</td>
-            <td class="px-3 py-3 text-center">
-              <input type="number" id="open-phys-${item.id}" oninput="calcOpenDisc('${item.id}', ${expected})" placeholder="${expected}" class="w-16 bg-gray-50 border border-gray-300 rounded-lg p-1.5 text-center text-gray-800 outline-none focus:border-indigo-500 font-bold text-xs">
-            </td>
-            <td class="px-3 py-3 text-center">
-              <span id="open-disc-${item.id}" class="text-xs font-bold text-gray-400">0</span>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    function calcOpenDisc(itemId, expected) {
-      const input = document.getElementById(`open-phys-${itemId}`);
-      const discSpan = document.getElementById(`open-disc-${itemId}`);
-      const physical = parseInt(input.value);
-
-      if (isNaN(physical)) {
-        discSpan.textContent = '0';
-        discSpan.className = 'text-xs font-bold text-gray-400';
-        return;
-      }
-
-      const diff = physical - expected;
-      if (diff === 0) {
-        discSpan.textContent = '0';
-        discSpan.className = 'text-xs font-bold text-emerald-600';
-      } else if (diff < 0) {
-        discSpan.textContent = `${diff}`;
-        discSpan.className = 'text-xs font-bold text-red-600';
-      } else {
-        discSpan.textContent = `+${diff}`;
-        discSpan.className = 'text-xs font-bold text-amber-600';
-      }
-    }
-
-    function calcCashDisc() {
-      if (!HOTEL_ACCEPTS_CASH) return;
-      const expected = lastPendingShift ? Number(lastPendingShift.total_cash_sales) : 0;
-      const physical = parseFloat(document.getElementById('physical-cash').value) || 0;
-      const disc = physical - expected;
-      const msg = document.getElementById('cash-disc-msg');
-
-      if (document.getElementById('physical-cash').value === '') {
-        msg.textContent = '0';
-        msg.className = 'text-xs font-bold text-transparent mt-1 text-right';
-        return;
-      }
-
-      if (disc === 0) {
-        msg.textContent = 'Cash is Perfect ✅';
-        msg.className = 'text-xs font-bold text-emerald-600 mt-1 text-right';
-      } else if (disc < 0) {
-        msg.textContent = `Missing ₦${Math.abs(disc).toLocaleString()} ❌`;
-        msg.className = 'text-xs font-bold text-red-600 mt-1 text-right';
-      } else {
-        msg.textContent = `Extra ₦${disc.toLocaleString()} ⚠️`;
-        msg.className = 'text-xs font-bold text-amber-600 mt-1 text-right';
-      }
-    }
-
-    async function submitOpeningCount() {
-      const rows = document.querySelectorAll('[id^="open-phys-"]');
-      let physicalCounts = [];
-      let hasEmpty = false;
-
-      rows.forEach(input => {
-        if (!input.value) hasEmpty = true;
-        const itemId = input.id.replace('open-phys-', '');
-        const itemName = input.closest('tr').querySelector('td').textContent;
-        const expected = parseInt(input.placeholder);
-        const physical = parseInt(input.value) || 0;
-        
-        physicalCounts.push({ item_id: itemId, item_name: itemName, expected, physical, discrepancy: physical - expected });
-      });
-
-      if (hasEmpty) return alert("Please enter the physical count for ALL items.");
-
-      let physicalCash = 0;
-      if (HOTEL_ACCEPTS_CASH) {
-        physicalCash = parseFloat(document.getElementById('physical-cash').value);
-        if (isNaN(physicalCash)) return alert("Please enter the physical cash amount.");
-        
-        const expectedCash = lastPendingShift ? Number(lastPendingShift.total_cash_sales) : 0;
-        physicalCounts.push({ item_name: 'Cash Remittance', expected: expectedCash, physical: physicalCash, discrepancy: physicalCash - expectedCash });
-      }
-
-      const btn = document.getElementById('start-btn');
-      btn.textContent = "Verifying..."; btn.disabled = true;
-
-      try {
-        if (lastPendingShift) {
-          await db.from('shift_handovers').insert({
-            shift_id: lastPendingShift.id,
-            user_id: currentUser.id, 
-            department: 'Reception',
-            physical_counts: physicalCounts,
-            status: 'Pending'
-          });
-        }
-
-        await db.from('shifts').insert({
-          user_id: currentUser.id,
-          department: 'Reception',
-          status: 'Active'
-        });
-
-        alert("✅ Handover verified. Shift started!");
-        checkShiftStatus();
-
-      } catch (err) {
-        alert("Error: " + err.message);
-        btn.textContent = "Confirm Count & Start Shift"; btn.disabled = false;
-      }
-    }
-
-    async function loadLiveSales() {
-      if (!activeShift) return;
-
-      // 1. Fetch Bookings (Room revenue)
-      const { data: bookings } = await db.from('bookings')
-        .select('id, rooms(price_per_night)')
-        .eq('created_by', currentUser.id)
-        .gte('created_at', activeShift.start_time);
-
-      let bookingTotal = 0;
-      if (bookings) {
-        bookings.forEach(b => {
-          if (b.rooms && b.rooms.price_per_night) bookingTotal += Number(b.rooms.price_per_night);
-        });
-      }
-      
-      // 2. Fetch Minimart Sales
-      const { data: mmOrders } = await db.from('pos_orders')
-        .select('*')
-        .eq('department', 'Minimart')
-        .eq('created_by', currentUser.id)
-        .gte('created_at', activeShift.start_time);
-
-      let mmCash = 0, mmCredit = 0;
-      if (mmOrders) {
-        mmOrders.forEach(o => {
-          if (o.payment_method === 'Charge_to_Room') mmCredit += Number(o.total_amount);
-          else mmCash += Number(o.total_amount);
-        });
-      }
-
-      const totalCash = bookingTotal + mmCash;
-      const totalSales = totalCash + mmCredit;
-      shiftSales = { bookings: bookingTotal, cash: mmCash, credit: mmCredit, total: totalSales };
-
-      document.getElementById('live-bookings').textContent = `₦${bookingTotal.toLocaleString()}`;
-      document.getElementById('live-mm-cash').textContent = `₦${mmCash.toLocaleString()}`;
-      document.getElementById('live-mm-credit').textContent = `₦${mmCredit.toLocaleString()}`;
-      document.getElementById('live-total-cash').textContent = `₦${totalCash.toLocaleString()}`;
-      document.getElementById('live-total').textContent = `₦${totalSales.toLocaleString()}`;
-    }
-
-    async function endShift() {
-      if (!confirm("End shift and submit for Accountant approval?")) return;
-
-      await db.from('shifts').update({
-        status: 'Pending_Approval',
-        end_time: new Date().toISOString(),
-        total_cash_sales: shiftSales.bookings + shiftSales.cash, // Total cash = Bookings + Minimart cash
-        total_credit_sales: shiftSales.credit
-      }).eq('id', activeShift.id);
-
-      alert("✅ Shift ended. Please hand over the remaining stock to the next receptionist.");
-      checkShiftStatus();
-    }
-
-    function generateShiftPDF() {
-      if (!activeShift) return;
-
-      const element = document.createElement('div');
-      element.innerHTML = `
-        <div style="padding: 20px; font-family: sans-serif;">
-          <h2 style="text-align: center;">Vicnos Hotel - Reception Shift Report</h2>
-          <p><strong>Date:</strong> ${new Date(activeShift.start_time).toLocaleString()}</p>
-          <p><strong>Status:</strong> ${activeShift.status}</p>
-          <hr style="margin: 20px 0;">
-          <h3>Sales Summary</h3>
-          <p><strong>Room Bookings:</strong> ₦${shiftSales.bookings.toLocaleString()}</p>
-          <p><strong>Minimart Cash:</strong> ₦${shiftSales.cash.toLocaleString()}</p>
-          <p><strong>Minimart Credits (To Room):</strong> ₦${shiftSales.credit.toLocaleString()}</p>
-          <hr style="margin: 10px 0;">
-          <p><strong>Total Cash to Remit:</strong> ₦${(shiftSales.bookings + shiftSales.cash).toLocaleString()}</p>
-          <p><strong>Total Sales:</strong> ₦${shiftSales.total.toLocaleString()}</p>
-          <br>
-          <p style="text-align: center; font-size: 10px;">Powered by DEKY</p>
-        </div>
-      `;
-      html2pdf().set({ filename: `Reception_Shift_${new Date().toISOString().split('T')[0]}.pdf` }).from(element).save();
-    }
-
-    // --- CHECK-IN SUBMISSION ---
     document.getElementById('checkin-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!selectedRoomId) return alert("Please select a room first.");
+      const msg = document.getElementById('message'); const btn = document.getElementById('submit-btn');
+      msg.textContent = 'Processing Check-in...'; msg.className = 'mt-4 text-center text-sm font-bold text-blue-600 animate-pulse'; btn.disabled = true;
 
-      const msg = document.getElementById('message');
-      const btn = document.getElementById('submit-btn');
-      msg.textContent = 'Processing Check-in...';
-      msg.className = 'mt-4 text-center text-sm font-bold text-blue-600 animate-pulse';
-      btn.disabled = true;
-
-      // 1. Create Guest
       const { data: guest, error: guestErr } = await db.from('guests').insert({
-        full_name: document.getElementById('guest-name').value,
-        phone: document.getElementById('guest-phone').value,
-        dob: document.getElementById('guest-dob').value || null,
-        sex: document.getElementById('guest-sex').value,
-        nationality: document.getElementById('guest-nationality').value,
-        city: document.getElementById('guest-city').value,
-        address: document.getElementById('guest-address').value,
-        occupation: document.getElementById('guest-occupation').value,
+        full_name: document.getElementById('guest-name').value, phone: document.getElementById('guest-phone').value,
+        dob: document.getElementById('guest-dob').value || null, sex: document.getElementById('guest-sex').value,
+        nationality: document.getElementById('guest-nationality').value, city: document.getElementById('guest-city').value,
+        address: document.getElementById('guest-address').value, occupation: document.getElementById('guest-occupation').value,
         id_type: document.getElementById('guest-id').value
       }).select().single();
 
-      if (guestErr) { 
-        msg.textContent = guestErr.message; 
-        msg.className = 'mt-4 text-center text-sm font-bold text-red-600';
-        btn.disabled = false;
-        return; 
-      }
+      if (guestErr) { msg.textContent = guestErr.message; msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; btn.disabled = false; return; }
 
-      // 2. Create Booking
+      // CRITICAL FIX: Added check_in_date so checkout calculator works!
       const { error: bookErr } = await db.from('bookings').insert({
-        room_id: selectedRoomId,
-        guest_id: guest.id,
+        room_id: selectedRoomId, guest_id: guest.id,
+        check_in_date: new Date().toISOString(), // <-- THIS WAS MISSING
         expected_check_out: document.getElementById('checkout-date').value,
-        status: 'Checked In',
-        created_by: currentUser.id,
+        status: 'Checked In', created_by: currentUser.id,
         payment_method: document.getElementById('payment-method').value,
         additional_guest_name: document.getElementById('add-name').value,
         additional_guest_relation: document.getElementById('add-relation').value,
         agreed_to_rules: document.getElementById('agree-rules').checked
       });
 
-      if (bookErr) { 
-        msg.textContent = bookErr.message; 
-        msg.className = 'mt-4 text-center text-sm font-bold text-red-600';
-        btn.disabled = false;
-        return; 
-      }
+      if (bookErr) { msg.textContent = bookErr.message; msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; btn.disabled = false; return; }
 
-      // 3. Update Room Status
       await db.from('rooms').update({ status: 'Occupied' }).eq('id', selectedRoomId);
 
       msg.innerHTML = '✅ Checked In Successfully! <br><br><span class="text-gray-500 text-xs">Sending signal to ARIT Key Encoder...</span>';
       msg.className = 'mt-4 text-center text-sm font-bold text-green-600';
       
-      setTimeout(() => {
-        alert("Simulated: Key Card Written for Room " + selectedRoomNum);
-        window.location.reload();
-      }, 2000);
+      setTimeout(() => { alert("Simulated: Key Card Written for Room " + selectedRoomNum); window.location.reload(); }, 2000);
     });
 
-    // --- SALES DASHBOARD ---
     async function loadSalesDashboard() {
       const today = new Date().toISOString().split('T')[0];
-
-      const { data: bookings } = await db.from('bookings')
-        .select('id, rooms(price_per_night)')
-        .gte('created_at', today);
-      
-      let bookTotal = 0;
-      let bookCount = bookings ? bookings.length : 0;
-      if (bookings) {
-        bookings.forEach(b => {
-          if (b.rooms && b.rooms.price_per_night) bookTotal += Number(b.rooms.price_per_night);
-        });
-      }
-
+      const { data: bookings } = await db.from('bookings').select('id, rooms(price_per_night)').gte('created_at', today);
+      let bookTotal = 0; let bookCount = bookings ? bookings.length : 0;
+      if (bookings) bookings.forEach(b => { if (b.rooms && b.rooms.price_per_night) bookTotal += Number(b.rooms.price_per_night); });
       document.getElementById('booking-revenue').innerText = '₦' + bookTotal.toLocaleString();
       document.getElementById('booking-count').innerText = `${bookCount} Check-in${bookCount === 1 ? '' : 's'} today`;
 
-      const { data: sales } = await db.from('pos_orders')
-        .select('total_amount, payment_method')
-        .eq('department', 'Minimart')
-        .gte('created_at', today);
-
-      let mmTotal = 0;
-      let mmCash = 0;
-      let mmCredit = 0;
-
-      if (sales) {
-        sales.forEach(s => {
-          mmTotal += Number(s.total_amount);
-          if (s.payment_method === 'Charge_to_Room') {
-            mmCredit += Number(s.total_amount);
-          } else {
-            mmCash += Number(s.total_amount);
-          }
-        });
-      }
-
+      const { data: sales } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', 'Minimart').gte('created_at', today);
+      let mmTotal = 0; let mmCash = 0; let mmCredit = 0;
+      if (sales) sales.forEach(s => { mmTotal += Number(s.total_amount); if (s.payment_method === 'Charge_to_Room') mmCredit += Number(s.total_amount); else mmCash += Number(s.total_amount); });
       document.getElementById('minimart-revenue').innerText = '₦' + mmTotal.toLocaleString();
       document.getElementById('mm-cash').innerText = '₦' + mmCash.toLocaleString();
       document.getElementById('mm-credit').innerText = '₦' + mmCredit.toLocaleString();

@@ -14,6 +14,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
     .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="min-h-screen pb-10">
@@ -27,19 +29,34 @@
   </nav>
 
   <main class="p-4 max-w-3xl mx-auto space-y-4 mt-2">
-    
-    <!-- Search Bar -->
     <div class="bg-white p-2 rounded-xl shadow-sm border border-gray-200 flex items-center gap-2">
       <i data-lucide="search" class="w-5 h-5 text-gray-400 ml-2"></i>
       <input type="text" id="search-input" oninput="filterGuests()" placeholder="Search by name or phone..." class="w-full bg-transparent outline-none text-sm text-gray-700 font-medium py-2">
     </div>
-
-    <!-- Guest List -->
     <div id="guest-list" class="space-y-3">
       <p class="text-center text-gray-500 text-sm py-10 animate-pulse">Loading guest directory...</p>
     </div>
-
   </main>
+
+  <!-- Modal for Guest History -->
+  <div id="history-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative fade-in max-h-[80vh] flex flex-col">
+      <button onclick="closeHistoryModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-6 h-6"></i></button>
+      
+      <div class="text-center mb-4 border-b pb-4">
+        <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2"><i data-lucide="user" class="w-8 h-8 text-indigo-600"></i></div>
+        <h2 id="modal-guest-name" class="text-xl font-bold text-gray-900">Guest Name</h2>
+        <p id="modal-guest-phone" class="text-sm text-gray-500">Phone</p>
+      </div>
+      
+      <div class="overflow-y-auto hide-scroll flex-1">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Stay History</h3>
+        <div id="modal-history-list" class="space-y-3">
+          <p class="text-center text-sm text-gray-500">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
@@ -54,62 +71,80 @@
 
     async function loadGuests() {
       const list = document.getElementById('guest-list');
-      
       const { data: guests, error } = await db.from('guests').select('*').order('full_name');
-
-      if (error) {
-        list.innerHTML = `<p class="text-center text-red-500">Error: ${error.message}</p>`;
-        return;
-      }
-
-      if (!guests || guests.length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-500 py-6">No guest records found.</p>';
-        return;
-      }
-
+      if (error) { list.innerHTML = `<p class="text-center text-red-500">Error: ${error.message}</p>`; return; }
+      if (!guests || guests.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 py-6">No guest records found.</p>'; return; }
       allGuests = guests;
       renderGuests(allGuests);
     }
 
     function renderGuests(guestArray) {
       const list = document.getElementById('guest-list');
-      
-      list.innerHTML = guestArray.map(g => {
-        return `
+      list.innerHTML = guestArray.map(g => `
           <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center fade-in">
             <div class="flex items-center gap-4">
-              <div class="bg-indigo-50 p-3 rounded-full text-indigo-600">
-                <i data-lucide="user" class="w-6 h-6"></i>
-              </div>
+              <div class="bg-indigo-50 p-3 rounded-full text-indigo-600"><i data-lucide="user" class="w-6 h-6"></i></div>
               <div>
                 <h3 class="font-bold text-gray-900 text-sm">${g.full_name}</h3>
                 <p class="text-xs text-gray-500 font-medium mt-0.5">${g.phone || 'No phone'}</p>
                 <p class="text-[10px] text-gray-400 mt-0.5">${g.id_type || 'No ID'} • ${g.nationality || 'N/A'}</p>
               </div>
             </div>
-            
-            <button class="bg-blue-50 text-blue-600 font-bold text-xs px-3 py-2 rounded-lg hover:bg-blue-100 transition">
+            <button onclick="viewHistory('${g.id}', '${g.full_name.replace(/'/g, "\\'")}', '${g.phone || 'N/A'}')" class="bg-blue-50 text-blue-600 font-bold text-xs px-3 py-2 rounded-lg hover:bg-blue-100 transition">
               View History
             </button>
           </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    async function viewHistory(guestId, guestName, guestPhone) {
+      document.getElementById('modal-guest-name').textContent = guestName;
+      document.getElementById('modal-guest-phone').textContent = guestPhone;
+      document.getElementById('history-modal').classList.remove('hidden');
+      document.getElementById('history-modal').classList.add('flex');
+      
+      const list = document.getElementById('modal-history-list');
+      list.innerHTML = '<p class="text-center text-sm text-gray-500 animate-pulse">Fetching stays...</p>';
+
+      const { data: bookings, error } = await db.from('bookings')
+        .select('*, rooms(room_number)')
+        .eq('guest_id', guestId)
+        .order('created_at', { ascending: false });
+
+      if (error || !bookings || bookings.length === 0) {
+        list.innerHTML = '<p class="text-center text-sm text-gray-500">No past stays found.</p>';
+        return;
+      }
+
+      list.innerHTML = bookings.map(b => {
+        const checkIn = new Date(b.check_in_date).toLocaleDateString();
+        const checkOut = new Date(b.expected_check_out).toLocaleDateString();
+        const isActive = b.status === 'Checked In';
+        
+        return `
+          <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+            <div class="flex justify-between items-center mb-1">
+              <p class="font-bold text-gray-800 text-sm">Room ${b.rooms.room_number}</p>
+              <span class="${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'} text-[9px] font-bold px-2 py-1 rounded">${b.status}</span>
+            </div>
+            <p class="text-[10px] text-gray-500">${checkIn} to ${checkOut}</p>
+            <p class="text-[10px] text-gray-500 mt-1 font-mono">ID: ${b.id.split('-')[0]}</p>
+          </div>
         `;
       }).join('');
+    }
 
-      lucide.createIcons();
+    function closeHistoryModal() {
+      document.getElementById('history-modal').classList.add('hidden');
+      document.getElementById('history-modal').classList.remove('flex');
     }
 
     function filterGuests() {
       const query = document.getElementById('search-input').value.toLowerCase();
-      const filtered = allGuests.filter(g => 
-        g.full_name.toLowerCase().includes(query) || 
-        (g.phone && g.phone.includes(query))
-      );
-      
-      if (filtered.length === 0) {
-        document.getElementById('guest-list').innerHTML = '<p class="text-center text-gray-500 py-6">No guests match your search.</p>';
-      } else {
-        renderGuests(filtered);
-      }
+      const filtered = allGuests.filter(g => g.full_name.toLowerCase().includes(query) || (g.phone && g.phone.includes(query)));
+      if (filtered.length === 0) { document.getElementById('guest-list').innerHTML = '<p class="text-center text-gray-500 py-6">No guests match your search.</p>'; } 
+      else { renderGuests(filtered); }
     }
 
     loadGuests();
