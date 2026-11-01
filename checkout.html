@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Check Out</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #receipt-area, #receipt-area * { visibility: visible; }
+      #receipt-area { position: absolute; left: 0; top: 0; width: 80mm; color: black; background: white; padding: 10px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Guest Check-Out</h1><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Front Desk</p></div>
+    </div>
+    <div class="bg-orange-50 p-2 rounded-full text-orange-600"><i data-lucide="log-out" class="w-5 h-5"></i></div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-4 mt-2">
+    
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="search" class="w-5 h-5 text-blue-500"></i> Select Guest to Check Out</h2>
+      <select id="booking-select" onchange="loadBillDetails()" class="w-full bg-gray-50 border border-gray-300 p-4 rounded-xl text-gray-800 outline-none font-bold text-lg">
+        <option value="">-- Loading Active Guests... --</option>
+      </select>
+    </div>
+
+    <div id="bill-details" class="hidden space-y-4 fade-in">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+        <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-emerald-500"></i> Final Bill Breakdown</h2>
+        
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between items-center border-b pb-2">
+            <span class="text-gray-600 font-medium">Room Accommodation</span>
+            <span id="bill-room" class="font-bold text-gray-800 text-lg">₦0</span>
+          </div>
+          <div class="flex justify-between items-center border-b pb-2">
+            <span class="text-gray-600 font-medium">Food, Drinks & Services</span>
+            <span id="bill-pos" class="font-bold text-gray-800 text-lg">₦0</span>
+          </div>
+          <div class="flex justify-between items-center pt-2">
+            <span class="text-lg font-bold text-gray-900">Total Amount Due</span>
+            <span id="bill-total" class="text-2xl font-black text-blue-600">₦0</span>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition flex items-center justify-center gap-2 text-lg">
+        <i data-lucide="check-circle" class="w-6 h-6"></i> Complete Check-Out & Print
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Receipt Area (Hidden on screen, shows on print) -->
+  <div id="receipt-area" class="hidden">
+    <div class="text-center mb-4">
+      <h1 class="font-bold text-lg uppercase">Vicnos Hotel & Apartment</h1>
+      <p class="text-[10px] leading-tight">No 1, Vicnos Lane, Off Mouka Foam Road,</p>
+      <p class="text-[10px] leading-tight">Upper Mission Extension, Benin City, Edo State.</p>
+      <p class="mt-2 text-sm font-bold uppercase">FINAL INVOICE</p>
+      <p id="r-date" class="text-xs mt-1"></p>
+    </div>
+    <div class="border-t border-dashed border-black my-2"></div>
+    <div class="text-xs mb-2">
+      <p><strong>Guest:</strong> <span id="r-guest"></span></p>
+      <p><strong>Room:</strong> <span id="r-room"></span></p>
+      <p><strong>Check-in:</strong> <span id="r-checkin"></span></p>
+      <p><strong>Check-out:</strong> <span id="r-checkout"></span></p>
+    </div>
+    <div class="border-t border-dashed border-black my-2"></div>
+    <div id="r-items" class="mb-4 text-xs"></div>
+    <div class="border-t border-dashed border-black pt-2">
+      <p class="flex justify-between font-bold text-base"><span>TOTAL</span> <span id="r-total"></span></p>
+    </div>
+    <p class="text-center mt-6 text-xs">Thank you for staying with us!</p>
+    <p class="text-center text-[10px] mt-1">Powered by DEKY</p>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let activeBookings = [];
+    let currentBooking = null;
+    let roomRate = 0;
+
+    async function loadActiveGuests() {
+      const select = document.getElementById('booking-select');
+      const { data: bookings, error } = await db.from('bookings')
+        .select('*, rooms(room_number, price_per_night), guests(full_name)')
+        .eq('status', 'Checked In')
+        .order('created_at', { ascending: true });
+
+      if (error || !bookings || bookings.length === 0) {
+        select.innerHTML = '<option value="">No active guests to check out.</option>';
+        return;
+      }
+
+      activeBookings = bookings;
+      select.innerHTML = '<option value="">-- Select Guest --</option>';
+      bookings.forEach(b => {
+        select.innerHTML += `<option value="${b.id}">Room ${b.rooms.room_number} - ${b.guests.full_name}</option>`;
+      });
+    }
+
+    async function loadBillDetails() {
+      const bookingId = document.getElementById('booking-select').value;
+      const detailsDiv = document.getElementById('bill-details');
+      
+      if (!bookingId) {
+        detailsDiv.classList.add('hidden');
+        currentBooking = null;
+        return;
+      }
+
+      currentBooking = activeBookings.find(b => b.id === bookingId);
+      roomRate = currentBooking.rooms.price_per_night;
+      
+      // Calculate Room Cost (Nights)
+      const checkIn = new Date(currentBooking.check_in_date);
+      const checkOut = new Date(); // Today
+      const diffTime = Math.abs(checkOut - checkIn);
+      const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+      const roomCost = nights * roomRate;
+
+      // Fetch POS/Folio Charges
+      const { data: charges } = await db.from('folio_charges').select('*').eq('booking_id', bookingId);
+      
+      let posTotal = 0;
+      let itemsHtml = '';
+      if (charges) {
+        charges.forEach(c => {
+          posTotal += Number(c.amount);
+          itemsHtml += `<p class="flex justify-between"><span>${c.description}</span> <span>₦${Number(c.amount).toLocaleString()}</span></p>`;
+        });
+      }
+
+      const total = roomCost + posTotal;
+
+      document.getElementById('bill-room').textContent = `₦${roomCost.toLocaleString()}`;
+      document.getElementById('bill-pos').textContent = `₦${posTotal.toLocaleString()}`;
+      document.getElementById('bill-total').textContent = `₦${total.toLocaleString()}`;
+      
+      detailsDiv.classList.remove('hidden');
+    }
+
+    async function processCheckout() {
+      if (!currentBooking) return;
+      if (!confirm("Are you sure you want to check out this guest? This will mark the room as Dirty.")) return;
+
+      const btn = document.getElementById('checkout-btn');
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Processing...`;
+      btn.disabled = true;
+
+      try {
+        // 1. Update Booking Status
+        const { error: bookErr } = await db.from('bookings')
+          .update({ status: 'Checked Out' })
+          .eq('id', currentBooking.id);
+        if (bookErr) throw bookErr;
+
+        // 2. Update Room Status to Dirty
+        const { error: roomErr } = await db.from('rooms')
+          .update({ status: 'Dirty' })
+          .eq('id', currentBooking.room_id);
+        if (roomErr) throw roomErr;
+
+        // 3. Generate Receipt
+        document.getElementById('r-date').innerText = new Date().toLocaleString();
+        document.getElementById('r-guest').innerText = currentBooking.guests.full_name;
+        document.getElementById('r-room').innerText = currentBooking.rooms.room_number;
+        document.getElementById('r-checkin').innerText = new Date(currentBooking.check_in_date).toLocaleDateString();
+        document.getElementById('r-checkout').innerText = new Date().toLocaleDateString();
+        document.getElementById('r-total').innerText = document.getElementById('bill-total').innerText;
+        document.getElementById('r-items').innerHTML = `<p class="flex justify-between"><span>Room Charge</span> <span>${document.getElementById('bill-room').innerText}</span></p>` + document.getElementById('r-items').innerHTML;
+        // Note: The items html could be populated from the `charges` array if needed for print.
+
+        // 4. Print and Reload
+        const receipt = document.getElementById('receipt-area');
+        receipt.classList.remove('hidden');
+        
+        setTimeout(() => {
+          window.print();
+          setTimeout(() => {
+            receipt.classList.add('hidden');
+            alert("✅ Guest Checked Out Successfully. Room is now Dirty.");
+            window.location.reload();
+          }, 500);
+        }, 100);
+
+      } catch (err) {
+        alert("Checkout Failed: " + err.message);
+        btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Complete Check-Out & Print`;
+        btn.disabled = false;
+      }
+    }
+
+    loadActiveGuests();
+  </script>
+</body>
+</html>
