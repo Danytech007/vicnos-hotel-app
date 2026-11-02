@@ -227,6 +227,9 @@
     }
 
     loadPage();
+    
+    // Auto-refresh requests every 10 seconds
+    setInterval(loadPendingRequests, 10000);
   </script>
 </body>
 </html>

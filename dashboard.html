@@ -41,6 +41,14 @@
     .room-card:active { transform: scale(0.95); }
     
     .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
+    
+    /* BLINKING ALERT ANIMATION */
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    .blink-alert { animation: blink 1.5s infinite; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -61,6 +69,18 @@
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
       
+      <!-- LIVE UPGRADE REQUEST ALERT -->
+      <div id="live-upgrade-alert" class="hidden bg-red-600 text-white p-4 rounded-xl shadow-lg fade-in flex justify-between items-center blink-alert cursor-pointer" onclick="window.location.href='manage-booking.html'">
+        <div class="flex items-center gap-3">
+            <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
+            <div>
+                <h3 class="font-bold text-sm">URGENT: Guest Upgrade Request!</h3>
+                <p id="live-upgrade-text" class="text-red-100 text-xs mt-1 font-medium">A guest is waiting for an upgrade...</p>
+            </div>
+        </div>
+        <i data-lucide="chevron-right" class="w-6 h-6"></i>
+      </div>
+
       <div id="recep-low-stock-banner" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-sm fade-in flex items-start gap-3">
         <div class="bg-red-100 p-2 rounded-full text-red-600 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
         <div><h3 class="text-red-800 font-bold text-sm">Minimart Low Stock Alert!</h3><p id="recep-low-stock-items" class="text-red-700 text-xs mt-1 font-medium">Loading items...</p></div>
@@ -183,6 +203,7 @@
     let selectedRoom = null;
     let allRoomsData = [];
     let currentFilter = 'All';
+    let heartbeatInterval = null;
 
     async function init() {
       try {
@@ -201,6 +222,9 @@
           document.getElementById('receptionist-view').classList.remove('hidden');
           document.getElementById('duty-title').textContent = 'Receptionist on Duty';
           loadReceptionistData();
+          
+          // START THE LIVE HEARTBEAT
+          startHeartbeat();
         } 
         else if (currentRole === 'barman' || currentRole === 'chef' || currentRole === 'kitchen') {
           document.body.classList.add('dark-theme');
@@ -220,6 +244,37 @@
       } catch (err) {
         alert("Dashboard Init Error: " + err.message);
       }
+    }
+
+    // --- HEARTBEAT LOGIC (Checks for updates every 10 seconds) ---
+    function startHeartbeat() {
+        checkUpgradeRequests(); // Run immediately
+        heartbeatInterval = setInterval(() => {
+            checkUpgradeRequests();
+        }, 10000); // 10 seconds
+    }
+
+    async function checkUpgradeRequests() {
+        const { data: requests, error } = await db.from('guest_orders')
+            .select('*')
+            .eq('department', 'Upgrade Request')
+            .eq('status', 'Pending');
+
+        const alertBanner = document.getElementById('live-upgrade-alert');
+        
+        if (requests && requests.length > 0) {
+            alertBanner.classList.remove('hidden');
+            document.getElementById('live-upgrade-text').textContent = `You have ${requests.length} pending guest upgrade request(s) waiting for approval.`;
+            
+            // Play a notification sound
+            try {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.volume = 0.5;
+                audio.play().catch(e => {}); 
+            } catch(err) {}
+        } else {
+            alertBanner.classList.add('hidden');
+        }
     }
 
     async function loadReceptionistData() {
@@ -558,7 +613,12 @@
       grid.innerHTML = buttons; lucide.createIcons();
     }
 
-    async function logout() { localStorage.clear(); await db.auth.signOut(); window.location.replace('index.html'); }
+    async function logout() { 
+        clearInterval(heartbeatInterval);
+        localStorage.clear(); 
+        await db.auth.signOut(); 
+        window.location.replace('index.html'); 
+    }
     init();
   </script>
 </body>
