@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Upgrade</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -15,8 +17,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
 <body class="pb-24">
 
@@ -60,9 +60,22 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const currentRoomNum = urlParams.get('room') || '101'; 
+    let currentBookingId = null;
+    let currentRoomId = null;
     
     document.getElementById('nav-room-num').textContent = currentRoomNum;
     document.getElementById('back-btn').href = `guest-portal.html?room=${currentRoomNum}`;
+
+    async function init() {
+        // Find the current booking to get the booking_id
+        const { data: room } = await db.from('rooms').select('id').eq('room_number', currentRoomNum).single();
+        if (room) {
+            currentRoomId = room.id;
+            const { data: booking } = await db.from('bookings').select('id').eq('room_id', room.id).eq('status', 'Checked In').single();
+            if (booking) currentBookingId = booking.id;
+        }
+        loadUpgrades();
+    }
 
     async function loadUpgrades() {
         const list = document.getElementById('rooms-list');
@@ -95,7 +108,7 @@
                     </div>
                 </div>
                 <div class="p-4 bg-gray-50">
-                    <button onclick="requestUpgrade('${room.room_number}')" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold active:scale-95 transition shadow-md flex items-center justify-center gap-2">
+                    <button onclick="requestUpgrade('${room.room_number}', '${room.id}')" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold active:scale-95 transition shadow-md flex items-center justify-center gap-2">
                         <i data-lucide="arrow-up-circle" class="w-5 h-5"></i> Request Upgrade
                     </button>
                 </div>
@@ -104,16 +117,35 @@
         lucide.createIcons();
     }
 
-    async function requestUpgrade(newRoom) {
-        const confirmMsg = `Upgrade from Room ${currentRoomNum} to Room ${newRoom}? The difference will be added to your final bill.`;
+    async function requestUpgrade(newRoomNum, newRoomId) {
+        const confirmMsg = `Upgrade from Room ${currentRoomNum} to Room ${newRoomNum}? The difference will be added to your final bill.`;
         if (!confirm(confirmMsg)) return;
 
-        // Here we would normally insert this into an 'upgrade_requests' table.
-        // For now, we will alert and send a WhatsApp to the front desk.
-        alert("✅ Upgrade Request Sent! The front desk will confirm shortly.");
+        if (!currentBookingId) {
+            alert("Error: Could not find your active booking. Please contact reception.");
+            return;
+        }
+
+        // Insert into guest_orders to notify the receptionist
+        const { error } = await db.from('guest_orders').insert({
+            booking_id: currentBookingId,
+            room_id: currentRoomId,
+            room_number: currentRoomNum,
+            department: 'Upgrade Request',
+            items: [{ old_room: currentRoomNum, new_room: newRoomNum, new_room_id: newRoomId }],
+            total_amount: 0,
+            status: 'Pending'
+        });
+
+        if (error) {
+            alert("Failed to send request: " + error.message);
+        } else {
+            alert("✅ Upgrade Request Sent! Please wait for the front desk to confirm.");
+            window.location.href = `guest-portal.html?room=${currentRoomNum}`;
+        }
     }
 
-    loadUpgrades();
+    init();
   </script>
 <script>
   if ('serviceWorker' in navigator) {
