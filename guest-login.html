@@ -132,7 +132,7 @@
       if (roomNum) processLogin(roomNum);
     });
 
-    // 3. QR Scanner Logic
+    // 3. QR Scanner Logic (UPDATED TO HANDLE URLs)
     function startScanner() {
       document.getElementById('scanner-modal').classList.remove('hidden');
       document.getElementById('scanner-modal').classList.add('flex');
@@ -143,15 +143,32 @@
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
-          // QR code contains something like "VICNOS-ROOM-106"
+          let roomNum = null;
+
+          // CASE A: The old format (VICNOS-ROOM-101)
           if (decodedText.includes("VICNOS-ROOM-")) {
-            const roomNum = decodedText.replace("VICNOS-ROOM-", "");
+            roomNum = decodedText.replace("VICNOS-ROOM-", "").trim();
+          } 
+          // CASE B: The new format (https://vicnos-hotel-app...?room=101)
+          else if (decodedText.includes("room=")) {
+            try {
+              const url = new URL(decodedText);
+              roomNum = url.searchParams.get('room');
+            } catch (e) {
+              // Fallback if URL parsing fails
+              const parts = decodedText.split('room=');
+              if (parts.length > 1) roomNum = parts[1].split('&')[0];
+            }
+          }
+          // CASE C: They just put a plain number like "101"
+          else if (!isNaN(decodedText)) {
+            roomNum = decodedText;
+          }
+
+          // If we found a valid room number, log them in
+          if (roomNum) {
             closeScanner();
             processLogin(roomNum);
-          } else if (!isNaN(decodedText)) {
-            // If they just put the number in the QR
-            closeScanner();
-            processLogin(decodedText);
           } else {
             alert("Invalid QR Code. Please scan the Vicnos Room Code.");
           }
