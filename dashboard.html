@@ -6,7 +6,7 @@
   <title>Vicnos HotelStack - Dashboard</title>
   
   <script>
-    // CACHE KILLER: This forces the phone to drop the old broken code
+    // CACHE KILLER
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) { registration.unregister(); }
@@ -35,7 +35,8 @@
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
     
-    .room-card { transition: all 0.2s ease-in-out; cursor: pointer; touch-action: manipulation; }
+    /* Added z-index and position to force mobile click events */
+    .room-card { transition: all 0.2s ease-in-out; cursor: pointer; touch-action: manipulation; position: relative; z-index: 10; }
     .room-card:active { transform: scale(0.98); }
   </style>
 </head>
@@ -67,7 +68,6 @@
         <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Maintenance</p><p id="stat-maintenance" class="text-3xl font-black text-red-600">0</p></div><div class="bg-red-50 p-3 rounded-full"><i data-lucide="wrench" class="w-6 h-6 text-red-600"></i></div></div>
       </div>
       
-      <!-- FIXED CHECKOUT LINK -->
       <div class="grid grid-cols-2 md:grid-cols-6 gap-3 fade-in">
         <a href="./checkin.html" class="bg-slate-900 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition"><i data-lucide="log-in" class="w-5 h-5"></i> Check-In</a>
         <a href="./checkout.html" class="bg-orange-600 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition"><i data-lucide="log-out" class="w-5 h-5"></i> Check-Out</a>
@@ -135,7 +135,6 @@
   </div>
 
   <script>
-    // Re-register SW after cache clear
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -262,7 +261,6 @@
           </div>
         `;
         
-        // Attach click event safely via JS (Fixes mobile click issues)
         setTimeout(() => {
             const el = document.getElementById(cardId);
             if(el) el.addEventListener('click', () => openAritModal(room.room_number, displayStatus, guestName, activeBookingId));

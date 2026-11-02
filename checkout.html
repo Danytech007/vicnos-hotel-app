@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Check Out</title>
+  
+  <script>
+    // CACHE KILLER
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#f8fafc">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -38,6 +51,7 @@
       <select id="booking-select" onchange="loadBillDetails()" class="w-full bg-gray-50 border border-gray-300 p-4 rounded-xl text-gray-800 outline-none font-bold text-lg">
         <option value="">-- Loading Active Guests... --</option>
       </select>
+      <p id="error-msg" class="text-red-500 text-xs mt-2 hidden"></p>
     </div>
 
     <div id="bill-details" class="hidden space-y-4 fade-in">
@@ -106,12 +120,22 @@
 
     async function loadActiveGuests() {
       const select = document.getElementById('booking-select');
+      const errorMsg = document.getElementById('error-msg');
+      
+      // Fetch all checked-in bookings with room and guest data
       const { data: bookings, error } = await db.from('bookings')
         .select('*, rooms(room_number, price_per_night), guests(full_name)')
         .eq('status', 'Checked In')
         .order('created_at', { ascending: true });
 
-      if (error || !bookings || bookings.length === 0) {
+      if (error) {
+        select.innerHTML = '<option value="">Database Error.</option>';
+        errorMsg.textContent = error.message;
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      if (!bookings || bookings.length === 0) {
         select.innerHTML = '<option value="">No active guests to check out.</option>';
         return;
       }
@@ -119,7 +143,10 @@
       activeBookings = bookings;
       select.innerHTML = '<option value="">-- Select Guest --</option>';
       bookings.forEach(b => {
-        select.innerHTML += `<option value="${b.id}">Room ${b.rooms.room_number} - ${b.guests.full_name}</option>`;
+        // Fallback in case guest or room data is missing
+        const rNum = b.rooms ? b.rooms.room_number : 'Unknown Room';
+        const gName = b.guests ? b.guests.full_name : 'Unknown Guest';
+        select.innerHTML += `<option value="${b.id}">Room ${rNum} - ${gName}</option>`;
       });
     }
 
@@ -135,23 +162,20 @@
 
       currentBooking = activeBookings.find(b => b.id === bookingId);
       
-      // Calculate Room Cost (Nights)
       const checkIn = currentBooking.check_in_date ? new Date(currentBooking.check_in_date) : new Date();
-      const checkOut = new Date(); // Today
+      const checkOut = new Date(); 
       const diffTime = Math.abs(checkOut - checkIn);
       const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
-      const roomCost = nights * currentBooking.rooms.price_per_night;
+      
+      // Fallback for room price
+      const rate = currentBooking.rooms && currentBooking.rooms.price_per_night ? currentBooking.rooms.price_per_night : 0;
+      const roomCost = nights * rate;
 
-      // Fetch POS/Folio Charges
       const { data: charges } = await db.from('folio_charges').select('*').eq('booking_id', bookingId);
       
       let posTotal = 0;
-      let itemsHtml = '';
       if (charges) {
-        charges.forEach(c => {
-          posTotal += Number(c.amount);
-          itemsHtml += `<p class="flex justify-between"><span>${c.description}</span> <span>₦${Number(c.amount).toLocaleString()}</span></p>`;
-        });
+        charges.forEach(c => { posTotal += Number(c.amount); });
       }
 
       const total = roomCost + posTotal;
@@ -172,28 +196,20 @@
       btn.disabled = true;
 
       try {
-        // 1. Update Booking Status
-        const { error: bookErr } = await db.from('bookings')
-          .update({ status: 'Checked Out' })
-          .eq('id', currentBooking.id);
+        const { error: bookErr } = await db.from('bookings').update({ status: 'Checked Out' }).eq('id', currentBooking.id);
         if (bookErr) throw bookErr;
 
-        // 2. Update Room Status to Dirty
-        const { error: roomErr } = await db.from('rooms')
-          .update({ status: 'Dirty' })
-          .eq('id', currentBooking.room_id);
+        const { error: roomErr } = await db.from('rooms').update({ status: 'Dirty' }).eq('id', currentBooking.room_id);
         if (roomErr) throw roomErr;
 
-        // 3. Generate Receipt
         document.getElementById('r-date').innerText = new Date().toLocaleString();
-        document.getElementById('r-guest').innerText = currentBooking.guests.full_name;
-        document.getElementById('r-room').innerText = currentBooking.rooms.room_number;
+        document.getElementById('r-guest').innerText = currentBooking.guests ? currentBooking.guests.full_name : 'Guest';
+        document.getElementById('r-room').innerText = currentBooking.rooms ? currentBooking.rooms.room_number : 'Room';
         document.getElementById('r-checkin').innerText = currentBooking.check_in_date ? new Date(currentBooking.check_in_date).toLocaleDateString() : 'N/A';
         document.getElementById('r-checkout').innerText = new Date().toLocaleDateString();
         document.getElementById('r-total').innerText = document.getElementById('bill-total').innerText;
         document.getElementById('r-items').innerHTML = `<p class="flex justify-between"><span>Room Charge</span> <span>${document.getElementById('bill-room').innerText}</span></p>`;
 
-        // 4. Print and Reload
         const receipt = document.getElementById('receipt-area');
         receipt.classList.remove('hidden');
         
