@@ -83,6 +83,16 @@
 
   </main>
 
+  <!-- ARIT Card Writing Modal (For Approvals) -->
+  <div id="arit-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center fade-in">
+      <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="credit-card" class="w-10 h-10 text-blue-600"></i></div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">Encode New Key</h2>
+      <p class="text-sm text-gray-500 mb-6">Upgrade Approved! Place the blank card on the ARIT machine to unlock <strong>Room <span id="arit-room-num" class="text-gray-900">---</span></strong>.</p>
+      <button onclick="finishUpgradeProcess()" id="write-card-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Activate Key Card</button>
+    </div>
+  </div>
+
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
@@ -95,9 +105,9 @@
     let activeBookings = [];
     let availableRooms = [];
     let currentBooking = null;
+    let activeRequestData = null; // Stores the request being approved
 
     async function loadPage() {
-      // 1. Load Active Guests for Manual Upgrade
       const { data: bookings } = await db.from('bookings')
         .select('*, rooms(id, room_number, price_per_night, room_type), guests(full_name)')
         .eq('status', 'Checked In');
@@ -109,11 +119,9 @@
         select.innerHTML += `<option value="${b.id}">Room ${b.rooms.room_number} - ${b.guests.full_name}</option>`;
       });
 
-      // 2. Load Available Rooms
       const { data: rooms } = await db.from('rooms').select('*').eq('status', 'Available').order('room_number');
       availableRooms = rooms || [];
 
-      // 3. Load Pending Upgrade Requests
       loadPendingRequests();
     }
 
@@ -122,7 +130,7 @@
       const list = document.getElementById('requests-list');
 
       const { data: requests } = await db.from('guest_orders')
-        .select('*, bookings(room_number)')
+        .select('*')
         .eq('department', 'Upgrade Request')
         .eq('status', 'Pending');
 
@@ -133,7 +141,7 @@
 
       container.classList.remove('hidden');
       list.innerHTML = requests.map(req => {
-        const details = req.items[0]; // We stored old_room and new_room here
+        const details = req.items[0]; 
         return `
           <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl shadow-sm">
             <div class="flex justify-between items-start mb-2">
@@ -144,7 +152,7 @@
               <span class="bg-orange-200 text-orange-800 text-[10px] font-bold px-2 py-1 rounded">PENDING</span>
             </div>
             <div class="flex gap-2 mt-3">
-              <button onclick="approveRequest('${req.id}', '${req.booking_id}', '${details.new_room_id}', '${req.room_id}')" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold shadow active:scale-95 transition">Approve</button>
+              <button onclick="approveRequest('${req.id}', '${req.booking_id}', '${details.new_room_id}', '${req.room_id}', '${details.new_room}')" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold shadow active:scale-95 transition">Approve & Encode Key</button>
               <button onclick="rejectRequest('${req.id}')" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-xs font-bold active:scale-95 transition">Reject</button>
             </div>
           </div>
@@ -152,9 +160,7 @@
       }).join('');
     }
 
-    async function approveRequest(requestId, bookingId, newRoomId, oldRoomId) {
-      if(!confirm("Approve this upgrade? The guest's room will change and their folio will update.")) return;
-
+    async function approveRequest(requestId, bookingId, newRoomId, oldRoomId, newRoomNum) {
       try {
         // 1. Update Booking
         await db.from('bookings').update({ room_id: newRoomId }).eq('id', bookingId);
@@ -168,11 +174,24 @@
         // 4. Mark request as Completed
         await db.from('guest_orders').update({ status: 'Completed' }).eq('id', requestId);
 
-        alert("✅ Upgrade Approved! Guest has been moved.");
-        window.location.reload();
+        // 5. Pop the ARIT Modal for the receptionist to encode the physical key
+        activeRequestData = { requestId, bookingId, newRoomId, oldRoomId, newRoomNum };
+        document.getElementById('arit-room-num').textContent = newRoomNum;
+        document.getElementById('arit-modal').classList.remove('hidden');
+        document.getElementById('arit-modal').classList.add('flex');
+
       } catch (err) {
         alert("Error approving upgrade: " + err.message);
       }
+    }
+
+    async function finishUpgradeProcess() {
+        // This runs after the receptionist "encodes" the key
+        document.getElementById('arit-modal').classList.add('hidden');
+        document.getElementById('arit-modal').classList.remove('flex');
+        
+        alert(`✅ Upgrade Approved & Key Encoded!\n\nThe guest's portal has been updated. They can now enter Room ${activeRequestData.newRoomNum}.`);
+        window.location.reload();
     }
 
     async function rejectRequest(requestId) {
@@ -217,7 +236,7 @@
         await db.from('rooms').update({ status: 'Dirty' }).eq('id', currentBooking.rooms.id);
         await db.from('rooms').update({ status: 'Occupied' }).eq('id', newRoomId);
 
-        alert("✅ Room Upgraded Successfully!");
+        alert("✅ Room Upgraded Successfully! You can now encode the new key.");
         window.location.href = 'dashboard.html';
       } catch (err) {
         alert("Upgrade Failed: " + err.message);
@@ -227,9 +246,7 @@
     }
 
     loadPage();
-    
-    // Auto-refresh requests every 10 seconds
-    setInterval(loadPendingRequests, 10000);
+    setInterval(loadPendingRequests, 10000); // Check for new requests every 10s
   </script>
 </body>
 </html>

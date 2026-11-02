@@ -33,20 +33,45 @@
 
   <main class="flex-grow max-w-md mx-auto w-full p-4 fade-in">
     
-    <div class="mb-6 bg-slate-900 rounded-3xl p-6 text-center shadow-xl relative overflow-hidden">
-      <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
-      <i data-lucide="crown" class="w-10 h-10 text-yellow-400 mx-auto mb-3 relative z-10"></i>
-      <h1 class="text-2xl font-bold text-white relative z-10">Upgrade Your Stay</h1>
-      <p class="text-sm text-slate-400 mt-2 relative z-10">Treat yourself to our premium suites. Select an available room below.</p>
+    <!-- WAITING SCREEN (Hidden by default) -->
+    <div id="waiting-screen" class="hidden flex-col items-center justify-center py-20 text-center">
+        <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+            <i data-lucide="loader-2" class="w-10 h-10 text-blue-600 animate-spin"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Request Sent</h2>
+        <p class="text-gray-500 text-sm px-6">The front desk is preparing your new room and encoding your key. Please wait here...</p>
     </div>
 
-    <div id="rooms-list" class="space-y-4">
-        <p class="text-center text-gray-500 py-10">Checking for available rooms...</p>
+    <!-- SUCCESS SCREEN (Hidden by default) -->
+    <div id="success-screen" class="hidden flex-col items-center justify-center py-10 text-center">
+        <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
+            <i data-lucide="check-circle" class="w-10 h-10 text-emerald-600"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Upgrade Approved!</h2>
+        <p class="text-gray-500 text-sm px-4 mb-6">Your new digital key for <strong class="text-gray-800">Room <span id="new-room-display"></span></strong> is ready. The door has been unlocked by the Front Desk.</p>
+        
+        <div class="w-full space-y-3">
+            <a id="go-to-new-portal" href="#" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                <i data-lucide="key" class="w-5 h-5"></i> Enter Room <span id="new-room-display-btn"></span>
+            </a>
+            <button onclick="callPorter()" id="porter-btn" class="w-full bg-white border border-gray-200 text-gray-800 py-4 rounded-xl font-bold shadow-sm active:scale-95 transition flex items-center justify-center gap-2">
+                <i data-lucide="bell" class="w-5 h-5 text-orange-500"></i> Call Porter for Luggage Help
+            </button>
+        </div>
     </div>
 
-    <div class="mt-12 pt-6 text-center border-t border-gray-200">
-      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
-      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
+    <!-- UPGRADE LIST (Default View) -->
+    <div id="upgrade-list-view">
+        <div class="mb-6 bg-slate-900 rounded-3xl p-6 text-center shadow-xl relative overflow-hidden">
+          <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
+          <i data-lucide="crown" class="w-10 h-10 text-yellow-400 mx-auto mb-3 relative z-10"></i>
+          <h1 class="text-2xl font-bold text-white relative z-10">Upgrade Your Stay</h1>
+          <p class="text-sm text-slate-400 mt-2 relative z-10">Treat yourself to our premium suites. Select an available room below.</p>
+        </div>
+
+        <div id="rooms-list" class="space-y-4">
+            <p class="text-center text-gray-500 py-10">Checking for available rooms...</p>
+        </div>
     </div>
 
   </main>
@@ -62,12 +87,14 @@
     const currentRoomNum = urlParams.get('room') || '101'; 
     let currentBookingId = null;
     let currentRoomId = null;
+    let pendingRequestId = null;
+    let pollInterval = null;
+    let chosenNewRoomNum = null;
     
     document.getElementById('nav-room-num').textContent = currentRoomNum;
     document.getElementById('back-btn').href = `guest-portal.html?room=${currentRoomNum}`;
 
     async function init() {
-        // Find the current booking to get the booking_id
         const { data: room } = await db.from('rooms').select('id').eq('room_number', currentRoomNum).single();
         if (room) {
             currentRoomId = room.id;
@@ -79,8 +106,6 @@
 
     async function loadUpgrades() {
         const list = document.getElementById('rooms-list');
-        
-        // Fetch available rooms that are NOT the current room
         const { data: rooms, error } = await db.from('rooms')
             .select('*')
             .eq('status', 'Available')
@@ -118,16 +143,12 @@
     }
 
     async function requestUpgrade(newRoomNum, newRoomId) {
-        const confirmMsg = `Upgrade from Room ${currentRoomNum} to Room ${newRoomNum}? The difference will be added to your final bill.`;
-        if (!confirm(confirmMsg)) return;
+        if (!confirm(`Request upgrade to Room ${newRoomNum}?`)) return;
 
-        if (!currentBookingId) {
-            alert("Error: Could not find your active booking. Please contact reception.");
-            return;
-        }
+        chosenNewRoomNum = newRoomNum;
 
         // Insert into guest_orders to notify the receptionist
-        const { error } = await db.from('guest_orders').insert({
+        const { data, error } = await db.from('guest_orders').insert({
             booking_id: currentBookingId,
             room_id: currentRoomId,
             room_number: currentRoomNum,
@@ -135,24 +156,92 @@
             items: [{ old_room: currentRoomNum, new_room: newRoomNum, new_room_id: newRoomId }],
             total_amount: 0,
             status: 'Pending'
-        });
+        }).select().single();
 
         if (error) {
             alert("Failed to send request: " + error.message);
-        } else {
-            alert("✅ Upgrade Request Sent! Please wait for the front desk to confirm.");
-            window.location.href = `guest-portal.html?room=${currentRoomNum}`;
+            return;
         }
+
+        pendingRequestId = data.id;
+
+        // Show waiting screen
+        document.getElementById('upgrade-list-view').classList.add('hidden');
+        document.getElementById('waiting-screen').classList.remove('hidden');
+        document.getElementById('waiting-screen').classList.add('flex');
+
+        // Start polling for approval
+        startPolling();
+    }
+
+    function startPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        
+        pollInterval = setInterval(async () => {
+            const { data: request } = await db.from('guest_orders')
+                .select('status')
+                .eq('id', pendingRequestId)
+                .single();
+
+            if (request && request.status === 'Completed') {
+                clearInterval(pollInterval);
+                showSuccessScreen();
+            } else if (request && request.status === 'Rejected') {
+                clearInterval(pollInterval);
+                alert("Your upgrade request was declined. Please speak to the front desk.");
+                window.location.reload();
+            }
+        }, 3000); // Check every 3 seconds
+    }
+
+    function showSuccessScreen() {
+        document.getElementById('waiting-screen').classList.add('hidden');
+        document.getElementById('waiting-screen').classList.remove('flex');
+        
+        document.getElementById('success-screen').classList.remove('hidden');
+        document.getElementById('success-screen').classList.add('flex');
+
+        document.getElementById('new-room-display').textContent = chosenNewRoomNum;
+        document.getElementById('new-room-display-btn').textContent = chosenNewRoomNum;
+
+        // Update the local session
+        let savedGuest = JSON.parse(localStorage.getItem('vicnos_guest_session'));
+        if (savedGuest) {
+            savedGuest.room_number = chosenNewRoomNum;
+            localStorage.setItem('vicnos_guest_session', JSON.stringify(savedGuest));
+        }
+
+        // Set button link to new portal
+        document.getElementById('go-to-new-portal').href = `guest-portal.html?room=${chosenNewRoomNum}`;
+    }
+
+    async function callPorter() {
+        const btn = document.getElementById('porter-btn');
+        btn.innerHTML = `<i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> Porter Notified!`;
+        btn.classList.replace('bg-white', 'bg-emerald-50');
+        btn.classList.replace('border-gray-200', 'border-emerald-200');
+        btn.disabled = true;
+
+        // Send a message to the front desk
+        await db.from('guest_orders').insert({
+            booking_id: currentBookingId,
+            room_id: currentRoomId,
+            room_number: chosenNewRoomNum,
+            department: 'Porter Request',
+            items: [{ request: 'Guest needs luggage help to new room' }],
+            total_amount: 0,
+            status: 'Pending'
+        });
     }
 
     init();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+      });
+    }
+  </script>
 </body>
 </html>
