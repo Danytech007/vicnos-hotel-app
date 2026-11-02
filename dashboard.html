@@ -24,7 +24,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     
-    /* THE CLICK FIX: Removes 300ms mobile delay */
     * { touch-action: manipulation; }
     
     body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; transition: background 0.3s ease; }
@@ -39,7 +38,7 @@
     .gold-text { color: #fbbf24; }
     
     .room-card { transition: all 0.1s ease-in-out; cursor: pointer; position: relative; z-index: 10; }
-    .room-card:active { transform: scale(0.95); } /* Immediate tap feedback */
+    .room-card:active { transform: scale(0.95); }
     
     .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
   </style>
@@ -110,7 +109,6 @@
     </div>
 
     <!-- ================= DARK MODE VIEW (BARMAN & CHEF) ================= -->
-    <!-- (Kept identical to previous working version) -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
       <div id="ops-low-stock-banner" class="hidden glass-card bg-red-500/10 border-red-500/30 p-4 rounded-xl flex items-start gap-3">
         <div class="bg-red-500/20 p-2 rounded-full text-red-400 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
@@ -140,7 +138,7 @@
 
   </main>
 
-  <!-- ================= NEW ACTION MODAL (Replaces Popups) ================= -->
+  <!-- ACTION MODAL -->
   <div id="action-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-end md:items-center justify-center z-[100] p-0 md:p-4">
     <div class="bg-white w-full max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl fade-in">
       <div class="flex justify-between items-center mb-4">
@@ -250,11 +248,10 @@
             activeBookingId = activeBooking.id;
             isKeyIssued = activeBooking.key_issued !== false; 
         } else {
-            // If no active booking, but room table says Occupied, force to Available
             if (displayStatus === 'Occupied') displayStatus = 'Available';
         }
 
-        if (displayStatus === 'Available' || displayStatus === 'Dirty' || displayStatus === 'Maintenance') {
+        if (displayStatus === 'Available' || displayStatus === 'Dirty' || displayStatus === 'Maintenance' || displayStatus === 'Reserved') {
             isKeyIssued = false;
         }
 
@@ -326,7 +323,6 @@
                 keyIconHtml = `<span class="text-gray-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="lock" class="w-3 h-3"></i> LOCKED</span>`;
             }
 
-            // Native onclick stringified
             const roomData = encodeURIComponent(JSON.stringify(room));
 
             roomGrid.innerHTML += `
@@ -352,7 +348,6 @@
         lucide.createIcons();
     }
 
-    // --- ACTION MODAL LOGIC (Replaces Popups) ---
     function openActionModal(encodedRoom) {
         selectedRoom = JSON.parse(encodedRoom);
         
@@ -362,7 +357,6 @@
         const actionsContainer = document.getElementById('modal-actions-container');
         actionsContainer.innerHTML = '';
 
-        // Action 1: If Door is Unlocked
         if (selectedRoom.isKeyIssued) {
             actionsContainer.innerHTML += `
                 <button onclick="lockDoor()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
@@ -373,15 +367,16 @@
                 </button>
             `;
         } 
-        // Action 2: If Room is Occupied (but door locked)
         else if (selectedRoom.status === 'Occupied') {
             actionsContainer.innerHTML += `
                 <button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
                     <i data-lucide="key" class="w-5 h-5"></i> Encode Guest Key (Unlock)
                 </button>
+                <a href="manage-booking.html" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2">
+                    <i data-lucide="arrow-up-right" class="w-5 h-5"></i> Upgrade / Extend Stay
+                </a>
             `;
         }
-        // Action 3: If Room is Available
         else if (selectedRoom.status === 'Available') {
             actionsContainer.innerHTML += `
                 <button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
@@ -392,7 +387,6 @@
                 </button>
             `;
         }
-        // Action 4: Reserved
         else if (selectedRoom.status === 'Reserved') {
             actionsContainer.innerHTML += `
                 <button onclick="cancelReservation()" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition">
@@ -431,7 +425,6 @@
         loadReceptionistData();
     }
 
-    // --- REST OF THE APP LOGIC ---
     async function loadMovements() {
       const today = new Date().toISOString().split('T')[0];
       const { data: arrivals } = await db.from('bookings').select('*, rooms(room_number), guests(full_name)').gte('check_in_date', today).eq('status', 'Checked In');
@@ -492,13 +485,77 @@
       }, 2000);
     }
 
-    // --- BARMAN / CHEF LOGIC ---
     async function loadDarkOpsData(role) {
-      // ... Keep existing dark mode logic ...
-      // (I omitted it here to keep the response focused, but it is included in the file above)
+      const today = new Date().toISOString().split('T')[0];
+      const dept = role === 'barman' ? 'Bar' : 'Kitchen';
+      
+      const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', dept).gte('created_at', today);
+      let cash = 0, credit = 0;
+      if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
+      document.getElementById('ops-total-sales').textContent = `₦${(cash + credit).toLocaleString()}`;
+      document.getElementById('ops-credit-sales').textContent = `₦${credit.toLocaleString()}`;
+      document.getElementById('ops-cash-sales').textContent = `₦${cash.toLocaleString()}`;
+
+      const { data: shifts } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', dept).eq('status', 'Active').limit(1);
+      const shiftStatusEl = document.getElementById('ops-shift-status');
+      if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; } 
+      else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
+
+      const { data: lowStock } = await db.from('inventory').select('*').eq('department', dept).lte('stock_quantity', 5);
+      const banner = document.getElementById('ops-low-stock-banner');
+      if (lowStock && lowStock.length > 0) { banner.classList.remove('hidden'); document.getElementById('ops-low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', '); } 
+      else { banner.classList.add('hidden'); }
+
+      const btnContainer = document.getElementById('ops-action-buttons');
+      const posLink = `pos.html?dept=${dept}&tab=pos`;
+      const shiftLink = `pos.html?dept=${dept}&tab=shift`;
+      const ordersLink = role === 'barman' ? 'bar-orders.html' : 'order-board.html';
+      const stockLink = `stock-request.html?dept=${dept}`;
+      const icon = role === 'barman' ? 'wine' : 'chef-hat';
+      const title = role === 'barman' ? 'Bar' : 'Kitchen';
+
+      btnContainer.innerHTML = `
+        <a href="${posLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="${icon}" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">${title} POS</span></a>
+        <a href="${shiftLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Shift & Handover</span></a>
+        <a href="${ordersLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">${title} Orders</span></a>
+        <a href="stock-request.html?dept=${dept}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="package" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Stock Req</span></a>
+      `;
+      
+      document.getElementById('ops-stock-request-link').href = stockLink;
+      document.getElementById('ops-bills-title').innerHTML = `<i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room ${title} Bills (Checkout Due)`;
+
+      const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
+      const list = document.getElementById('ops-room-bills-list');
+      if (departures && departures.length > 0) {
+        const { data: charges } = await db.from('folio_charges').select('booking_id, amount').eq('department', dept).in('booking_id', departures.map(d => d.id));
+        let billsHtml = '', hasBills = false;
+        departures.forEach(d => {
+           const totalOwed = (charges?.filter(c => c.booking_id === d.id) || []).reduce((sum, c) => sum + Number(c.amount), 0);
+           if (totalOwed > 0) { hasBills = true; billsHtml += `<div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">${title} Bill</p></div></div>`; }
+        });
+        if (hasBills) list.innerHTML = billsHtml;
+        else list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No ${title.toLowerCase()} bills owed by checking-out guests today.</p>`;
+      } else { list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>'; }
+      
+      lucide.createIcons();
     }
+
     function renderStandardOperations(role) {
-        // ... Keep existing standard role logic ...
+      const grid = document.getElementById('std-operations-grid'); let buttons = '';
+      const btn = (href, icon, color, bg, label) => `<a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-700/50 active:scale-95 transition-all shadow-sm group cursor-pointer"><div class="${bg} p-2.5 sm:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"><i data-lucide="${icon}" class="w-5 h-5 sm:w-6 sm:h-6 ${color}"></i></div><span class="text-[10px] sm:text-xs font-medium text-slate-300 text-center leading-tight">${label}</span></a>`;
+      const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out'); const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
+      
+      if (role === 'super_admin') { buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network'); buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); }
+      else if (['md', 'admin', 'manager'].includes(role)) { buttons += auditBtn; buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights'); buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); buttons += btn('checkout.html', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); buttons += btn('guest-history.html', 'users', 'text-indigo-400', 'bg-indigo-500/20', 'Guest Directory'); buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); buttons += orderBtn; buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager'); buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); buttons += clockBtn; buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal'); }
+      else if (role === 'accountant') { buttons += auditBtn; buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('pos.html?dept=Kitchen&tab=orders', 'bell', 'text-orange-400', 'bg-orange-500/20', 'Live Orders'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += clockBtn; }
+      else if (role === 'supervisor') { buttons += auditBtn; buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
+      else if (role === 'housekeeping') { buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
+      else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += clockBtn; }
+      else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
+      else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-red-400', 'bg-red-500/20', 'Security Control'); buttons += clockBtn; }
+      else { buttons += clockBtn; }
+
+      grid.innerHTML = buttons; lucide.createIcons();
     }
 
     async function logout() { localStorage.clear(); await db.auth.signOut(); window.location.replace('index.html'); }
