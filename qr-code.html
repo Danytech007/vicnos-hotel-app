@@ -49,8 +49,6 @@
 
     async function loadQRs() {
       const grid = document.getElementById('qr-grid');
-      
-      // Fetch all rooms
       const { data: rooms, error } = await db.from('rooms').select('*').order('room_number');
       
       if (error || !rooms || rooms.length === 0) {
@@ -58,10 +56,13 @@
         return;
       }
 
+      // CHANGE THIS LINK TO YOUR ACTUAL VERCEL URL IF IT IS DIFFERENT
+      const baseUrl = 'https://vicnoshotel-app.vercel.app/guest-login.html';
+
       grid.innerHTML = rooms.map(r => {
-        // The QR code contains "VICNOS-ROOM-XXX"
-        const qrData = `VICNOS-ROOM-${r.room_number}`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrData}`;
+        // The QR code now contains a real URL that phones understand
+        const qrData = `${baseUrl}?room=${r.room_number}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
         
         return `
           <div class="qr-card bg-white p-6 rounded-2xl flex flex-col items-center shadow-sm text-center">

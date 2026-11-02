@@ -33,7 +33,6 @@
 
   <main class="flex-grow max-w-md mx-auto w-full p-4 fade-in">
     
-    <!-- WAITING SCREEN (Hidden by default) -->
     <div id="waiting-screen" class="hidden flex-col items-center justify-center py-20 text-center">
         <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
             <i data-lucide="loader-2" class="w-10 h-10 text-blue-600 animate-spin"></i>
@@ -42,7 +41,6 @@
         <p class="text-gray-500 text-sm px-6">The front desk is preparing your new room and encoding your key. Please wait here...</p>
     </div>
 
-    <!-- SUCCESS SCREEN (Hidden by default) -->
     <div id="success-screen" class="hidden flex-col items-center justify-center py-10 text-center">
         <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
             <i data-lucide="check-circle" class="w-10 h-10 text-emerald-600"></i>
@@ -60,7 +58,6 @@
         </div>
     </div>
 
-    <!-- UPGRADE LIST (Default View) -->
     <div id="upgrade-list-view">
         <div class="mb-6 bg-slate-900 rounded-3xl p-6 text-center shadow-xl relative overflow-hidden">
           <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
@@ -106,18 +103,27 @@
 
     async function loadUpgrades() {
         const list = document.getElementById('rooms-list');
-        const { data: rooms, error } = await db.from('rooms')
-            .select('*')
-            .eq('status', 'Available')
-            .neq('room_number', currentRoomNum)
-            .order('price_per_night', { ascending: false });
+        
+        // 1. Get ALL rooms
+        const { data: allRooms } = await db.from('rooms').select('*').neq('room_number', currentRoomNum).order('price_per_night', { ascending: false });
+        
+        // 2. Get all active bookings to see who is actually checked in
+        const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
+        const occupiedRoomIds = activeBookings ? activeBookings.map(b => b.room_id) : [];
 
-        if (error || !rooms || rooms.length === 0) {
+        // 3. Filter: Only show rooms that are NOT active bookings AND not Dirty/Maintenance
+        const availableUpgrades = allRooms ? allRooms.filter(r => {
+            const isOccupied = occupiedRoomIds.includes(r.id);
+            const isClean = r.status === 'Available';
+            return !isOccupied && isClean;
+        }) : [];
+
+        if (availableUpgrades.length === 0) {
             list.innerHTML = '<p class="text-center text-gray-500 py-10">No upgrades available at the moment. You have the best room!</p>';
             return;
         }
 
-        list.innerHTML = rooms.map(room => `
+        list.innerHTML = availableUpgrades.map(room => `
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                 <div class="flex items-center p-4 border-b border-gray-50">
                     <div class="bg-blue-50 w-12 h-12 rounded-xl flex items-center justify-center mr-4">
@@ -144,45 +150,28 @@
 
     async function requestUpgrade(newRoomNum, newRoomId) {
         if (!confirm(`Request upgrade to Room ${newRoomNum}?`)) return;
-
         chosenNewRoomNum = newRoomNum;
 
-        // Insert into guest_orders to notify the receptionist
         const { data, error } = await db.from('guest_orders').insert({
-            booking_id: currentBookingId,
-            room_id: currentRoomId,
-            room_number: currentRoomNum,
+            booking_id: currentBookingId, room_id: currentRoomId, room_number: currentRoomNum,
             department: 'Upgrade Request',
             items: [{ old_room: currentRoomNum, new_room: newRoomNum, new_room_id: newRoomId }],
-            total_amount: 0,
-            status: 'Pending'
+            total_amount: 0, status: 'Pending'
         }).select().single();
 
-        if (error) {
-            alert("Failed to send request: " + error.message);
-            return;
-        }
-
+        if (error) { alert("Failed to send request: " + error.message); return; }
         pendingRequestId = data.id;
 
-        // Show waiting screen
         document.getElementById('upgrade-list-view').classList.add('hidden');
         document.getElementById('waiting-screen').classList.remove('hidden');
         document.getElementById('waiting-screen').classList.add('flex');
-
-        // Start polling for approval
         startPolling();
     }
 
     function startPolling() {
         if (pollInterval) clearInterval(pollInterval);
-        
         pollInterval = setInterval(async () => {
-            const { data: request } = await db.from('guest_orders')
-                .select('status')
-                .eq('id', pendingRequestId)
-                .single();
-
+            const { data: request } = await db.from('guest_orders').select('status').eq('id', pendingRequestId).single();
             if (request && request.status === 'Completed') {
                 clearInterval(pollInterval);
                 showSuccessScreen();
@@ -191,27 +180,22 @@
                 alert("Your upgrade request was declined. Please speak to the front desk.");
                 window.location.reload();
             }
-        }, 3000); // Check every 3 seconds
+        }, 3000); 
     }
 
     function showSuccessScreen() {
         document.getElementById('waiting-screen').classList.add('hidden');
         document.getElementById('waiting-screen').classList.remove('flex');
-        
         document.getElementById('success-screen').classList.remove('hidden');
         document.getElementById('success-screen').classList.add('flex');
-
         document.getElementById('new-room-display').textContent = chosenNewRoomNum;
         document.getElementById('new-room-display-btn').textContent = chosenNewRoomNum;
 
-        // Update the local session
         let savedGuest = JSON.parse(localStorage.getItem('vicnos_guest_session'));
         if (savedGuest) {
             savedGuest.room_number = chosenNewRoomNum;
             localStorage.setItem('vicnos_guest_session', JSON.stringify(savedGuest));
         }
-
-        // Set button link to new portal
         document.getElementById('go-to-new-portal').href = `guest-portal.html?room=${chosenNewRoomNum}`;
     }
 
@@ -219,29 +203,14 @@
         const btn = document.getElementById('porter-btn');
         btn.innerHTML = `<i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> Porter Notified!`;
         btn.classList.replace('bg-white', 'bg-emerald-50');
-        btn.classList.replace('border-gray-200', 'border-emerald-200');
         btn.disabled = true;
-
-        // Send a message to the front desk
         await db.from('guest_orders').insert({
-            booking_id: currentBookingId,
-            room_id: currentRoomId,
-            room_number: chosenNewRoomNum,
-            department: 'Porter Request',
-            items: [{ request: 'Guest needs luggage help to new room' }],
-            total_amount: 0,
-            status: 'Pending'
+            booking_id: currentBookingId, room_id: currentRoomId, room_number: chosenNewRoomNum,
+            department: 'Porter Request', items: [{ request: 'Luggage help' }], total_amount: 0, status: 'Pending'
         });
     }
 
     init();
-  </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-      });
-    }
   </script>
 </body>
 </html>
