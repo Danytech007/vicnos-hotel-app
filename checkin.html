@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Reception & Check-In</title>
+  
+  <script>
+    // CACHE KILLER
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#f8fafc">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +60,7 @@
           
           <div id="room-select-container" class="hidden bg-blue-50 p-4 rounded-xl border border-blue-200">
             <label class="block text-sm font-bold text-blue-800 mb-1">Select Available Room</label>
-            <select id="room-select" class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl outline-none font-semibold text-gray-700"><option value="">-- Choose an Available Room --</option></select>
+            <select id="room-select" class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl outline-none font-semibold text-gray-700"><option value="">Scanning database...</option></select>
           </div>
 
           <div>
@@ -137,14 +150,6 @@
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
       
-      // AUTO-FIX DATABASE: Find all checked-in guests and force their rooms to Occupied
-      const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
-      if (activeBookings && activeBookings.length > 0) {
-          for (const b of activeBookings) {
-              await db.from('rooms').update({ status: 'Occupied' }).eq('id', b.room_id);
-          }
-      }
-
       if (urlParams.get('dept') === 'Minimart' || window.location.hash === '#sales') switchTab('sales');
 
       if (selectedRoomId) {
@@ -154,14 +159,32 @@
         document.getElementById('display-room').textContent = "Select Below";
         document.getElementById('room-select-container').classList.remove('hidden');
         
-        // Fetch rooms that are ACTUALLY available now
-        const { data: availRooms } = await db.from('rooms').select('*').eq('status', 'Available').order('room_number');
         const select = document.getElementById('room-select');
+
+        // FETCH ALL ROOMS
+        const { data: allRooms } = await db.from('rooms').select('*').order('room_number');
         
-        if(!availRooms || availRooms.length === 0) { 
+        // FETCH ACTIVE BOOKINGS TO SEE WHO IS ACTUALLY IN A ROOM
+        const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
+        const occupiedRoomIds = activeBookings ? activeBookings.map(b => b.room_id) : [];
+
+        if (!allRooms) {
+             select.innerHTML = '<option value="">Database Error</option>';
+             return;
+        }
+
+        // THE FIX: Only show room if it is NOT in the active bookings list AND not Dirty/Maintenance
+        const availableRooms = allRooms.filter(r => {
+            const hasActiveGuest = occupiedRoomIds.includes(r.id);
+            const isDirtyOrMaintenance = r.status === 'Dirty' || r.status === 'Maintenance';
+            return !hasActiveGuest && !isDirtyOrMaintenance;
+        });
+
+        select.innerHTML = '<option value="">-- Choose an Available Room --</option>';
+        if (availableRooms.length === 0) { 
             select.innerHTML = '<option value="">No rooms available</option>'; 
         } else {
-            availRooms.forEach(r => { 
+            availableRooms.forEach(r => { 
                 select.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} - ₦${Number(r.price_per_night).toLocaleString()}</option>`; 
             });
         }
@@ -211,7 +234,7 @@
 
       if (bookErr) { msg.textContent = bookErr.message; msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; btn.disabled = false; return; }
 
-      // THE CRITICAL FIX: UPDATE THE ROOM STATUS TO OCCUPIED
+      // Force update room status
       await db.from('rooms').update({ status: 'Occupied' }).eq('id', selectedRoomId);
 
       msg.innerHTML = '✅ Checked In Successfully! <br><br><span class="text-gray-500 text-xs">Sending signal to ARIT Key Encoder...</span>';
