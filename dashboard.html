@@ -24,6 +24,10 @@
   <script src="https://unpkg.com/lucide@latest"></script> 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    
+    /* THE CLICK FIX: touch-action manipulation removes the 300ms zoom delay on mobile/tablets */
+    * { touch-action: manipulation; }
+    
     body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; transition: background 0.3s ease; }
     .hide-scroll::-webkit-scrollbar { display: none; }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
@@ -35,8 +39,8 @@
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
     
-    .room-card { transition: all 0.2s ease-in-out; cursor: pointer; touch-action: manipulation; position: relative; z-index: 10; }
-    .room-card:active { transform: scale(0.98); }
+    .room-card { transition: all 0.1s ease-in-out; cursor: pointer; position: relative; z-index: 10; }
+    .room-card:active { transform: scale(0.95); } /* Immediate visual feedback on tap */
     
     .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
   </style>
@@ -225,22 +229,24 @@
         let activeBookingId = '';
         let isKeyIssued = false;
 
-        // INTELLIGENT DOOR STATE
-        if (displayStatus === 'Available') {
-            isKeyIssued = false; // Available rooms are ALWAYS locked
-        } else if (displayStatus === 'Occupied') {
-            const activeBooking = bookings?.find(b => b.room_id === room.id);
-            if (activeBooking) {
-                guestName = activeBooking.guests?.full_name || 'Guest';
-                activeBookingId = activeBooking.id;
-                // If they just checked in, key_issued is true. If they already closed the door, it's false.
-                isKeyIssued = activeBooking.key_issued === true; 
-            } else {
-                // Fallback if DB is out of sync: Occupied but no booking -> assume Unlocked
-                isKeyIssued = true;
-            }
+        // THE FIX: If there is ANY active booking for this room, it is OCCUPIED.
+        const activeBooking = bookings?.find(b => b.room_id === room.id);
+        
+        if (activeBooking) {
+            displayStatus = 'Occupied';
+            guestName = activeBooking.guests?.full_name || 'Guest';
+            activeBookingId = activeBooking.id;
+            // If they checked in and we don't know the door state, assume it's unlocked
+            isKeyIssued = activeBooking.key_issued !== false; 
         } else {
-            isKeyIssued = false; // Dirty/Maintenance are locked
+            // If no active booking, force Available, Dirty, or Maintenance based on room table
+            // (Handles case where room table is stuck on Occupied but no booking exists)
+            if (displayStatus === 'Occupied') displayStatus = 'Available';
+        }
+
+        // Door logic overrides for non-occupied
+        if (displayStatus === 'Available' || displayStatus === 'Dirty' || displayStatus === 'Maintenance') {
+            isKeyIssued = false;
         }
 
         if (stats[displayStatus] !== undefined) stats[displayStatus]++;
@@ -302,10 +308,9 @@
             let keyBtnText = "Encode Key Card";
             let keyBtnClass = "bg-blue-50 text-blue-600";
             
-            // DOOR LOGIC
             if (room.isKeyIssued) {
                 keyIconHtml = `<span class="text-emerald-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="unlock" class="w-3 h-3"></i> DOOR UNLOCKED</span>`;
-                keyBtnText = "Click to Close Door";
+                keyBtnText = "Close Door";
                 keyBtnClass = "bg-emerald-50 text-emerald-600";
             } else {
                 keyIconHtml = `<span class="text-gray-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="lock" class="w-3 h-3"></i> DOOR LOCKED</span>`;
