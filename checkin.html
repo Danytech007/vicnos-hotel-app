@@ -174,10 +174,9 @@
 
       if (guestErr) { msg.textContent = guestErr.message; msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; btn.disabled = false; return; }
 
-      // CRITICAL FIX: Added check_in_date so checkout calculator works!
       const { error: bookErr } = await db.from('bookings').insert({
         room_id: selectedRoomId, guest_id: guest.id,
-        check_in_date: new Date().toISOString(), // <-- THIS WAS MISSING
+        check_in_date: new Date().toISOString(),
         expected_check_out: document.getElementById('checkout-date').value,
         status: 'Checked In', created_by: currentUser.id,
         payment_method: document.getElementById('payment-method').value,

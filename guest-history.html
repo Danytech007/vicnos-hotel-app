@@ -118,8 +118,8 @@
       }
 
       list.innerHTML = bookings.map(b => {
-        const checkIn = new Date(b.check_in_date).toLocaleDateString();
-        const checkOut = new Date(b.expected_check_out).toLocaleDateString();
+        const checkIn = b.check_in_date ? new Date(b.check_in_date).toLocaleDateString() : 'N/A';
+        const checkOut = b.expected_check_out ? new Date(b.expected_check_out).toLocaleDateString() : 'N/A';
         const isActive = b.status === 'Checked In';
         
         return `
@@ -129,7 +129,6 @@
               <span class="${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'} text-[9px] font-bold px-2 py-1 rounded">${b.status}</span>
             </div>
             <p class="text-[10px] text-gray-500">${checkIn} to ${checkOut}</p>
-            <p class="text-[10px] text-gray-500 mt-1 font-mono">ID: ${b.id.split('-')[0]}</p>
           </div>
         `;
       }).join('');
