@@ -56,11 +56,11 @@
         return;
       }
 
-      // CHANGE THIS LINK TO YOUR ACTUAL VERCEL URL IF IT IS DIFFERENT
-      const baseUrl = 'https://vicnoshotel-app.vercel.app/guest-login.html';
+      // YOUR EXACT LIVE VERCEL URL
+      const baseUrl = 'https://vicnos-hotel-app-7vyp.vercel.app/guest-login.html';
 
       grid.innerHTML = rooms.map(r => {
-        // The QR code now contains a real URL that phones understand
+        // The QR code now contains the real URL that phones understand
         const qrData = `${baseUrl}?room=${r.room_number}`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
         
