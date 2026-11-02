@@ -35,7 +35,7 @@
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
     
-    /* Added z-index and position to force mobile click events */
+    /* THE FIX FOR LUCK-CLICKING: touch-action: manipulation removes the 300ms delay and double-tap zoom */
     .room-card { transition: all 0.2s ease-in-out; cursor: pointer; touch-action: manipulation; position: relative; z-index: 10; }
     .room-card:active { transform: scale(0.98); }
   </style>

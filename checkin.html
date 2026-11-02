@@ -144,16 +144,31 @@
       } else {
         document.getElementById('display-room').textContent = "Select Below";
         document.getElementById('room-select-container').classList.remove('hidden');
+        
+        // FIXED: Ensure we only grab strictly available rooms
         const { data: availRooms } = await db.from('rooms').select('*').eq('status', 'Available').order('room_number');
         const select = document.getElementById('room-select');
-        if(!availRooms || availRooms.length === 0) { select.innerHTML = '<option value="">No rooms available</option>'; } 
-        else {
-            availRooms.forEach(r => { select.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} - ₦${Number(r.price_per_night).toLocaleString()}</option>`; });
+        
+        if(!availRooms || availRooms.length === 0) { 
+            select.innerHTML = '<option value="">No rooms available</option>'; 
+        } else {
+            availRooms.forEach(r => { 
+                select.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} - ₦${Number(r.price_per_night).toLocaleString()}</option>`; 
+            });
         }
+        
         select.addEventListener('change', (e) => {
           const opt = e.target.options[e.target.selectedIndex];
-          if(opt.value) { selectedRoomId = opt.value; selectedRoomNum = opt.dataset.num; document.getElementById('room-rate').value = opt.dataset.price; document.getElementById('display-room').textContent = selectedRoomNum; } 
-          else { selectedRoomId = null; document.getElementById('room-rate').value = ''; document.getElementById('display-room').textContent = "Select Below"; }
+          if(opt.value) { 
+              selectedRoomId = opt.value; 
+              selectedRoomNum = opt.dataset.num; 
+              document.getElementById('room-rate').value = opt.dataset.price; 
+              document.getElementById('display-room').textContent = selectedRoomNum; 
+          } else { 
+              selectedRoomId = null; 
+              document.getElementById('room-rate').value = ''; 
+              document.getElementById('display-room').textContent = "Select Below"; 
+          }
         });
       }
     }
@@ -187,6 +202,7 @@
 
       if (bookErr) { msg.textContent = bookErr.message; msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; btn.disabled = false; return; }
 
+      // CRITICAL FIX: Ensure the room is updated to Occupied immediately
       await db.from('rooms').update({ status: 'Occupied' }).eq('id', selectedRoomId);
 
       msg.innerHTML = '✅ Checked In Successfully! <br><br><span class="text-gray-500 text-xs">Sending signal to ARIT Key Encoder...</span>';
@@ -197,7 +213,7 @@
 
     async function loadSalesDashboard() {
       const today = new Date().toISOString().split('T')[0];
-      const { data: bookings } = await db.from('bookings').select('id, rooms(price_per_night)').gte('created_at', today);
+      const { data: bookings } = await db.from('bookings').select('id, rooms(price_per_night)').gte('check_in_date', today);
       let bookTotal = 0; let bookCount = bookings ? bookings.length : 0;
       if (bookings) bookings.forEach(b => { if (b.rooms && b.rooms.price_per_night) bookTotal += Number(b.rooms.price_per_night); });
       document.getElementById('booking-revenue').innerText = '₦' + bookTotal.toLocaleString();
