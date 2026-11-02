@@ -35,9 +35,10 @@
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
     
-    /* THE FIX FOR LUCK-CLICKING: touch-action: manipulation removes the 300ms delay and double-tap zoom */
     .room-card { transition: all 0.2s ease-in-out; cursor: pointer; touch-action: manipulation; position: relative; z-index: 10; }
     .room-card:active { transform: scale(0.98); }
+    
+    .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -57,10 +58,12 @@
     
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
+      
       <div id="recep-low-stock-banner" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-sm fade-in flex items-start gap-3">
         <div class="bg-red-100 p-2 rounded-full text-red-600 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
         <div><h3 class="text-red-800 font-bold text-sm">Minimart Low Stock Alert!</h3><p id="recep-low-stock-items" class="text-red-700 text-xs mt-1 font-medium">Loading items...</p></div>
       </div>
+      
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
         <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Available</p><p id="stat-available" class="text-3xl font-black text-emerald-600">0</p></div><div class="bg-emerald-50 p-3 rounded-full"><i data-lucide="door-open" class="w-6 h-6 text-emerald-600"></i></div></div>
         <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Occupied</p><p id="stat-occupied" class="text-3xl font-black text-blue-600">0</p></div><div class="bg-blue-50 p-3 rounded-full"><i data-lucide="users" class="w-6 h-6 text-blue-600"></i></div></div>
@@ -79,9 +82,23 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 fade-in">
-          <div class="flex justify-between items-end mb-4"><div><h2 class="text-xl font-bold text-gray-800">Room Status & Key Cards</h2><p class="text-xs text-gray-500 mt-1">Click any room to activate a Guest or Master Key Card.</p></div><button onclick="loadReceptionistData()" class="text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button></div>
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
+            <div><h2 class="text-xl font-bold text-gray-800">Room Status & Key Cards</h2><p class="text-xs text-gray-500 mt-1">Click any room to manage Door Lock & Key Card.</p></div>
+            <button onclick="loadReceptionistData()" class="text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button>
+          </div>
+          
+          <!-- Category Filter Buttons -->
+          <div class="flex gap-2 overflow-x-auto hide-scroll mb-4 pb-1">
+            <button onclick="filterRooms('Occupied', this)" class="filter-btn active px-4 py-2 rounded-lg text-xs font-bold border border-gray-200 whitespace-nowrap transition">Occupied</button>
+            <button onclick="filterRooms('Available', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Available</button>
+            <button onclick="filterRooms('Dirty', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Dirty</button>
+            <button onclick="filterRooms('Maintenance', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Maintenance</button>
+            <button onclick="filterRooms('All', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">All Rooms</button>
+          </div>
+
           <div id="room-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4"><p class="text-gray-500 text-sm animate-pulse">Loading rooms...</p></div>
         </div>
+        
         <div class="fade-in space-y-4">
           <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2"><i data-lucide="plane-landing" class="w-4 h-4 text-blue-500"></i> Arrivals Today</h3><div id="arrivals-list" class="space-y-3"><p class="text-xs text-gray-500">Loading...</p></div></div>
           <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2"><i data-lucide="plane-takeoff" class="w-4 h-4 text-orange-500"></i> Departures Today</h3><div id="departures-list" class="space-y-3"><p class="text-xs text-gray-500">Loading...</p></div></div>
@@ -143,7 +160,10 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    let currentUser = null, currentRole = null, selectedRoomNum = '', selectedBookingId = '';
+    let currentUser = null, currentRole = null;
+    let selectedRoomNum = '', selectedBookingId = '';
+    let allRoomsData = [];
+    let currentFilter = 'Occupied'; // Default to Occupied
 
     async function init() {
       try {
@@ -193,10 +213,12 @@
       else { banner.classList.add('hidden'); }
 
       let stats = { Available: 0, Occupied: 0, Dirty: 0, Maintenance: 0 };
-      const roomGrid = document.getElementById('room-grid');
-      if (!rooms || rooms.length === 0) { roomGrid.innerHTML = '<p class="text-gray-500 text-sm">No rooms configured.</p>'; return; }
-      
-      roomGrid.innerHTML = '';
+      allRoomsData = []; 
+
+      if (!rooms || rooms.length === 0) { 
+          document.getElementById('room-grid').innerHTML = '<p class="text-gray-500 text-sm">No rooms configured.</p>'; 
+          return; 
+      }
 
       rooms.forEach(room => {
         let displayStatus = room.status;
@@ -214,57 +236,15 @@
 
         if (stats[displayStatus] !== undefined) stats[displayStatus]++;
 
-        let cardColor = 'bg-white border-gray-200', badgeColor = 'bg-gray-100 text-gray-600', iconColor = 'text-gray-400';
-        if (displayStatus === 'Available') { badgeColor = 'bg-emerald-100 text-emerald-700'; iconColor = 'text-emerald-500'; }
-        if (displayStatus === 'Occupied') { badgeColor = 'bg-blue-100 text-blue-700'; iconColor = 'text-blue-500'; cardColor = 'bg-white border-blue-200'; }
-        if (displayStatus === 'Dirty') { badgeColor = 'bg-amber-100 text-amber-700'; iconColor = 'text-amber-500'; }
-        if (displayStatus === 'Maintenance') { badgeColor = 'bg-red-100 text-red-700'; iconColor = 'text-red-500'; }
-
-        let keyIconHtml = '';
-        let keyBtnText = "Encode Key Card";
-        let keyBtnClass = "bg-blue-50 text-blue-600";
-        
-        if (displayStatus === 'Occupied' || displayStatus === 'Dirty') {
-            if (isKeyIssued) {
-                keyIconHtml = `<span class="text-emerald-500 flex items-center gap-1 text-xs font-bold"><i data-lucide="unlock" class="w-4 h-4"></i> UNLOCKED</span>`;
-                keyBtnText = "Re-encode Key";
-                keyBtnClass = "bg-emerald-50 text-emerald-600";
-            } else {
-                keyIconHtml = `<span class="text-red-500 flex items-center gap-1 text-xs font-bold"><i data-lucide="lock" class="w-4 h-4"></i> LOCKED</span>`;
-                keyBtnText = "Encode Key Card";
-                keyBtnClass = "bg-blue-50 text-blue-600";
-            }
-        } else {
-            keyIconHtml = `<span class="text-gray-400 flex items-center gap-1 text-xs font-bold"><i data-lucide="lock" class="w-4 h-4"></i> LOCKED</span>`;
-            keyBtnText = "Create Master Key";
-            keyBtnClass = "bg-gray-100 text-gray-700";
-        }
-
-        const cardId = `room-card-${room.id}`;
-
-        roomGrid.innerHTML += `
-          <div id="${cardId}" class="room-card ${cardColor} border p-4 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between fade-in group">
-            <div>
-              <div class="flex justify-between items-start mb-2">
-                <div>
-                   <h3 class="text-2xl font-black text-gray-900 group-hover:text-blue-700 transition">${room.room_number}</h3>
-                   <div class="mt-1">${keyIconHtml}</div>
-                </div>
-                <span class="${badgeColor} text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">${displayStatus}</span>
-              </div>
-              <p class="text-xs text-gray-500 font-medium mt-2">${room.room_type}</p>
-              <div class="mt-1 flex items-center gap-2 h-6"><i data-lucide="user" class="w-3 h-3 ${iconColor}"></i><p class="text-xs font-bold text-gray-700 truncate">${guestName || 'No Guest'}</p></div>
-            </div>
-            <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-2 text-xs font-bold py-2 rounded-lg transition ${keyBtnClass}">
-              <i data-lucide="key" class="w-4 h-4"></i> ${keyBtnText}
-            </div>
-          </div>
-        `;
-        
-        setTimeout(() => {
-            const el = document.getElementById(cardId);
-            if(el) el.addEventListener('click', () => openAritModal(room.room_number, displayStatus, guestName, activeBookingId));
-        }, 0);
+        allRoomsData.push({
+            id: room.id,
+            room_number: room.room_number,
+            room_type: room.room_type,
+            status: displayStatus,
+            guestName: guestName,
+            isKeyIssued: isKeyIssued,
+            activeBookingId: activeBookingId
+        });
       });
 
       document.getElementById('stat-available').textContent = stats.Available;
@@ -272,8 +252,103 @@
       document.getElementById('stat-dirty').textContent = stats.Dirty;
       document.getElementById('stat-maintenance').textContent = stats.Maintenance;
 
+      renderRoomGrid();
       loadMovements();
-      lucide.createIcons();
+    }
+
+    function filterRooms(status, btnElement) {
+        currentFilter = status;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-slate-900', 'text-white');
+            btn.classList.add('bg-white', 'text-gray-700');
+        });
+        if (btnElement) {
+            btnElement.classList.remove('bg-white', 'text-gray-700');
+            btnElement.classList.add('active', 'bg-slate-900', 'text-white');
+        }
+        renderRoomGrid();
+    }
+
+    function renderRoomGrid() {
+        const roomGrid = document.getElementById('room-grid');
+        roomGrid.innerHTML = '';
+
+        const filteredRooms = currentFilter === 'All' 
+            ? allRoomsData 
+            : allRoomsData.filter(r => r.status === currentFilter);
+
+        if (filteredRooms.length === 0) {
+            roomGrid.innerHTML = `<p class="text-gray-500 text-sm py-4">No rooms found for "${currentFilter}".</p>`;
+            return;
+        }
+
+        filteredRooms.forEach(room => {
+            let cardColor = 'bg-white border-gray-200', badgeColor = 'bg-gray-100 text-gray-600', iconColor = 'text-gray-400';
+            if (room.status === 'Available') { badgeColor = 'bg-emerald-100 text-emerald-700'; iconColor = 'text-emerald-500'; }
+            if (room.status === 'Occupied') { badgeColor = 'bg-blue-100 text-blue-700'; iconColor = 'text-blue-500'; cardColor = 'bg-white border-blue-200'; }
+            if (room.status === 'Dirty') { badgeColor = 'bg-amber-100 text-amber-700'; iconColor = 'text-amber-500'; }
+            if (room.status === 'Maintenance') { badgeColor = 'bg-red-100 text-red-700'; iconColor = 'text-red-500'; }
+
+            let keyIconHtml = '';
+            let keyBtnText = "Encode Key Card";
+            let keyBtnClass = "bg-blue-50 text-blue-600";
+            
+            // DOOR LOGIC
+            if (room.isKeyIssued) {
+                keyIconHtml = `<span class="text-emerald-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="door-open" class="w-3 h-3"></i> DOOR UNLOCKED</span>`;
+                keyBtnText = "Click to Close Door";
+                keyBtnClass = "bg-emerald-50 text-emerald-600";
+            } else {
+                keyIconHtml = `<span class="text-gray-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="lock" class="w-3 h-3"></i> DOOR LOCKED</span>`;
+                keyBtnText = "Encode / Unlock";
+                keyBtnClass = "bg-gray-100 text-gray-700";
+            }
+
+            const cardId = `room-card-${room.id}`;
+
+            roomGrid.innerHTML += `
+              <div id="${cardId}" class="room-card ${cardColor} border p-3 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between fade-in group">
+                <div>
+                  <div class="flex justify-between items-start mb-1">
+                    <div>
+                       <h3 class="text-xl font-black text-gray-900 group-hover:text-blue-700 transition">${room.room_number}</h3>
+                       <div class="mt-1">${keyIconHtml}</div>
+                    </div>
+                    <span class="${badgeColor} text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">${room.status}</span>
+                  </div>
+                  <p class="text-[10px] text-gray-500 font-medium mt-1 truncate">${room.room_type}</p>
+                  <div class="mt-1 flex items-center gap-1.5 h-5"><i data-lucide="user" class="w-3 h-3 ${iconColor}"></i><p class="text-[11px] font-bold text-gray-700 truncate">${room.guestName || 'No Guest'}</p></div>
+                </div>
+                <div class="mt-3 pt-2 border-t border-gray-100 flex items-center justify-center gap-1 text-[10px] font-bold py-1.5 rounded-md transition ${keyBtnClass}">
+                  <i data-lucide="key" class="w-3 h-3"></i> ${keyBtnText}
+                </div>
+              </div>
+            `;
+            
+            setTimeout(() => {
+                const el = document.getElementById(cardId);
+                if(el) el.addEventListener('click', () => handleRoomClick(room));
+            }, 0);
+        });
+
+        lucide.createIcons();
+    }
+
+    function handleRoomClick(room) {
+        if (room.isKeyIssued) {
+            // Instantly close the door, NO popup
+            if(room.activeBookingId) {
+                db.from('bookings').update({ key_issued: false }).eq('id', room.activeBookingId).then(() => {
+                    loadReceptionistData();
+                });
+            } else {
+                // Fallback for non-booking rooms
+                loadReceptionistData();
+            }
+        } else {
+            // Open ARIT modal to encode
+            openAritModal(room.room_number, room.status, room.guestName, room.activeBookingId);
+        }
     }
 
     async function loadMovements() {
