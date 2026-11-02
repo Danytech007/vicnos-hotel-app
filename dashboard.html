@@ -87,7 +87,6 @@
             <button onclick="loadReceptionistData()" class="text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button>
           </div>
           
-          <!-- Category Filter Buttons -->
           <div class="flex gap-2 overflow-x-auto hide-scroll mb-4 pb-1">
             <button onclick="filterRooms('Occupied', this)" class="filter-btn active px-4 py-2 rounded-lg text-xs font-bold border border-gray-200 whitespace-nowrap transition">Occupied</button>
             <button onclick="filterRooms('Available', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Available</button>
@@ -223,15 +222,25 @@
       rooms.forEach(room => {
         let displayStatus = room.status;
         let guestName = '';
-        let isKeyIssued = false;
         let activeBookingId = '';
+        let isKeyIssued = false;
 
-        const activeBooking = bookings?.find(b => b.room_id === room.id);
-        if (activeBooking) {
-            displayStatus = 'Occupied';
-            if (activeBooking.guests) guestName = activeBooking.guests.full_name;
-            isKeyIssued = activeBooking.key_issued || false;
-            activeBookingId = activeBooking.id;
+        // INTELLIGENT DOOR STATE
+        if (displayStatus === 'Available') {
+            isKeyIssued = false; // Available rooms are ALWAYS locked
+        } else if (displayStatus === 'Occupied') {
+            const activeBooking = bookings?.find(b => b.room_id === room.id);
+            if (activeBooking) {
+                guestName = activeBooking.guests?.full_name || 'Guest';
+                activeBookingId = activeBooking.id;
+                // If they just checked in, key_issued is true. If they already closed the door, it's false.
+                isKeyIssued = activeBooking.key_issued === true; 
+            } else {
+                // Fallback if DB is out of sync: Occupied but no booking -> assume Unlocked
+                isKeyIssued = true;
+            }
+        } else {
+            isKeyIssued = false; // Dirty/Maintenance are locked
         }
 
         if (stats[displayStatus] !== undefined) stats[displayStatus]++;
@@ -295,7 +304,7 @@
             
             // DOOR LOGIC
             if (room.isKeyIssued) {
-                keyIconHtml = `<span class="text-emerald-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="door-open" class="w-3 h-3"></i> DOOR UNLOCKED</span>`;
+                keyIconHtml = `<span class="text-emerald-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="unlock" class="w-3 h-3"></i> DOOR UNLOCKED</span>`;
                 keyBtnText = "Click to Close Door";
                 keyBtnClass = "bg-emerald-50 text-emerald-600";
             } else {
@@ -304,10 +313,11 @@
                 keyBtnClass = "bg-gray-100 text-gray-700";
             }
 
-            const cardId = `room-card-${room.id}`;
+            // THE GUARANTEED CLICK FIX: Inline onclick with JSON stringify to avoid quote conflicts
+            const roomData = encodeURIComponent(JSON.stringify(room));
 
             roomGrid.innerHTML += `
-              <div id="${cardId}" class="room-card ${cardColor} border p-3 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between fade-in group">
+              <div onclick="handleRoomClick(decodeURIComponent('${roomData}'))" class="room-card ${cardColor} border p-3 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between fade-in group">
                 <div>
                   <div class="flex justify-between items-start mb-1">
                     <div>
@@ -324,17 +334,15 @@
                 </div>
               </div>
             `;
-            
-            setTimeout(() => {
-                const el = document.getElementById(cardId);
-                if(el) el.addEventListener('click', () => handleRoomClick(room));
-            }, 0);
         });
 
         lucide.createIcons();
     }
 
-    function handleRoomClick(room) {
+    // Global click handler (Outside the async function to ensure it's always available)
+    function handleRoomClick(encodedRoom) {
+        const room = JSON.parse(encodedRoom);
+
         if (room.isKeyIssued) {
             // Instantly close the door, NO popup
             if(room.activeBookingId) {
@@ -342,7 +350,6 @@
                     loadReceptionistData();
                 });
             } else {
-                // Fallback for non-booking rooms
                 loadReceptionistData();
             }
         } else {
