@@ -136,6 +136,15 @@
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
+      
+      // AUTO-FIX DATABASE: Find all checked-in guests and force their rooms to Occupied
+      const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
+      if (activeBookings && activeBookings.length > 0) {
+          for (const b of activeBookings) {
+              await db.from('rooms').update({ status: 'Occupied' }).eq('id', b.room_id);
+          }
+      }
+
       if (urlParams.get('dept') === 'Minimart' || window.location.hash === '#sales') switchTab('sales');
 
       if (selectedRoomId) {
@@ -145,7 +154,7 @@
         document.getElementById('display-room').textContent = "Select Below";
         document.getElementById('room-select-container').classList.remove('hidden');
         
-        // FIXED: Ensure we only grab strictly available rooms
+        // Fetch rooms that are ACTUALLY available now
         const { data: availRooms } = await db.from('rooms').select('*').eq('status', 'Available').order('room_number');
         const select = document.getElementById('room-select');
         
@@ -202,7 +211,7 @@
 
       if (bookErr) { msg.textContent = bookErr.message; msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; btn.disabled = false; return; }
 
-      // CRITICAL FIX: Ensure the room is updated to Occupied immediately
+      // THE CRITICAL FIX: UPDATE THE ROOM STATUS TO OCCUPIED
       await db.from('rooms').update({ status: 'Occupied' }).eq('id', selectedRoomId);
 
       msg.innerHTML = '✅ Checked In Successfully! <br><br><span class="text-gray-500 text-xs">Sending signal to ARIT Key Encoder...</span>';
