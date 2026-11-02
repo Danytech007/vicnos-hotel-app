@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos HotelStack - Dashboard</title>
+  
+  <script>
+    // CACHE KILLER: This forces the phone to drop the old broken code
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -22,7 +35,7 @@
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
     
-    .room-card { transition: all 0.2s ease-in-out; cursor: pointer; }
+    .room-card { transition: all 0.2s ease-in-out; cursor: pointer; touch-action: manipulation; }
     .room-card:active { transform: scale(0.98); }
   </style>
 </head>
@@ -54,13 +67,14 @@
         <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Maintenance</p><p id="stat-maintenance" class="text-3xl font-black text-red-600">0</p></div><div class="bg-red-50 p-3 rounded-full"><i data-lucide="wrench" class="w-6 h-6 text-red-600"></i></div></div>
       </div>
       
+      <!-- FIXED CHECKOUT LINK -->
       <div class="grid grid-cols-2 md:grid-cols-6 gap-3 fade-in">
-        <a href="checkin.html" class="bg-slate-900 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition"><i data-lucide="log-in" class="w-5 h-5"></i> Check-In</a>
-        <a href="checkout.html" class="bg-orange-600 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition"><i data-lucide="log-out" class="w-5 h-5"></i> Check-Out</a>
-        <a href="guest-history.html" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="users" class="w-5 h-5 text-indigo-500"></i> Directory</a>
-        <a href="qr-code.html" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="qr-code" class="w-5 h-5 text-purple-500"></i> QR Codes</a>
-        <a href="pos.html?dept=Minimart" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="shopping-cart" class="w-5 h-5 text-teal-600"></i> Minimart POS</a>
-        <a href="stock-request.html?dept=Minimart" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="package" class="w-5 h-5 text-indigo-600"></i> Stock Req.</a>
+        <a href="./checkin.html" class="bg-slate-900 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition"><i data-lucide="log-in" class="w-5 h-5"></i> Check-In</a>
+        <a href="./checkout.html" class="bg-orange-600 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition"><i data-lucide="log-out" class="w-5 h-5"></i> Check-Out</a>
+        <a href="./guest-history.html" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="users" class="w-5 h-5 text-indigo-500"></i> Directory</a>
+        <a href="./qr-code.html" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="qr-code" class="w-5 h-5 text-purple-500"></i> QR Codes</a>
+        <a href="./pos.html?dept=Minimart" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="shopping-cart" class="w-5 h-5 text-teal-600"></i> Minimart POS</a>
+        <a href="./stock-request.html?dept=Minimart" class="bg-white border border-gray-200 text-gray-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50"><i data-lucide="package" class="w-5 h-5 text-indigo-600"></i> Stock Req.</a>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -121,6 +135,7 @@
   </div>
 
   <script>
+    // Re-register SW after cache clear
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -206,7 +221,6 @@
         if (displayStatus === 'Dirty') { badgeColor = 'bg-amber-100 text-amber-700'; iconColor = 'text-amber-500'; }
         if (displayStatus === 'Maintenance') { badgeColor = 'bg-red-100 text-red-700'; iconColor = 'text-red-500'; }
 
-        // THE NEW LOCK/UNLOCK ICON LOGIC
         let keyIconHtml = '';
         let keyBtnText = "Encode Key Card";
         let keyBtnClass = "bg-blue-50 text-blue-600";
@@ -227,7 +241,6 @@
             keyBtnClass = "bg-gray-100 text-gray-700";
         }
 
-        // Generate unique ID for this room card
         const cardId = `room-card-${room.id}`;
 
         roomGrid.innerHTML += `
@@ -249,7 +262,7 @@
           </div>
         `;
         
-        // Attach click event safely via JS
+        // Attach click event safely via JS (Fixes mobile click issues)
         setTimeout(() => {
             const el = document.getElementById(cardId);
             if(el) el.addEventListener('click', () => openAritModal(room.room_number, displayStatus, guestName, activeBookingId));
