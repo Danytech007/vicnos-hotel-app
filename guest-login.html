@@ -25,10 +25,10 @@
 </head>
 <body class="items-center justify-center p-4">
 
-  <!-- Loading Screen (Checks for existing session) -->
+  <!-- Loading Screen -->
   <div id="loading-screen" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-[200]">
     <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-    <p class="text-gray-500 font-bold animate-pulse">Checking your reservation...</p>
+    <p class="text-gray-500 font-bold animate-pulse">Verifying your reservation...</p>
   </div>
 
   <!-- MAIN LOGIN UI -->
@@ -44,7 +44,6 @@
 
     <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100">
       
-      <!-- SCAN BUTTON -->
       <button onclick="startScanner()" id="scan-btn" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 mb-6">
         <i data-lucide="scan-line" class="w-5 h-5"></i> Scan Room QR Code
       </button>
@@ -55,7 +54,6 @@
         <div class="h-px bg-gray-200 flex-1"></div>
       </div>
 
-      <!-- MANUAL ROOM ENTRY -->
       <form id="manual-form" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Room Number</label>
@@ -65,7 +63,7 @@
           Access My Portal
         </button>
       </form>
-      <p id="error-msg" class="mt-4 text-center text-sm font-bold text-red-500"></p>
+      <p id="error-msg" class="mt-4 text-center text-sm font-bold text-red-500 leading-tight"></p>
     </div>
 
     <div class="mt-8 text-center">
@@ -97,42 +95,60 @@
 
     let qrScanner = null;
 
-    // 1. Check if they already have a session
-    async function checkSession() {
-      let savedGuest = localStorage.getItem('vicnos_guest_session');
-      
-      if (savedGuest) {
-        try {
-          savedGuest = JSON.parse(savedGuest);
-          // Verify with DB to ensure they haven't checked out
-          const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
-          
-          if (booking && booking.status === 'Checked In') {
-            // Valid session! Go straight to portal
-            window.location.replace(`guest-portal.html?room=${savedGuest.room_number}`);
-            return;
-          } else {
-            // They checked out or booking is invalid
+    async function init() {
+        // 1. Check URL for ?room= param (from scanned QR)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoom = urlParams.get('room');
+
+        if (urlRoom) {
+            // Scanned a QR code! Clear old session immediately.
             localStorage.removeItem('vicnos_guest_session');
-          }
-        } catch (e) {
-          localStorage.removeItem('vicnos_guest_session');
+            
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+            
+            // Process the scanned room
+            processLogin(urlRoom);
+        } else {
+            // 2. No URL param, check for existing valid session
+            let savedGuest = localStorage.getItem('vicnos_guest_session');
+            
+            if (savedGuest) {
+                try {
+                    savedGuest = JSON.parse(savedGuest);
+                    const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
+                    
+                    // If they are still checked in, let them in
+                    if (booking && booking.status === 'Checked In') {
+                        window.location.replace(`guest-portal.html?room=${savedGuest.room_number}`);
+                        return;
+                    } else {
+                        // They checked out. Clear session.
+                        localStorage.removeItem('vicnos_guest_session');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('vicnos_guest_session');
+                }
+            }
+            
+            // Show login UI
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('login-container').classList.remove('hidden');
+            // Clean URL
+            window.history.replaceState(null, '', 'guest-login.html');
         }
-      }
-      
-      // No valid session found, show login UI
-      document.getElementById('loading-screen').classList.add('hidden');
-      document.getElementById('login-container').classList.remove('hidden');
     }
 
-    // 2. Manual Form Submit
     document.getElementById('manual-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const roomNum = document.getElementById('room-input').value.trim();
-      if (roomNum) processLogin(roomNum);
+      if (roomNum) {
+          document.getElementById('login-container').classList.add('hidden');
+          document.getElementById('loading-screen').classList.remove('hidden');
+          processLogin(roomNum);
+      }
     });
 
-    // 3. QR Scanner Logic (UPDATED TO HANDLE URLs)
     function startScanner() {
       document.getElementById('scanner-modal').classList.remove('hidden');
       document.getElementById('scanner-modal').classList.add('flex');
@@ -145,35 +161,33 @@
         (decodedText) => {
           let roomNum = null;
 
-          // CASE A: The old format (VICNOS-ROOM-101)
           if (decodedText.includes("VICNOS-ROOM-")) {
             roomNum = decodedText.replace("VICNOS-ROOM-", "").trim();
           } 
-          // CASE B: The new format (https://vicnos-hotel-app...?room=101)
           else if (decodedText.includes("room=")) {
             try {
               const url = new URL(decodedText);
               roomNum = url.searchParams.get('room');
             } catch (e) {
-              // Fallback if URL parsing fails
               const parts = decodedText.split('room=');
               if (parts.length > 1) roomNum = parts[1].split('&')[0];
             }
           }
-          // CASE C: They just put a plain number like "101"
           else if (!isNaN(decodedText)) {
             roomNum = decodedText;
           }
 
-          // If we found a valid room number, log them in
           if (roomNum) {
             closeScanner();
+            localStorage.removeItem('vicnos_guest_session'); // CLEAR OLD SESSION IMMEDIATELY
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
             processLogin(roomNum);
           } else {
             alert("Invalid QR Code. Please scan the Vicnos Room Code.");
           }
         },
-        (errorMessage) => { /* Ignore focusing errors */ }
+        (errorMessage) => { }
       ).catch((err) => alert("Camera error: " + err));
     }
 
@@ -189,54 +203,51 @@
       }
     }
 
-    // 4. The Core Login Logic
     async function processLogin(roomNum) {
-      const btn = document.getElementById('scan-btn');
-      const submitBtn = document.getElementById('submit-btn');
       const errMsg = document.getElementById('error-msg');
       
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Verifying...`;
-      btn.disabled = true; submitBtn.disabled = true;
-      errMsg.textContent = '';
-
       try {
-        // Check if room exists
+        // 1. Check if room exists
         const { data: roomData, error: roomErr } = await db.from('rooms').select('id').eq('room_number', roomNum).single();
-        if (roomErr || !roomData) throw new Error("Room not found. Please check the number and try again.");
+        if (roomErr || !roomData) throw new Error("Room " + roomNum + " does not exist.");
 
-        // Check if there is an active checked-in booking for this room
+        // 2. STRICT SECURITY: Only allow if 'Checked In' or 'Reserved'
         const { data: booking, error: bookErr } = await db.from('bookings')
-          .select('id, check_in_date, expected_check_out, guests(full_name)')
+          .select('id, check_in_date, expected_check_out, status, guests(full_name)')
           .eq('room_id', roomData.id)
-          .eq('status', 'Checked In')
+          .in('status', ['Checked In', 'Reserved'])
           .limit(1)
           .maybeSingle();
 
-        if (bookErr || !booking) throw new Error("This room is not currently checked in. Please contact the front desk.");
+        if (bookErr || !booking) {
+            // If no booking found, block access gracefully.
+            throw new Error("Access Denied. Room " + roomNum + " has no active reservation or has been checked out.");
+        }
 
-        // Success! Save the secure session token
+        // 3. Success! Save the secure session token
         const sessionData = {
           booking_id: booking.id,
           room_number: roomNum,
-          guest_name: booking.guests.full_name,
+          guest_name: booking.guests ? booking.guests.full_name : 'Guest',
           check_in: booking.check_in_date,
           check_out: booking.expected_check_out
         };
         
         localStorage.setItem('vicnos_guest_session', JSON.stringify(sessionData));
         
-        // Redirect to the portal
+        // 4. Redirect
         window.location.replace(`guest-portal.html?room=${roomNum}`);
 
       } catch (err) {
+        // Failed (Empty room or invalid room)
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('login-container').classList.remove('hidden');
         errMsg.textContent = err.message;
-        btn.innerHTML = `<i data-lucide="scan-line" class="w-5 h-5"></i> Scan Room QR Code`;
-        btn.disabled = false; submitBtn.disabled = false;
       }
     }
 
     // Initialize
-    checkSession();
+    init();
   </script>
 </body>
 </html>
