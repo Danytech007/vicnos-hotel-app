@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Guest History</title>
+  
+  <script>
+    // CACHE KILLER
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#f8fafc">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -40,8 +53,8 @@
 
   <!-- Modal for Guest History -->
   <div id="history-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative fade-in max-h-[80vh] flex flex-col">
-      <button onclick="closeHistoryModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative fade-in max-h-[85vh] flex flex-col">
+      <button onclick="closeHistoryModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
       
       <div class="text-center mb-4 border-b pb-4">
         <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2"><i data-lucide="user" class="w-8 h-8 text-indigo-600"></i></div>
@@ -49,10 +62,21 @@
         <p id="modal-guest-phone" class="text-sm text-gray-500">Phone</p>
       </div>
       
-      <div class="overflow-y-auto hide-scroll flex-1">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Stay History</h3>
-        <div id="modal-history-list" class="space-y-3">
-          <p class="text-center text-sm text-gray-500">Loading...</p>
+      <div class="overflow-y-auto hide-scroll flex-1 space-y-4 pr-1">
+        <!-- Stay History Section -->
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i data-lucide="bed" class="w-4 h-4"></i> Stay History</h3>
+          <div id="modal-history-list" class="space-y-3">
+            <p class="text-center text-sm text-gray-500">Loading...</p>
+          </div>
+        </div>
+
+        <!-- Purchases Section -->
+        <div id="purchases-section" class="hidden">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2 border-t pt-4"><i data-lucide="shopping-bag" class="w-4 h-4"></i> Purchases (All Stays)</h3>
+          <div id="modal-purchases-list" class="space-y-2">
+            <!-- Purchases will be injected here -->
+          </div>
         </div>
       </div>
     </div>
@@ -72,8 +96,16 @@
     async function loadGuests() {
       const list = document.getElementById('guest-list');
       const { data: guests, error } = await db.from('guests').select('*').order('full_name');
-      if (error) { list.innerHTML = `<p class="text-center text-red-500">Error: ${error.message}</p>`; return; }
-      if (!guests || guests.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 py-6">No guest records found.</p>'; return; }
+      
+      if (error) { 
+          list.innerHTML = `<p class="text-center text-red-500 font-bold p-4 bg-red-50 rounded-xl">Error: ${error.message}</p>`; 
+          return; 
+      }
+      if (!guests || guests.length === 0) { 
+          list.innerHTML = '<p class="text-center text-gray-500 py-6">No guest records found in the database.</p>'; 
+          return; 
+      }
+      
       allGuests = guests;
       renderGuests(allGuests);
     }
@@ -104,34 +136,84 @@
       document.getElementById('history-modal').classList.remove('hidden');
       document.getElementById('history-modal').classList.add('flex');
       
-      const list = document.getElementById('modal-history-list');
-      list.innerHTML = '<p class="text-center text-sm text-gray-500 animate-pulse">Fetching stays...</p>';
+      const historyList = document.getElementById('modal-history-list');
+      const purchasesList = document.getElementById('modal-purchases-list');
+      const purchasesSection = document.getElementById('purchases-section');
+      
+      historyList.innerHTML = '<p class="text-center text-sm text-gray-500 animate-pulse">Fetching stays...</p>';
+      purchasesList.innerHTML = '';
+      purchasesSection.classList.add('hidden');
 
-      const { data: bookings, error } = await db.from('bookings')
+      // FETCH BOOKINGS FOR THIS GUEST
+      const { data: bookings, error: bookErr } = await db.from('bookings')
         .select('*, rooms(room_number)')
         .eq('guest_id', guestId)
-        .order('created_at', { ascending: false });
+        .order('check_in_date', { ascending: false });
 
-      if (error || !bookings || bookings.length === 0) {
-        list.innerHTML = '<p class="text-center text-sm text-gray-500">No past stays found.</p>';
+      if (bookErr) {
+        historyList.innerHTML = `<p class="text-center text-sm text-red-500 font-bold">DB Error: ${bookErr.message}</p>`;
         return;
       }
 
-      list.innerHTML = bookings.map(b => {
+      if (!bookings || bookings.length === 0) {
+        historyList.innerHTML = '<p class="text-center text-sm text-gray-500">No past stays found for this Guest.</p>';
+        return;
+      }
+
+      // RENDER STAYS
+      historyList.innerHTML = bookings.map(b => {
         const checkIn = b.check_in_date ? new Date(b.check_in_date).toLocaleDateString() : 'N/A';
         const checkOut = b.expected_check_out ? new Date(b.expected_check_out).toLocaleDateString() : 'N/A';
         const isActive = b.status === 'Checked In';
+        const roomNum = b.rooms ? b.rooms.room_number : 'Unknown';
         
         return `
-          <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+          <div class="bg-gray-50 p-3 rounded-xl border ${isActive ? 'border-blue-300 shadow-sm' : 'border-gray-200'}">
             <div class="flex justify-between items-center mb-1">
-              <p class="font-bold text-gray-800 text-sm">Room ${b.rooms.room_number}</p>
+              <p class="font-bold text-gray-800 text-sm">Room ${roomNum}</p>
               <span class="${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'} text-[9px] font-bold px-2 py-1 rounded">${b.status}</span>
             </div>
-            <p class="text-[10px] text-gray-500">${checkIn} to ${checkOut}</p>
+            <p class="text-[10px] text-gray-500"><strong>In:</strong> ${checkIn}</p>
+            <p class="text-[10px] text-gray-500"><strong>Out:</strong> ${checkOut}</p>
           </div>
         `;
       }).join('');
+
+      // NOW FETCH ALL PURCHASES (FOLIO CHARGES) TIED TO THESE BOOKINGS
+      const bookingIds = bookings.map(b => b.id);
+      
+      const { data: charges, error: chargeErr } = await db.from('folio_charges')
+        .select('*')
+        .in('booking_id', bookingIds)
+        .order('created_at', { ascending: false });
+
+      if (!chargeErr && charges && charges.length > 0) {
+        purchasesSection.classList.remove('hidden');
+        
+        let totalSpent = 0;
+        charges.forEach(c => totalSpent += Number(c.amount));
+
+        purchasesList.innerHTML = charges.map(c => {
+          const date = new Date(c.created_at).toLocaleDateString();
+          return `
+            <div class="flex justify-between items-center bg-white border border-gray-100 p-2 rounded-lg text-xs">
+              <div>
+                <p class="font-bold text-gray-800">${c.description}</p>
+                <p class="text-[9px] text-gray-400">${date} • ${c.department}</p>
+              </div>
+              <span class="font-bold text-blue-600">₦${Number(c.amount).toLocaleString()}</span>
+            </div>
+          `;
+        }).join('');
+
+        // Add Total Spent at the bottom
+        purchasesList.innerHTML += `
+          <div class="flex justify-between items-center bg-indigo-50 border border-indigo-200 p-3 rounded-xl mt-2">
+            <p class="font-bold text-indigo-800 text-sm">Total Spent on Extras</p>
+            <span class="font-black text-indigo-800">₦${totalSpent.toLocaleString()}</span>
+          </div>
+        `;
+      }
     }
 
     function closeHistoryModal() {
