@@ -6,7 +6,6 @@
   <title>Vicnos Hotel - Check Out</title>
   
   <script>
-    // CACHE KILLER
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) { registration.unregister(); }
@@ -81,7 +80,7 @@
 
   </main>
 
-  <!-- Receipt Area (Hidden on screen, shows on print) -->
+  <!-- Receipt Area -->
   <div id="receipt-area" class="hidden">
     <div class="text-center mb-4">
       <h1 class="font-bold text-lg uppercase">Vicnos Hotel & Apartment</h1>
@@ -122,7 +121,6 @@
       const select = document.getElementById('booking-select');
       const errorMsg = document.getElementById('error-msg');
       
-      // FIXED: Changed order('created_at') to order('id') to prevent DB crash
       const { data: bookings, error } = await db.from('bookings')
         .select('*, rooms(room_number, price_per_night), guests(full_name)')
         .eq('status', 'Checked In')
@@ -194,12 +192,15 @@
       btn.disabled = true;
 
       try {
+        // 1. Update ROOM Status to Dirty FIRST
+        const { error: roomErr } = await db.from('rooms').update({ status: 'Dirty', key_issued: false }).eq('id', currentBooking.room_id);
+        if (roomErr) throw new Error("Room Update Failed: " + roomErr.message);
+
+        // 2. Update BOOKING Status to Checked Out
         const { error: bookErr } = await db.from('bookings').update({ status: 'Checked Out' }).eq('id', currentBooking.id);
-        if (bookErr) throw bookErr;
+        if (bookErr) throw new Error("Booking Update Failed: " + bookErr.message);
 
-        const { error: roomErr } = await db.from('rooms').update({ status: 'Dirty' }).eq('id', currentBooking.room_id);
-        if (roomErr) throw roomErr;
-
+        // 3. Generate Receipt
         document.getElementById('r-date').innerText = new Date().toLocaleString();
         document.getElementById('r-guest').innerText = currentBooking.guests ? currentBooking.guests.full_name : 'Guest';
         document.getElementById('r-room').innerText = currentBooking.rooms ? currentBooking.rooms.room_number : 'Room';
@@ -216,12 +217,12 @@
           setTimeout(() => {
             receipt.classList.add('hidden');
             alert("✅ Guest Checked Out Successfully. Room is now Dirty.");
-            window.location.reload();
+            window.location.href = 'dashboard.html'; 
           }, 500);
         }, 100);
 
       } catch (err) {
-        alert("Checkout Failed: " + err.message);
+        alert("Checkout Error: " + err.message);
         btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Complete Check-Out & Print`;
         btn.disabled = false;
       }
