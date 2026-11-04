@@ -192,8 +192,8 @@
       btn.disabled = true;
 
       try {
-        // 1. Update ROOM Status to Dirty FIRST
-        const { error: roomErr } = await db.from('rooms').update({ status: 'Dirty', key_issued: false }).eq('id', currentBooking.room_id);
+        // 1. Update ROOM Status to Dirty (Removed key_issued from this line)
+        const { error: roomErr } = await db.from('rooms').update({ status: 'Dirty' }).eq('id', currentBooking.room_id);
         if (roomErr) throw new Error("Room Update Failed: " + roomErr.message);
 
         // 2. Update BOOKING Status to Checked Out
