@@ -37,7 +37,7 @@
     <div class="bg-indigo-50 p-2 rounded-full text-indigo-600"><i data-lucide="utensils-crossed" class="w-5 h-5"></i></div>
   </nav>
 
-  <!-- LIVE BLINKING ALERT (Shows when new order arrives) -->
+  <!-- LIVE BLINKING ALERT -->
   <div id="live-order-alert" class="hidden fixed top-20 left-4 right-4 z-[60] bg-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between cursor-pointer blink-alert" onclick="switchTab('orders')">
     <div class="flex items-center gap-3">
       <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
@@ -162,7 +162,6 @@
         checkShiftStatus();
         loadLiveOrders();
         
-        // Poll for new orders every 10 seconds for the blinking alert
         setInterval(() => {
             loadLiveOrders(true);
         }, 10000);
@@ -179,7 +178,6 @@
 
         if (tab === 'orders') {
             loadLiveOrders();
-            // Hide the alert banner when they check the orders
             document.getElementById('live-order-alert').classList.add('hidden');
         }
         if (tab === 'charges') loadRoomCharges();
@@ -345,10 +343,16 @@
         checkShiftStatus();
     }
 
-    // --- LIVE ORDERS (With Blinking Alert) ---
+    // --- LIVE ORDERS (FIXED FILTERING) ---
     async function loadLiveOrders(isBackgroundPoll = false) {
         const list = document.getElementById('orders-list');
-        const { data: orders } = await db.from('guest_orders').select('*').not('status', 'in', '("Delivered","Completed","Cancelled")').order('created_at', { ascending: true });
+        
+        // CRITICAL FIX: Only fetch Kitchen and Bar orders. No more Porter requests!
+        const { data: orders } = await db.from('guest_orders')
+            .select('*')
+            .in('department', ['Kitchen', 'Bar'])
+            .not('status', 'in', '("Delivered","Completed","Cancelled")')
+            .order('created_at', { ascending: true });
 
         if (!orders || orders.length === 0) {
             list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active orders.</p>';
@@ -356,7 +360,6 @@
             return;
         }
 
-        // Handle Blinking Alert & Sound for NEW orders
         if (isBackgroundPoll && orders.length > lastOrderCount) {
             document.getElementById('live-order-alert').classList.remove('hidden');
             try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(e){}
@@ -366,7 +369,6 @@
         document.getElementById('order-badge').innerText = orders.length;
         document.getElementById('order-badge').classList.remove('hidden');
 
-        // If the user is on a different tab, don't render the list, just update the badge & alert
         if (document.getElementById('tab-orders').classList.contains('hidden')) return;
 
         list.innerHTML = orders.map(order => {
@@ -375,13 +377,10 @@
                 const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
                 if (Array.isArray(items)) {
                     itemsHtml = items.map(i => {
-                        // FIXED: Handles both 'qty/name' and 'quantity/item_name' data structures
                         const qty = i.qty || i.quantity || 1;
                         const name = i.name || i.item_name || i.request || 'Item';
                         return `<li class="flex justify-between text-xs text-gray-600 border-b border-gray-100 py-1 last:border-0"><span>${qty}x ${name}</span></li>`;
                     }).join('');
-                } else {
-                     itemsHtml = `<li class="text-xs text-gray-600">${JSON.stringify(items)}</li>`;
                 }
             } catch(e) { itemsHtml = `<li class="text-xs text-red-500">Error reading items</li>`; }
 
@@ -390,7 +389,6 @@
             if (order.status === 'Preparing') statusBadge = `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded animate-pulse">PREPARING</span>`;
             if (order.status === 'Ready') statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">READY</span>`;
 
-            // Determine if the order can be clicked to mark as delivered
             const isClickable = order.status === 'Ready';
             const clickAction = isClickable ? `onclick="updateOrderStatus('${order.id}', 'Delivered')"` : '';
             const cursorClass = isClickable ? 'cursor-pointer hover:border-emerald-500 active:scale-95' : '';
@@ -407,7 +405,7 @@
                     <ul class="mb-3">${itemsHtml}</ul>
                     <div class="flex justify-between items-center border-t pt-3">
                         <p class="font-black text-gray-900">₦${Number(order.total_amount).toLocaleString()}</p>
-                        ${isClickable ? `<span class="bg-emerald-600 text-white text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm">Tap to Mark Delivered</span>` : ''}
+                        ${isClickable ? `<span class="bg-emerald-600 text-white text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm">Tap to Deliver</span>` : ''}
                     </div>
                 </div>
             `;
