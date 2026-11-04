@@ -15,44 +15,36 @@
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     
-    /* Lock body height */
     body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; height: 100dvh; width: 100vw; }
     
     .hide-scroll::-webkit-scrollbar { display: none; }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-    .blink-alert { animation: blink 1.5s infinite; }
-
-    /* BULLETPROOF SLIDE OVER FROM BOTTOM */
+    
     #cart-panel {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.6);
-      z-index: 9999; /* Force on top of absolutely everything */
+      z-index: 9999;
       display: none;
       flex-direction: column;
       justify-content: flex-end;
     }
-    #cart-panel.active {
-      display: flex;
-    }
+    #cart-panel.active { display: flex; }
     
     #cart-content {
       background: white;
       width: 100%;
       max-width: 600px;
       margin: 0 auto;
-      height: 80vh;
+      height: 85vh;
       border-radius: 24px 24px 0 0;
       display: flex;
       flex-direction: column;
       transform: translateY(100%);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    #cart-panel.active #cart-content {
-      transform: translateY(0);
-    }
+    #cart-panel.active #cart-content { transform: translateY(0); }
   </style>
 </head>
 <body class="flex flex-col">
@@ -80,19 +72,13 @@
 
     <!-- TAB 1: TAKE ORDER -->
     <div id="tab-pos" class="flex-1 flex flex-col min-h-0 fade-in">
-      <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 mb-3 shrink-0 flex items-center gap-2">
-        <i data-lucide="map-pin" class="w-5 h-5 text-indigo-500"></i>
-        <input type="text" id="table-input" placeholder="Table No. / Room No." class="w-full bg-gray-50 border border-gray-200 p-2 rounded-xl outline-none font-bold text-lg focus:border-indigo-500 transition">
-      </div>
       
-      <div class="flex gap-2 overflow-x-auto hide-scroll pb-2 shrink-0" id="category-tabs"></div>
+      <div class="flex gap-2 overflow-x-auto hide-scroll pb-2 shrink-0 mt-2" id="category-tabs"></div>
       
-      <!-- Extra padding bottom so items don't hide behind the floating button -->
-      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-32 min-h-0">
+      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-32 min-h-0 mt-2">
         <p class="text-gray-500 text-sm animate-pulse col-span-full">Loading menu...</p>
       </div>
       
-      <!-- Floating Cart Button -->
       <div class="fixed bottom-6 right-6 z-[50]">
         <button onclick="openCart()" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center gap-2 font-bold text-lg active:scale-95 transition">
           <i data-lucide="shopping-cart" class="w-6 h-6"></i>
@@ -102,7 +88,7 @@
     </div>
 
     <!-- TAB 2: LIVE BOARD -->
-    <div id="tab-orders" class="hidden flex-1 overflow-y-auto hide-scroll fade-in pb-24">
+    <div id="tab-orders" class="hidden flex-1 overflow-y-auto hide-scroll fade-in pb-24 mt-2">
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
         <div class="flex justify-between items-center mb-4">
           <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-indigo-500"></i> Live Orders</h2>
@@ -113,7 +99,7 @@
     </div>
 
     <!-- TAB 3: SHIFT -->
-    <div id="tab-shift" class="hidden flex-1 overflow-y-auto hide-scroll space-y-4 fade-in pb-24">
+    <div id="tab-shift" class="hidden flex-1 overflow-y-auto hide-scroll space-y-4 fade-in pb-24 mt-2">
         <div id="active-shift-panel" class="hidden space-y-4">
             <div class="bg-slate-900 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden">
               <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Active Shift Sales</h2>
@@ -153,39 +139,58 @@
 
   </main>
 
-  <!-- BULLETPROOF SLIDING CART PANEL -->
+  <!-- SLIDING CART PANEL -->
   <div id="cart-panel">
     <div id="cart-content">
       <div class="p-4 border-b border-gray-100 flex justify-between items-center shrink-0">
         <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-indigo-500"></i> Current Order</h2>
         <button onclick="closeCart()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-gray-200"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
+      
       <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-2 hide-scroll min-h-0">
         <p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>
       </div>
+
       <div class="p-4 border-t border-gray-100 bg-gray-50 shrink-0 pb-8">
+        
         <div class="flex justify-between items-center mb-4">
           <span class="font-bold text-gray-600">Total:</span>
           <span id="cart-total" class="text-3xl font-black text-indigo-600">₦0</span>
         </div>
+        
         <div class="grid grid-cols-2 gap-2 mb-3">
           <button onclick="setPaymentMethod('Cash')" id="pay-cash" class="py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="banknote" class="w-4 h-4"></i> Cash</button>
           <button onclick="setPaymentMethod('POS')" id="pay-pos" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> Card/POS</button>
           <button onclick="setPaymentMethod('Transfer')" id="pay-transfer" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="smartphone" class="w-4 h-4"></i> Transfer</button>
           <button onclick="setPaymentMethod('Charge_to_Room')" id="pay-room" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="door-closed" class="w-4 h-4"></i> To Room</button>
         </div>
-        <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0</button>
+
+        <!-- Room Charge Info (Hidden by default, shows when To Room is selected) -->
+        <div id="selected-room-display" class="hidden bg-orange-50 border border-orange-200 p-3 rounded-xl mb-3 text-center">
+            <p class="text-xs text-orange-800 font-bold">Charging to: <span id="room-display-name" class="text-lg">---</span></p>
+        </div>
+
+        <button onclick="handleChargeButton()" id="checkout-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+          <i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Room Selection Modal -->
+  <!-- Room Selection Modal (Auto-populated) -->
   <div id="room-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[10000] p-4">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in border-t-4 border-indigo-500">
       <h2 class="text-xl font-bold text-gray-900 mb-2 text-center">Charge to Room</h2>
-      <p class="text-xs text-gray-500 text-center mb-6">Select the guest's room number.</p>
-      <select id="room-select" class="w-full bg-gray-50 border border-gray-300 p-4 rounded-xl text-gray-900 outline-none font-bold text-lg mb-6"><option value="">-- Select Room --</option></select>
-      <div class="flex gap-3"><button onclick="closeRoomModal()" class="w-1/3 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Cancel</button><button onclick="confirmRoomCharge()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">Confirm</button></div>
+      <p class="text-xs text-gray-500 text-center mb-6">Select the guest's room number from the active list.</p>
+      
+      <select id="room-select" class="w-full bg-gray-50 border border-gray-300 p-4 rounded-xl text-gray-900 outline-none font-bold text-lg mb-6">
+        <option value="">-- Loading Active Rooms... --</option>
+      </select>
+      
+      <div class="flex gap-3">
+        <button onclick="closeRoomModal()" class="w-1/3 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Cancel</button>
+        <button onclick="confirmRoomCharge()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">Confirm Room</button>
+      </div>
     </div>
   </div>
 
@@ -218,7 +223,7 @@
         loadLowStock();
         checkShiftStatus();
         loadLiveOrders();
-        loadRoomsForCharge();
+        loadRoomsForCharge(); // Load the dropdown immediately
         
         setInterval(() => { loadLiveOrders(true); }, 10000);
     }
@@ -235,7 +240,7 @@
         if (tab === 'orders') loadLiveOrders();
     }
 
-    // --- BULLETPROOF CART ANIMATION ---
+    // --- CART ANIMATION ---
     function openCart() {
         document.getElementById('cart-panel').classList.add('active');
     }
@@ -246,19 +251,36 @@
     // --- PAYMENT METHODS ---
     function setPaymentMethod(method) {
         selectedPaymentMethod = method;
+        
+        // Reset all
         ['pay-cash', 'pay-pos', 'pay-transfer', 'pay-room'].forEach(id => {
             const el = document.getElementById(id);
             if(el) el.className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2 border border-slate-600";
         });
 
+        // Highlight active
         if (method === 'Cash') document.getElementById('pay-cash').className = "py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-emerald-400";
         if (method === 'POS') document.getElementById('pay-pos').className = "py-3 rounded-xl font-bold bg-blue-500 text-white shadow-md shadow-blue-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-blue-400";
         if (method === 'Transfer') document.getElementById('pay-transfer').className = "py-3 rounded-xl font-bold bg-purple-500 text-white shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-purple-400";
         if (method === 'Charge_to_Room') document.getElementById('pay-room').className = "py-3 rounded-xl font-bold bg-orange-500 text-white shadow-md shadow-orange-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-orange-400";
+
+        // Show/hide room display
+        if (method === 'Charge_to_Room') {
+            document.getElementById('selected-room-display').classList.remove('hidden');
+            if (!selectedRoomForCharge) {
+                document.getElementById('room-display-name').textContent = 'Select Room...';
+            }
+        } else {
+            document.getElementById('selected-room-display').classList.add('hidden');
+        }
     }
 
+    // --- AUTO-LOAD ROOMS INTO DROPDOWN ---
     async function loadRoomsForCharge() {
+      // 1. Fetch all rooms
       const { data: rooms } = await db.from('rooms').select('id, room_number');
+      
+      // 2. Fetch active bookings to know who is actually checked in
       const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
       
       const occupiedRoomIds = activeBookings ? activeBookings.map(b => b.room_id) : [];
@@ -266,14 +288,44 @@
       
       const select = document.getElementById('room-select');
       select.innerHTML = '<option value="">-- Select Room --</option>';
+      
       if (occupiedRooms.length > 0) {
+        // Sort rooms numerically
         occupiedRooms.sort((a, b) => a.room_number.localeCompare(b.room_number));
-        occupiedRooms.forEach(r => { select.innerHTML += `<option value="${r.room_number}">Room ${r.room_number}</option>`; });
-      } else { select.innerHTML = '<option value="">No active guests found.</option>'; }
+        
+        occupiedRooms.forEach(r => { 
+            select.innerHTML += `<option value="${r.room_number}">Room ${r.room_number}</option>`; 
+        });
+      } else { 
+          select.innerHTML = '<option value="">No active guests found.</option>'; 
+      }
     }
 
     function closeRoomModal() { document.getElementById('room-modal').classList.add('hidden'); document.getElementById('room-modal').classList.remove('flex'); }
-    function confirmRoomCharge() { const room = document.getElementById('room-select').value; if (!room) return alert("Please select a room."); selectedRoomForCharge = room; closeRoomModal(); processCheckout(); }
+    
+    function confirmRoomCharge() { 
+        const room = document.getElementById('room-select').value; 
+        if (!room) return alert("Please select a room."); 
+        selectedRoomForCharge = room; 
+        document.getElementById('room-display-name').textContent = `Room ${room}`;
+        closeRoomModal(); 
+        processCheckout(); 
+    }
+
+    // --- CHARGE BUTTON HANDLER ---
+    function handleChargeButton() {
+        if (cart.length === 0) return alert("Cart is empty.");
+        
+        // If they chose "To Room" but haven't selected a room yet, open the modal
+        if (selectedPaymentMethod === 'Charge_to_Room' && !selectedRoomForCharge) {
+            document.getElementById('room-modal').classList.remove('hidden');
+            document.getElementById('room-modal').classList.add('flex');
+            return;
+        }
+        
+        // Otherwise, proceed to checkout
+        processCheckout();
+    }
 
     // --- SHIFT & STOCK ---
     async function checkShiftStatus() {
@@ -384,10 +436,14 @@
 
     // --- PROCESS CHECKOUT & SPLIT BILL ---
     async function processCheckout() {
-        const table = document.getElementById('table-input').value.trim();
-        if (!table) return alert("Please enter a Table / Room Number.");
         if (cart.length === 0) return alert("Cart is empty.");
-        if (selectedPaymentMethod === 'Charge_to_Room' && !selectedRoomForCharge) { document.getElementById('room-modal').classList.remove('hidden'); document.getElementById('room-modal').classList.add('flex'); return; }
+        
+        // Final safety check for room charge
+        if (selectedPaymentMethod === 'Charge_to_Room' && !selectedRoomForCharge) { 
+            document.getElementById('room-modal').classList.remove('hidden'); 
+            document.getElementById('room-modal').classList.add('flex'); 
+            return; 
+        }
 
         const btn = document.getElementById('checkout-btn');
         btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processing...`;
@@ -395,6 +451,8 @@
         let total = 0; cart.forEach(item => total += (item.price * item.qty));
         let kitchenItems = cart.filter(i => i.dept === 'Kitchen');
         let barItems = cart.filter(i => i.dept === 'Bar');
+        
+        const tableIdentifier = selectedPaymentMethod === 'Charge_to_Room' ? `Room ${selectedRoomForCharge}` : 'Walk-in';
 
         try {
             // 1. Create POS order header
@@ -408,7 +466,7 @@
             if (kitchenItems.length > 0) { 
                 await db.from('guest_orders').insert({ 
                     department: 'Kitchen', 
-                    table_number: table, 
+                    table_number: tableIdentifier, 
                     items: kitchenItems.map(i => ({ name: i.name, qty: i.qty })), 
                     total_amount: kitchenItems.reduce((sum, i) => sum + (i.price * i.qty), 0), 
                     status: 'Pending' 
@@ -419,7 +477,7 @@
             if (barItems.length > 0) { 
                 await db.from('guest_orders').insert({ 
                     department: 'Bar', 
-                    table_number: table, 
+                    table_number: tableIdentifier, 
                     items: barItems.map(i => ({ name: i.name, qty: i.qty })), 
                     total_amount: barItems.reduce((sum, i) => sum + (i.price * i.qty), 0), 
                     status: 'Pending' 
@@ -433,9 +491,12 @@
                 if (booking) { await db.from('folio_charges').insert({ booking_id: booking.id, department: 'Waitress', description: cart.map(i => `${i.qty}x ${i.name}`).join(', '), amount: total }); }
             }
 
-            alert(`✅ Order Charged!\nTotal: ₦${total.toLocaleString()}\nPayment: ${selectedPaymentMethod}${table ? '\nTable: '+table : ''}`);
+            alert(`✅ Order Charged!\nTotal: ₦${total.toLocaleString()}\nPayment: ${selectedPaymentMethod}${selectedRoomForCharge ? '\nRoom: '+selectedRoomForCharge : ''}`);
             
-            cart = []; selectedRoomForCharge = null; document.getElementById('table-input').value = '';
+            cart = []; selectedRoomForCharge = null; 
+            document.getElementById('selected-room-display').classList.add('hidden');
+            document.getElementById('room-display-name').textContent = '---';
+            
             renderCart(); closeCart(); switchTab('orders');
             
         } catch (err) { alert("Checkout Failed: " + err.message); } finally { btn.disabled = false; btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge`; }
@@ -480,7 +541,7 @@
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded border uppercase bg-white text-gray-700">${order.department}</span>
-                            <h3 class="text-gray-900 font-bold text-lg mt-1">Table ${order.table_number || order.room_number}</h3>
+                            <h3 class="text-gray-900 font-bold text-lg mt-1">${order.table_number || order.room_number}</h3>
                         </div>
                         ${statusBadge}
                     </div>
