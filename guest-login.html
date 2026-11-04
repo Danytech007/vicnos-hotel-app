@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Guest Login</title>
   
+  <!-- FORCE CLEAR CACHE ON EVERY LOAD -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#f8fafc">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -88,6 +100,7 @@
   </div>
 
   <script>
+    // Register service worker after the clear
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -97,42 +110,34 @@
     lucide.createIcons();
 
     let qrScanner = null;
-    let selectedPaymentMethod = 'Cash';
 
     async function init() {
         const urlParams = new URLSearchParams(window.location.search);
-        const urlRoom = urlParams.get('room');
+        let urlRoom = urlParams.get('room');
+        
+        // TRIM THE ROOM NUMBER just in case the scanner adds a space
+        if (urlRoom) urlRoom = urlRoom.trim();
+
         const loadingText = document.getElementById('loading-text');
 
-        // If a QR code was scanned, it puts ?room=105 in the URL
         if (urlRoom) {
-            loadingText.textContent = `Room ${urlRoom} detected. Verifying booking...`;
-            // Clear any old session
+            loadingText.textContent = `Room ${urlRoom} detected. Verifying...`;
             localStorage.removeItem('vicnos_guest_session');
-            
-            // Process the room number immediately
             await processLogin(urlRoom);
         } else {
-            // No room in URL. Check for existing valid session
             let savedGuest = localStorage.getItem('vicnos_guest_session');
-            
             if (savedGuest) {
                 try {
                     savedGuest = JSON.parse(savedGuest);
                     const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
-                    
                     if (booking && booking.status === 'Checked In') {
                         window.location.replace(`guest-portal.html?room=${savedGuest.room_number}`);
                         return;
                     } else {
                         localStorage.removeItem('vicnos_guest_session');
                     }
-                } catch (e) {
-                    localStorage.removeItem('vicnos_guest_session');
-                }
+                } catch (e) { localStorage.removeItem('vicnos_guest_session'); }
             }
-            
-            // Show manual login UI
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('login-container').classList.remove('hidden');
         }
@@ -140,7 +145,7 @@
 
     document.getElementById('manual-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const roomNum = document.getElementById('room-input').value.trim();
+      let roomNum = document.getElementById('room-input').value.trim();
       if (roomNum) {
           document.getElementById('login-container').classList.add('hidden');
           document.getElementById('loading-screen').classList.remove('hidden');
@@ -166,14 +171,14 @@
           else if (decodedText.includes("room=")) {
             try {
               const url = new URL(decodedText);
-              roomNum = url.searchParams.get('room');
+              roomNum = url.searchParams.get('room').trim();
             } catch (e) {
               const parts = decodedText.split('room=');
-              if (parts.length > 1) roomNum = parts[1].split('&')[0];
+              if (parts.length > 1) roomNum = parts[1].split('&')[0].trim();
             }
           }
           else if (!isNaN(decodedText)) {
-            roomNum = decodedText;
+            roomNum = decodedText.trim();
           }
 
           if (roomNum) {
@@ -183,7 +188,7 @@
             document.getElementById('loading-screen').classList.remove('hidden');
             processLogin(roomNum);
           } else {
-            alert("Invalid QR Code. Please scan the Vicnos Room Code.");
+            alert("Invalid QR Code.");
           }
         },
         (errorMessage) => { }
@@ -209,11 +214,15 @@
       try {
         // 1. Check if room exists
         const { data: roomData, error: roomErr } = await db.from('rooms').select('id').eq('room_number', roomNum).single();
+        
         if (roomErr || !roomData) {
-            throw new Error(`Room ${roomNum} does not exist in the hotel.`);
+            // If it fails here, let's also fetch all rooms to see what's actually in the DB
+            const { data: allRooms } = await db.from('rooms').select('room_number');
+            const available = allRooms.map(r => r.room_number).join(', ');
+            throw new Error(`Room ${roomNum} not found. Database has: [${available}]`);
         }
 
-        // 2. STRICT SECURITY: Check if there is an active checked-in booking
+        // 2. Check if there is an active checked-in booking
         const { data: booking, error: bookErr } = await db.from('bookings')
           .select('id, check_in_date, expected_check_out, guests(full_name)')
           .eq('room_id', roomData.id)
@@ -222,10 +231,10 @@
           .maybeSingle();
 
         if (bookErr || !booking) {
-            throw new Error(`Room ${roomNum} is not currently checked in.`);
+            throw new Error(`Room ${roomNum} exists, but no guest is currently checked in.`);
         }
 
-        // 3. Success! Save the secure session token
+        // 3. Success
         const sessionData = {
           booking_id: booking.id,
           room_number: roomNum,
@@ -235,12 +244,9 @@
         };
         
         localStorage.setItem('vicnos_guest_session', JSON.stringify(sessionData));
-        
-        // 4. Redirect to portal
         window.location.replace(`guest-portal.html?room=${roomNum}`);
 
       } catch (err) {
-        // Show the error on screen
         document.getElementById('loading-screen').classList.add('hidden');
         document.getElementById('login-container').classList.remove('hidden');
         
