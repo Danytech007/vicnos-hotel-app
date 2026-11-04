@@ -20,6 +20,8 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
+    
+    /* The sliding cart panel */
     .cart-panel { transform: translateY(100%); transition: transform 0.3s ease-in-out; }
     .cart-panel.open { transform: translateY(0); }
   </style>
@@ -65,10 +67,12 @@
         <input type="text" id="table-input" placeholder="Table No. / Room No." class="w-full bg-gray-50 border border-gray-200 p-2 rounded-xl outline-none font-bold text-lg focus:border-indigo-500 transition">
       </div>
       <div class="flex gap-2 overflow-x-auto hide-scroll pb-2 shrink-0" id="category-tabs"></div>
-      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-24 min-h-0">
+      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-24 min-h-0 relative z-0">
         <p class="text-gray-500 text-sm animate-pulse col-span-full">Loading menu...</p>
       </div>
-      <div class="fixed bottom-6 right-6 z-40">
+      
+      <!-- Floating Cart Button (Fixed z-index) -->
+      <div class="fixed bottom-6 right-6 z-50">
         <button onclick="toggleCart()" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center gap-2 font-bold text-lg active:scale-95 transition">
           <i data-lucide="shopping-cart" class="w-6 h-6"></i>
           <span id="mobile-cart-total">₦0</span>
@@ -153,7 +157,7 @@
     </div>
 
     <!-- SLIDING CART PANEL -->
-    <div id="cart-panel" class="cart-panel fixed inset-0 bg-black/60 z-[70] hidden flex-col justify-end">
+    <div id="cart-panel" class="cart-panel fixed inset-0 bg-black/60 z-[80] hidden flex-col justify-end">
       <div class="bg-white w-full max-w-2xl mx-auto rounded-t-3xl h-[80vh] flex flex-col shadow-2xl relative">
         <div class="p-4 border-b border-gray-100 flex justify-between items-center shrink-0">
           <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-indigo-500"></i> Current Order</h2>
@@ -239,13 +243,16 @@
         }
     }
 
-    // --- CART SLIDER ---
+    // --- CART SLIDER (FIXED ANIMATION) ---
     function toggleCart() {
         const panel = document.getElementById('cart-panel');
         if (panel.classList.contains('hidden')) {
             panel.classList.remove('hidden');
             panel.classList.add('flex');
-            setTimeout(() => panel.querySelector('.cart-panel').classList.add('open'), 10);
+            // Using requestAnimationFrame for smooth slide
+            requestAnimationFrame(() => {
+                panel.querySelector('.cart-panel').classList.add('open');
+            });
         } else {
             panel.querySelector('.cart-panel').classList.remove('open');
             setTimeout(() => { panel.classList.add('hidden'); panel.classList.remove('flex'); }, 300);
