@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos - Bar Table QR Codes</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; }
+      .qr-card { page-break-inside: avoid; border: 2px dashed #ccc; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-8">
+
+  <div class="max-w-5xl mx-auto">
+    <div class="flex justify-between items-center mb-8 no-print">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Outdoor Bar Table QR Codes</h1>
+        <p class="text-sm text-slate-500">Print these and laminate them for the tables.</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="window.location.href='dashboard.html'" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold">Back</button>
+        <button onclick="window.print()" class="bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2">
+          <i data-lucide="printer" class="w-4 h-4"></i> Print All
+        </button>
+      </div>
+    </div>
+
+    <!-- We will generate 15 tables -->
+    <div id="qr-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <!-- JS will populate this -->
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+    lucide.createIcons();
+
+    function generateQRs() {
+      const grid = document.getElementById('qr-grid');
+      // Your live Vercel URL
+      const baseUrl = 'https://vicnos-hotel-app-7vyp.vercel.app/guest-portal.html';
+      
+      let html = '';
+      // Generate for Tables 1 to 15
+      for (let i = 1; i <= 15; i++) {
+        const tableName = `Table ${i}`;
+        const qrData = `${baseUrl}?table=${i}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+        
+        html += `
+          <div class="qr-card bg-white p-6 rounded-2xl flex flex-col items-center shadow-sm text-center border-2 border-yellow-400">
+            <img src="${qrUrl}" alt="QR Code" class="w-40 h-40 mb-4">
+            <h2 class="text-2xl font-black text-slate-900">${tableName}</h2>
+            <p class="text-xs text-slate-500 mt-2 font-medium">Scan to order drinks<br>& pay directly from your phone.</p>
+            <p class="text-[10px] font-bold text-slate-400 mt-4 tracking-widest uppercase">Powered by DEKY</p>
+          </div>
+        `;
+      }
+      grid.innerHTML = html;
+    }
+
+    generateQRs();
+  </script>
+</body>
+</html>

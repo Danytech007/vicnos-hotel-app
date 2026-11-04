@@ -23,7 +23,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; overflow: hidden; }
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; overflow: hidden; height: 100vh; }
     .hide-scroll::-webkit-scrollbar { display: none; }
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
     .product-card { transition: all 0.2s ease; cursor: pointer; }
@@ -32,10 +32,10 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row">
+<body class="flex flex-col md:flex-row">
 
   <!-- LEFT SIDE: MENU & SEARCH -->
-  <div class="flex-1 flex flex-col h-[60vh] md:h-screen border-b md:border-b-0 md:border-r border-slate-700/50">
+  <div class="flex-1 flex flex-col min-h-0 border-b md:border-b-0 md:border-r border-slate-700/50">
     
     <!-- HEADER -->
     <div class="p-4 md:p-6 bg-slate-900/50 backdrop-blur-md border-b border-slate-700/50 flex justify-between items-center shrink-0">
@@ -60,15 +60,15 @@
     </div>
 
     <!-- PRODUCT GRID -->
-    <div class="flex-1 overflow-y-auto hide-scroll p-4 md:p-6">
-      <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+    <div class="flex-1 overflow-y-auto hide-scroll p-4 md:p-6 min-h-0">
+      <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 pb-20">
         <p class="text-slate-400 text-sm animate-pulse col-span-full">Loading menu...</p>
       </div>
     </div>
   </div>
 
   <!-- RIGHT SIDE: CART & CHECKOUT -->
-  <div class="w-full md:w-[400px] bg-slate-900 flex flex-col h-[40vh] md:h-screen shrink-0 relative z-10 shadow-2xl">
+  <div class="w-full md:w-[400px] bg-slate-900 flex flex-col min-h-0 shrink-0 relative z-10 shadow-2xl">
     
     <!-- CART HEADER -->
     <div class="p-4 border-b border-slate-700/50 bg-slate-800/30 flex justify-between items-center shrink-0">
@@ -82,7 +82,7 @@
     </div>
 
     <!-- CART ITEMS -->
-    <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3 hide-scroll">
+    <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3 hide-scroll min-h-0">
       <div class="h-full flex flex-col items-center justify-center text-slate-500">
         <i data-lucide="glass-water" class="w-12 h-12 mb-3 opacity-20"></i>
         <p class="text-sm">Tap a drink to add it</p>
@@ -156,9 +156,9 @@
     }
 
     async function loadProducts() {
-      // OPTIMIZATION: Only select the columns we actually need
+      // Fetch image_url if it exists in your DB
       const { data: products } = await db.from('inventory')
-        .select('id, item_name, price, stock_quantity, category')
+        .select('id, item_name, price, stock_quantity, category, image_url')
         .eq('department', department)
         .order('item_name');
         
@@ -196,10 +196,7 @@
 
     function filterProducts() {
       const query = document.getElementById('search-input').value.toLowerCase();
-      
-      // Filter from the current category, or all
       let baseList = currentCategory === 'All' ? allProducts : allProducts.filter(p => (p.category || 'Uncategorized') === currentCategory);
-      
       filteredProducts = baseList.filter(p => p.item_name.toLowerCase().includes(query));
       renderProducts();
     }
@@ -212,21 +209,26 @@
         return;
       }
 
-      grid.innerHTML = filteredProducts.map(p => `
-        <div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, ${p.stock_quantity})" class="product-card glass-card p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition"><i data-lucide="${p.category === 'Beer' ? 'beer' : p.category === 'Spirits' ? 'wine' : 'glass-water'}" class="w-12 h-12 text-yellow-400"></i></div>
+      grid.innerHTML = filteredProducts.map(p => {
+        // Use image if available, otherwise fallback to icon
+        const imageHtml = p.image_url 
+          ? `<img src="${p.image_url}" class="w-full h-24 object-cover rounded-t-xl absolute top-0 left-0 opacity-80" onerror="this.style.display='none'">` 
+          : `<div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition"><i data-lucide="${p.category === 'Beer' ? 'beer' : p.category === 'Spirits' ? 'wine' : 'glass-water'}" class="w-12 h-12 text-yellow-400"></i></div>`;
+
+        return `
+        <div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, ${p.stock_quantity})" class="product-card glass-card rounded-2xl flex flex-col justify-between h-40 relative overflow-hidden group">
+          ${imageHtml}
           
-          <div class="relative z-10">
+          <div class="relative z-10 p-3 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent h-full flex flex-col justify-end">
             <h3 class="font-bold text-white text-sm leading-tight mb-1 line-clamp-2">${p.item_name}</h3>
-            <p class="text-yellow-400 font-black text-lg">₦${Number(p.price).toLocaleString()}</p>
-          </div>
-          
-          <div class="relative z-10 flex justify-between items-center mt-2 border-t border-slate-700/50 pt-2">
-            <span class="text-[10px] ${p.stock_quantity > 5 ? 'text-slate-400' : 'text-red-400 font-bold'}">${p.stock_quantity} left</span>
-            <div class="bg-yellow-500/20 p-1 rounded-md"><i data-lucide="plus" class="w-4 h-4 text-yellow-400"></i></div>
+            <div class="flex justify-between items-end w-full">
+              <p class="text-yellow-400 font-black text-lg">₦${Number(p.price).toLocaleString()}</p>
+              <div class="bg-yellow-500/20 p-1 rounded-md mb-1"><i data-lucide="plus" class="w-4 h-4 text-yellow-400"></i></div>
+            </div>
+            <span class="text-[10px] ${p.stock_quantity > 5 ? 'text-slate-400' : 'text-red-400 font-bold'} mt-1">${p.stock_quantity} left</span>
           </div>
         </div>
-      `).join('');
+      `}).join('');
       lucide.createIcons();
     }
 
@@ -375,7 +377,7 @@
             await db.from('inventory').update({ stock_quantity: prod.stock_quantity - item.qty }).eq('id', item.id);
           }
           
-          // OPTIMIZATION: Deduct stock locally so we don't have to reload the whole DB
+          // Deduct stock locally
           const localProduct = allProducts.find(p => p.id === item.id);
           if (localProduct) {
              localProduct.stock_quantity -= item.qty;
@@ -401,13 +403,10 @@
 
         alert(`✅ Order Completed!\nTotal: ₦${total.toLocaleString()}\nMethod: ${selectedPaymentMethod}${tableNum ? '\nTable: '+tableNum : ''}`);
         
-        // Reset
         cart = [];
         selectedRoomForCharge = null;
         document.getElementById('table-number').value = '';
         renderCart();
-        
-        // Re-render grid with updated local stock (INSTANT, no network wait)
         filterCategory(currentCategory);
         
       } catch (err) {
