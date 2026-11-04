@@ -476,8 +476,8 @@
       else { banner.classList.add('hidden'); }
 
       const btnContainer = document.getElementById('ops-action-buttons');
-      const posLink = `pos.html?dept=${dept}&tab=pos`;
-      const shiftLink = `pos.html?dept=${dept}&tab=shift`;
+      const posLink = `pos.html?dept=${dept}`;
+      const shiftLink = `shift-handover.html`; // UPDATED TO NEW FILE
       const ordersLink = role === 'barman' ? 'bar-orders.html' : 'order-board.html';
       const stockLink = `stock-request.html?dept=${dept}`;
       const icon = role === 'barman' ? 'wine' : 'chef-hat';
@@ -516,7 +516,6 @@
       const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); 
       const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
       
-      // NEW BUTTONS
       const maintenanceBtn = btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
       const chatBtn = btn('internal-chat.html', 'message-square', 'text-emerald-400', 'bg-emerald-500/20', 'Staff Chat');
       

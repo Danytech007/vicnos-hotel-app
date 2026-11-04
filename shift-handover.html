@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Shift Handover</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-slate-900/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50 p-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-slate-800 p-2 rounded-xl text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-white text-lg leading-tight">Shift & Handover</h1><p id="nav-dept" class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Loading...</p></div>
+    </div>
+    <div class="bg-slate-800 p-2 rounded-full text-slate-300"><i data-lucide="clock" class="w-5 h-5"></i></div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-6 mt-4">
+    
+    <!-- START SHIFT VIEW (Shown if no active shift) -->
+    <div id="start-shift-view" class="hidden flex-col items-center justify-center py-10 text-center fade-in">
+      <div class="bg-slate-800/50 p-6 rounded-full mb-6 border border-slate-700">
+        <i data-lucide="play-circle" class="w-16 h-16 text-emerald-500"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-white mb-2">Ready to start?</h2>
+      <p class="text-slate-400 text-sm px-6 mb-8">You have no active shift. Please confirm you are on duty to start accepting orders and recording sales.</p>
+      
+      <button onclick="startShift()" id="start-btn" class="w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition text-lg flex items-center justify-center gap-2">
+        <i data-lucide="log-in" class="w-6 h-6"></i> Start My Shift
+      </button>
+    </div>
+
+    <!-- ACTIVE SHIFT VIEW (Shown if shift is active) -->
+    <div id="active-shift-view" class="hidden space-y-6 fade-in">
+      
+      <div class="glass-card p-6 rounded-2xl text-center border-t-4 border-emerald-500">
+        <p class="text-xs text-emerald-400 font-bold uppercase tracking-widest mb-1">Shift Active</p>
+        <h2 class="text-2xl font-black text-white" id="shift-start-time">Started at --:--</h2>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="glass-card p-4 rounded-xl text-center border-l-4 border-emerald-500">
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Cash Expected</p>
+          <p id="shift-cash" class="text-3xl font-black text-emerald-400">₦0</p>
+        </div>
+        <div class="glass-card p-4 rounded-xl text-center border-l-4 border-amber-500">
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Room Credits</p>
+          <p id="shift-credit" class="text-3xl font-black text-amber-400">₦0</p>
+        </div>
+      </div>
+
+      <div class="glass-card p-5 rounded-2xl">
+        <h3 class="font-bold text-white mb-3 text-sm border-b border-slate-700 pb-2">Shift Sales Breakdown</h3>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between items-center text-slate-300">
+            <span>Total Orders Completed</span>
+            <span id="shift-order-count" class="font-bold text-white">0</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-300">
+            <span>Total Sales Value</span>
+            <span id="shift-total-sales" class="font-bold text-yellow-400">₦0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card p-5 rounded-2xl border border-red-500/30 bg-red-500/5">
+        <h3 class="font-bold text-red-400 mb-2 text-sm flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> End Shift Handover</h3>
+        <p class="text-xs text-slate-400 mb-4">Before ending your shift, please physically count the cash in your drawer.</p>
+        
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Physical Cash Count (₦)</label>
+          <input type="number" id="physical-cash" placeholder="Enter cash amount" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-red-500 mb-2">
+          <p id="discrepancy-msg" class="text-xs font-bold mb-4 hidden"></p>
+        </div>
+
+        <button onclick="endShift()" id="end-btn" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-red-500/20 active:scale-95 transition flex items-center justify-center gap-2">
+          <i data-lucide="log-out" class="w-5 h-5"></i> End Shift & Submit Count
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let currentRole = null;
+    let department = 'Bar';
+    let activeShift = null;
+
+    async function init() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+
+      const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+      currentRole = profile.role;
+      
+      if (currentRole === 'chef' || currentRole === 'kitchen') department = 'Kitchen';
+      if (currentRole === 'receptionist') department = 'Minimart';
+
+      document.getElementById('nav-dept').textContent = department + ' Station';
+
+      checkActiveShift();
+    }
+
+    async function checkActiveShift() {
+      const { data: shifts } = await db.from('shifts')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('department', department)
+        .eq('status', 'Active')
+        .limit(1);
+
+      if (shifts && shifts.length > 0) {
+        activeShift = shifts[0];
+        showActiveShiftView();
+      } else {
+        showStartShiftView();
+      }
+    }
+
+    function showStartShiftView() {
+      document.getElementById('start-shift-view').classList.remove('hidden');
+      document.getElementById('start-shift-view').classList.add('flex');
+      document.getElementById('active-shift-view').classList.add('hidden');
+    }
+
+    async function startShift() {
+      const btn = document.getElementById('start-btn');
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Starting...`;
+      btn.disabled = true;
+
+      const { error } = await db.from('shifts').insert({
+        user_id: currentUser.id,
+        department: department,
+        status: 'Active'
+      });
+
+      if (error) {
+        alert("Error starting shift: " + error.message);
+        btn.innerHTML = `<i data-lucide="log-in" class="w-6 h-6"></i> Start My Shift`;
+        btn.disabled = false;
+        return;
+      }
+
+      window.location.reload();
+    }
+
+    async function showActiveShiftView() {
+      document.getElementById('start-shift-view').classList.add('hidden');
+      document.getElementById('active-shift-view').classList.remove('hidden');
+
+      const startTime = new Date(activeShift.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('shift-start-time').textContent = `Started at ${startTime}`;
+
+      // Fetch all POS orders for this department since the shift started
+      const { data: orders } = await db.from('pos_orders')
+        .select('*')
+        .eq('department', department)
+        .gte('created_at', activeShift.created_at);
+
+      let cash = 0, credit = 0, totalSales = 0, count = 0;
+
+      if (orders) {
+        count = orders.length;
+        orders.forEach(o => {
+          const amt = Number(o.total_amount);
+          totalSales += amt;
+          if (o.payment_method === 'Charge_to_Room') credit += amt;
+          else cash += amt;
+        });
+      }
+
+      document.getElementById('shift-cash').textContent = `₦${cash.toLocaleString()}`;
+      document.getElementById('shift-credit').textContent = `₦${credit.toLocaleString()}`;
+      document.getElementById('shift-order-count').textContent = count;
+      document.getElementById('shift-total-sales').textContent = `₦${totalSales.toLocaleString()}`;
+      
+      // Save expected cash to compare later
+      document.getElementById('physical-cash').addEventListener('input', (e) => {
+        const physical = Number(e.target.value);
+        const msg = document.getElementById('discrepancy-msg');
+        
+        if (physical === 0) { msg.classList.add('hidden'); return; }
+        
+        msg.classList.remove('hidden');
+        const diff = physical - cash;
+        
+        if (diff === 0) {
+          msg.textContent = "✅ Perfect match!";
+          msg.className = "text-xs font-bold mb-4 text-emerald-400";
+        } else if (diff < 0) {
+          msg.textContent = `⚠️ Shortage of ₦${Math.abs(diff).toLocaleString()}`;
+          msg.className = "text-xs font-bold mb-4 text-red-400";
+        } else {
+          msg.textContent = `⚠️ Overage of ₦${diff.toLocaleString()}`;
+          msg.className = "text-xs font-bold mb-4 text-amber-400";
+        }
+      });
+    }
+
+    async function endShift() {
+      const physicalCash = Number(document.getElementById('physical-cash').value);
+      if (!document.getElementById('physical-cash').value) return alert("Please enter your physical cash count.");
+
+      if (!confirm("Are you sure you want to end your shift? This will lock your sales and send the report to the Accountant.")) return;
+
+      const btn = document.getElementById('end-btn');
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Ending...`;
+      btn.disabled = true;
+
+      try {
+        // 1. Update shift status to 'Ended' and save physical count
+        const { error } = await db.from('shifts').update({
+          status: 'Ended',
+          total_cash_sales: physicalCash // Saving the physical count
+        }).eq('id', activeShift.id);
+
+        if (error) throw error;
+
+        // 2. Create a notification log for the Accountant
+        await db.from('guest_orders').insert({
+          department: 'Shift Handover',
+          room_number: 'N/A',
+          items: [{ message: `${department} shift ended by staff. Physical cash counted: ₦${physicalCash.toLocaleString()}` }],
+          total_amount: physicalCash,
+          status: 'Pending'
+        });
+
+        alert("✅ Shift Ended Successfully!\nYour sales have been locked. Please hand over the physical cash to the supervisor/accountant.");
+        window.location.href = 'dashboard.html';
+
+      } catch (err) {
+        alert("Error ending shift: " + err.message);
+        btn.innerHTML = `<i data-lucide="log-out" class="w-5 h-5"></i> End Shift & Submit Count`;
+        btn.disabled = false;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
