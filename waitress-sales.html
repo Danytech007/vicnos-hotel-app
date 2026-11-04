@@ -14,16 +14,45 @@
   <style>
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; height: 100dvh; }
+    
+    /* Lock body height */
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; height: 100dvh; width: 100vw; }
+    
     .hide-scroll::-webkit-scrollbar { display: none; }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
+
+    /* BULLETPROOF SLIDE OVER FROM BOTTOM */
+    #cart-panel {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999; /* Force on top of absolutely everything */
+      display: none;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    #cart-panel.active {
+      display: flex;
+    }
     
-    /* The sliding cart panel */
-    .cart-panel { transform: translateY(100%); transition: transform 0.3s ease-in-out; }
-    .cart-panel.open { transform: translateY(0); }
+    #cart-content {
+      background: white;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      height: 80vh;
+      border-radius: 24px 24px 0 0;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #cart-panel.active #cart-content {
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body class="flex flex-col">
@@ -41,20 +70,9 @@
     <div><p class="text-xs text-red-800 font-bold">Kitchen Low Stock Alert!</p><p id="low-stock-items" class="text-[10px] text-red-600 font-medium">Loading...</p></div>
   </div>
 
-  <div id="live-order-alert" class="hidden fixed top-20 left-4 right-4 z-[60] bg-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between cursor-pointer blink-alert" onclick="switchTab('orders')">
-    <div class="flex items-center gap-3">
-      <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
-      <div>
-        <h3 class="font-black text-lg">ORDER READY FOR PICKUP!</h3>
-        <p class="text-red-100 text-xs font-medium">The Bar or Kitchen has finished a docket.</p>
-      </div>
-    </div>
-    <i data-lucide="chevron-right" class="w-8 h-8"></i>
-  </div>
-
   <div class="max-w-4xl mx-auto px-4 mt-4 flex gap-2 overflow-x-auto hide-scroll w-full shrink-0">
     <button onclick="switchTab('pos')" id="tab-btn-pos" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md whitespace-nowrap transition">Take Order</button>
-    <button onclick="switchTab('orders')" id="tab-btn-orders" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition flex items-center justify-center gap-1">Live Board <span id="order-badge" class="hidden bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span></button>
+    <button onclick="switchTab('orders')" id="tab-btn-orders" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition flex items-center justify-center gap-1">Live Board</button>
     <button onclick="switchTab('shift')" id="tab-btn-shift" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition">Shift</button>
   </div>
 
@@ -66,14 +84,17 @@
         <i data-lucide="map-pin" class="w-5 h-5 text-indigo-500"></i>
         <input type="text" id="table-input" placeholder="Table No. / Room No." class="w-full bg-gray-50 border border-gray-200 p-2 rounded-xl outline-none font-bold text-lg focus:border-indigo-500 transition">
       </div>
+      
       <div class="flex gap-2 overflow-x-auto hide-scroll pb-2 shrink-0" id="category-tabs"></div>
-      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-24 min-h-0 relative z-0">
+      
+      <!-- Extra padding bottom so items don't hide behind the floating button -->
+      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-32 min-h-0">
         <p class="text-gray-500 text-sm animate-pulse col-span-full">Loading menu...</p>
       </div>
       
-      <!-- Floating Cart Button (Fixed z-index) -->
-      <div class="fixed bottom-6 right-6 z-50">
-        <button onclick="toggleCart()" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center gap-2 font-bold text-lg active:scale-95 transition">
+      <!-- Floating Cart Button -->
+      <div class="fixed bottom-6 right-6 z-[50]">
+        <button onclick="openCart()" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center gap-2 font-bold text-lg active:scale-95 transition">
           <i data-lucide="shopping-cart" class="w-6 h-6"></i>
           <span id="mobile-cart-total">₦0</span>
         </button>
@@ -81,39 +102,13 @@
     </div>
 
     <!-- TAB 2: LIVE BOARD -->
-    <div id="tab-orders" class="hidden flex-1 flex flex-col min-h-0 fade-in pb-24">
-      <div class="flex justify-between items-center mb-2 shrink-0">
-        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="monitor" class="w-5 h-5 text-indigo-500"></i> Live Orders Board</h2>
-        <button onclick="loadLiveOrders()" class="text-gray-400 hover:text-indigo-600"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
-      </div>
-      <p class="text-xs text-gray-500 mb-4 shrink-0">Track the Kitchen and Bar in real-time. Deliver orders when ready.</p>
-      
-      <div class="flex-1 overflow-y-auto hide-scroll space-y-6">
-        
-        <!-- COOKING / MIXING -->
-        <div>
-          <h3 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i> Cooking & Mixing</h3>
-          <div id="cooking-list" class="space-y-2">
-            <p class="text-xs text-gray-400">Nothing on the stove or at the bar yet.</p>
-          </div>
+    <div id="tab-orders" class="hidden flex-1 overflow-y-auto hide-scroll fade-in pb-24">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-indigo-500"></i> Live Orders</h2>
+          <button onclick="loadLiveOrders()" class="text-gray-400 hover:text-indigo-600"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
         </div>
-
-        <!-- READY FOR PICKUP -->
-        <div>
-          <h3 class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> Ready for Pickup</h3>
-          <div id="ready-list" class="space-y-2">
-            <p class="text-xs text-gray-400">No food or drinks ready.</p>
-          </div>
-        </div>
-
-        <!-- DELIVERED (Today) -->
-        <div>
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Recently Delivered</h3>
-          <div id="delivered-list" class="space-y-2 opacity-60">
-            <p class="text-xs text-gray-400">No recent deliveries.</p>
-          </div>
-        </div>
-
+        <div id="orders-list" class="space-y-3"><p class="text-center text-gray-500 text-sm py-4 animate-pulse">Loading...</p></div>
       </div>
     </div>
 
@@ -156,43 +151,43 @@
         </div>
     </div>
 
-    <!-- SLIDING CART PANEL -->
-    <div id="cart-panel" class="cart-panel fixed inset-0 bg-black/60 z-[80] hidden flex-col justify-end">
-      <div class="bg-white w-full max-w-2xl mx-auto rounded-t-3xl h-[80vh] flex flex-col shadow-2xl relative">
-        <div class="p-4 border-b border-gray-100 flex justify-between items-center shrink-0">
-          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-indigo-500"></i> Current Order</h2>
-          <button onclick="toggleCart()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-gray-200"><i data-lucide="x" class="w-5 h-5"></i></button>
-        </div>
-        <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-2 hide-scroll min-h-0">
-          <p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>
-        </div>
-        <div class="p-4 border-t border-gray-100 bg-gray-50 shrink-0 pb-8">
-          <div class="flex justify-between items-center mb-4">
-            <span class="font-bold text-gray-600">Total:</span>
-            <span id="cart-total" class="text-3xl font-black text-indigo-600">₦0</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2 mb-3">
-            <button onclick="setPaymentMethod('Cash')" id="pay-cash" class="py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="banknote" class="w-4 h-4"></i> Cash</button>
-            <button onclick="setPaymentMethod('POS')" id="pay-pos" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> Card/POS</button>
-            <button onclick="setPaymentMethod('Transfer')" id="pay-transfer" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="smartphone" class="w-4 h-4"></i> Transfer</button>
-            <button onclick="setPaymentMethod('Charge_to_Room')" id="pay-room" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="door-closed" class="w-4 h-4"></i> To Room</button>
-          </div>
-          <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Room Selection Modal -->
-    <div id="room-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-      <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in border-t-4 border-indigo-500">
-        <h2 class="text-xl font-bold text-gray-900 mb-2 text-center">Charge to Room</h2>
-        <p class="text-xs text-gray-500 text-center mb-6">Select the guest's room number.</p>
-        <select id="room-select" class="w-full bg-gray-50 border border-gray-300 p-4 rounded-xl text-gray-900 outline-none font-bold text-lg mb-6"><option value="">-- Select Room --</option></select>
-        <div class="flex gap-3"><button onclick="closeRoomModal()" class="w-1/3 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Cancel</button><button onclick="confirmRoomCharge()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">Confirm</button></div>
-      </div>
-    </div>
-
   </main>
+
+  <!-- BULLETPROOF SLIDING CART PANEL -->
+  <div id="cart-panel">
+    <div id="cart-content">
+      <div class="p-4 border-b border-gray-100 flex justify-between items-center shrink-0">
+        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-indigo-500"></i> Current Order</h2>
+        <button onclick="closeCart()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-gray-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-2 hide-scroll min-h-0">
+        <p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>
+      </div>
+      <div class="p-4 border-t border-gray-100 bg-gray-50 shrink-0 pb-8">
+        <div class="flex justify-between items-center mb-4">
+          <span class="font-bold text-gray-600">Total:</span>
+          <span id="cart-total" class="text-3xl font-black text-indigo-600">₦0</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <button onclick="setPaymentMethod('Cash')" id="pay-cash" class="py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="banknote" class="w-4 h-4"></i> Cash</button>
+          <button onclick="setPaymentMethod('POS')" id="pay-pos" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> Card/POS</button>
+          <button onclick="setPaymentMethod('Transfer')" id="pay-transfer" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="smartphone" class="w-4 h-4"></i> Transfer</button>
+          <button onclick="setPaymentMethod('Charge_to_Room')" id="pay-room" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="door-closed" class="w-4 h-4"></i> To Room</button>
+        </div>
+        <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Room Selection Modal -->
+  <div id="room-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[10000] p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in border-t-4 border-indigo-500">
+      <h2 class="text-xl font-bold text-gray-900 mb-2 text-center">Charge to Room</h2>
+      <p class="text-xs text-gray-500 text-center mb-6">Select the guest's room number.</p>
+      <select id="room-select" class="w-full bg-gray-50 border border-gray-300 p-4 rounded-xl text-gray-900 outline-none font-bold text-lg mb-6"><option value="">-- Select Room --</option></select>
+      <div class="flex gap-3"><button onclick="closeRoomModal()" class="w-1/3 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Cancel</button><button onclick="confirmRoomCharge()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">Confirm</button></div>
+    </div>
+  </div>
 
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
@@ -237,26 +232,15 @@
         document.getElementById(`tab-${tab}`).classList.remove('hidden');
         document.getElementById(`tab-btn-${tab}`).className = "flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md whitespace-nowrap transition";
 
-        if (tab === 'orders') {
-            loadLiveOrders();
-            document.getElementById('live-order-alert').classList.add('hidden');
-        }
+        if (tab === 'orders') loadLiveOrders();
     }
 
-    // --- CART SLIDER (FIXED ANIMATION) ---
-    function toggleCart() {
-        const panel = document.getElementById('cart-panel');
-        if (panel.classList.contains('hidden')) {
-            panel.classList.remove('hidden');
-            panel.classList.add('flex');
-            // Using requestAnimationFrame for smooth slide
-            requestAnimationFrame(() => {
-                panel.querySelector('.cart-panel').classList.add('open');
-            });
-        } else {
-            panel.querySelector('.cart-panel').classList.remove('open');
-            setTimeout(() => { panel.classList.add('hidden'); panel.classList.remove('flex'); }, 300);
-        }
+    // --- BULLETPROOF CART ANIMATION ---
+    function openCart() {
+        document.getElementById('cart-panel').classList.add('active');
+    }
+    function closeCart() {
+        document.getElementById('cart-panel').classList.remove('active');
     }
 
     // --- PAYMENT METHODS ---
@@ -398,8 +382,6 @@
         document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦${total.toLocaleString()}`;
     }
 
-    function clearCart() { cart = []; renderCart(); }
-
     // --- PROCESS CHECKOUT & SPLIT BILL ---
     async function processCheckout() {
         const table = document.getElementById('table-input').value.trim();
@@ -454,104 +436,63 @@
             alert(`✅ Order Charged!\nTotal: ₦${total.toLocaleString()}\nPayment: ${selectedPaymentMethod}${table ? '\nTable: '+table : ''}`);
             
             cart = []; selectedRoomForCharge = null; document.getElementById('table-input').value = '';
-            renderCart(); toggleCart(); switchTab('orders');
+            renderCart(); closeCart(); switchTab('orders');
             
         } catch (err) { alert("Checkout Failed: " + err.message); } finally { btn.disabled = false; btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge`; }
     }
 
     // --- LIVE BOARD (COOKING, READY, DELIVERED) ---
     async function loadLiveOrders(isBackgroundPoll = false) {
-        const cookingList = document.getElementById('cooking-list');
-        const readyList = document.getElementById('ready-list');
-        const deliveredList = document.getElementById('delivered-list');
+        const list = document.getElementById('orders-list');
         
-        const today = new Date().toISOString().split('T')[0];
-
-        // Fetch orders from today
         const { data: orders } = await db.from('guest_orders')
             .select('*')
             .in('department', ['Kitchen', 'Bar'])
-            .gte('created_at', today)
+            .in('status', ['Pending', 'Preparing', 'Ready'])
             .order('created_at', { ascending: true });
 
         if (!orders || orders.length === 0) {
-            cookingList.innerHTML = '<p class="text-xs text-gray-400">Nothing on the stove or at the bar yet.</p>';
-            readyList.innerHTML = '<p class="text-xs text-gray-400">No food or drinks ready.</p>';
-            deliveredList.innerHTML = '<p class="text-xs text-gray-400">No recent deliveries.</p>';
-            document.getElementById('order-badge').classList.add('hidden');
+            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active orders.</p>';
             return;
         }
 
-        // Count ready orders for the badge
-        const readyOrders = orders.filter(o => o.status === 'Ready');
-        if (isBackgroundPoll && readyOrders.length > lastOrderCount) {
-            document.getElementById('live-order-alert').classList.remove('hidden');
+        if (isBackgroundPoll && orders.length > lastOrderCount) {
             try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(e){}
         }
-        lastOrderCount = readyOrders.length;
+        lastOrderCount = orders.length;
 
-        if (readyOrders.length > 0) {
-            document.getElementById('order-badge').innerText = readyOrders.length;
-            document.getElementById('order-badge').classList.remove('hidden');
-        } else {
-            document.getElementById('order-badge').classList.add('hidden');
-        }
+        list.innerHTML = orders.map(order => {
+            let itemsHtml = '';
+            try {
+                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                itemsHtml = items.map(i => `<li class="flex justify-between text-xs text-gray-600 border-b border-gray-100 py-1 last:border-0"><span>${i.qty || i.quantity || 1}x ${i.name || i.item_name}</span></li>`).join('');
+            } catch(e) {}
 
-        // If the user is not on the orders tab, don't render the HTML (saves processing)
-        if (document.getElementById('tab-orders').classList.contains('hidden')) return;
+            let statusBadge = `<span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded">COOKING</span>`;
+            if (order.status === 'Ready') statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">READY</span>`;
 
-        // 1. COOKING / MIXING
-        const cooking = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing');
-        if (cooking.length === 0) {
-            cookingList.innerHTML = '<p class="text-xs text-gray-400">Nothing on the stove or at the bar yet.</p>';
-        } else {
-            cookingList.innerHTML = cooking.map(o => renderCard(o, 'blue')).join('');
-        }
+            const isReady = order.status === 'Ready';
+            const clickAction = isReady ? `onclick="updateOrderStatus('${order.id}', 'Delivered')"` : '';
+            const cursorClass = isReady ? 'cursor-pointer hover:border-emerald-500 active:scale-95 border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-white';
 
-        // 2. READY FOR PICKUP
-        if (readyOrders.length === 0) {
-            readyList.innerHTML = '<p class="text-xs text-gray-400">No food or drinks ready.</p>';
-        } else {
-            readyList.innerHTML = readyOrders.map(o => renderCard(o, 'emerald')).join('');
-        }
-
-        // 3. DELIVERED
-        const delivered = orders.filter(o => o.status === 'Delivered').reverse().slice(0, 5); // Last 5 delivered
-        if (delivered.length === 0) {
-            deliveredList.innerHTML = '<p class="text-xs text-gray-400">No recent deliveries.</p>';
-        } else {
-            deliveredList.innerHTML = delivered.map(o => renderCard(o, 'gray')).join('');
-        }
-
-        lucide.createIcons();
-    }
-
-    function renderCard(order, color) {
-        let itemsHtml = '';
-        try {
-            const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-            itemsHtml = items.map(i => `<span class="inline-block bg-white/50 text-[10px] font-bold px-1.5 py-0.5 rounded mr-1 mb-1 border border-${color}-200">${i.qty || i.quantity || 1}x ${i.name || i.item_name}</span>`).join('');
-        } catch(e) {}
-
-        const bgClass = color === 'blue' ? 'bg-blue-50 border-blue-200' : color === 'emerald' ? 'bg-emerald-50 border-emerald-200 cursor-pointer hover:bg-emerald-100' : 'bg-gray-50 border-gray-200';
-        const textClass = color === 'blue' ? 'text-blue-700' : color === 'emerald' ? 'text-emerald-700' : 'text-gray-600';
-        const clickAction = color === 'emerald' ? `onclick="deliverOrder('${order.id}')"` : '';
-
-        return `
-            <div ${clickAction} class="border rounded-xl p-3 shadow-sm transition ${bgClass}">
-                <div class="flex justify-between items-center mb-1">
-                    <h4 class="font-bold text-gray-900 text-sm">Table ${order.table_number || order.room_number}</h4>
-                    <span class="text-[9px] uppercase font-bold ${textClass}">${order.department}</span>
+            return `
+                <div ${clickAction} class="border rounded-xl p-4 shadow-sm transition ${cursorClass}">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded border uppercase bg-white text-gray-700">${order.department}</span>
+                            <h3 class="text-gray-900 font-bold text-lg mt-1">Table ${order.table_number || order.room_number}</h3>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    <ul class="mb-3">${itemsHtml}</ul>
+                    ${isReady ? `<p class="text-right text-xs text-emerald-600 font-bold">Tap to Mark Served</p>` : ''}
                 </div>
-                <div class="mb-2">${itemsHtml}</div>
-                ${color === 'emerald' ? `<p class="text-[10px] text-emerald-600 font-bold text-right">Tap to mark Served</p>` : ''}
-            </div>
-        `;
+            `;
+        }).join('');
     }
 
-    async function deliverOrder(orderId) {
-        if (!confirm("Confirm you have delivered this item to the table?")) return;
-        await db.from('guest_orders').update({ status: 'Delivered' }).eq('id', orderId);
+    async function updateOrderStatus(orderId, newStatus) {
+        await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
         loadLiveOrders();
     }
 
