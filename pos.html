@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vicnos Hotel - POS</title>
+  <title>Vicnos Hotel - Bar POS</title>
   
   <script>
+    // CACHE KILLER
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) { registration.unregister(); }
@@ -23,77 +24,105 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; }
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; overflow: hidden; }
     .hide-scroll::-webkit-scrollbar { display: none; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .product-card { transition: all 0.2s ease; cursor: pointer; }
+    .product-card:active { transform: scale(0.96); }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="min-h-screen pb-10 flex flex-col md:flex-row">
+<body class="h-screen flex flex-col md:flex-row">
 
-  <!-- LEFT SIDE: MENU -->
-  <div class="flex-1 p-4 md:p-6 overflow-y-auto h-screen border-b md:border-b-0 md:border-r border-slate-700/50">
-    <div class="flex justify-between items-center mb-6">
+  <!-- LEFT SIDE: MENU & SEARCH -->
+  <div class="flex-1 flex flex-col h-[60vh] md:h-screen border-b md:border-b-0 md:border-r border-slate-700/50">
+    
+    <!-- HEADER -->
+    <div class="p-4 md:p-6 bg-slate-900/50 backdrop-blur-md border-b border-slate-700/50 flex justify-between items-center shrink-0">
       <div class="flex items-center gap-3">
         <a href="dashboard.html" class="bg-slate-800 p-2 rounded-xl text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
         <div>
-          <h1 id="pos-title" class="font-bold text-white text-xl leading-tight">POS Terminal</h1>
-          <p id="pos-dept" class="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">Loading...</p>
+          <h1 class="font-bold text-white text-xl leading-tight">Vicnos Bar</h1>
+          <p class="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">Outdoor & Lounge</p>
         </div>
       </div>
-      <div id="shift-status" class="bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold text-red-400">No Active Shift</div>
+      
+      <!-- SEARCH BAR -->
+      <div class="relative w-full max-w-xs hidden md:block">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+        <input type="text" id="search-input" oninput="filterProducts()" placeholder="Search drinks..." class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2 pl-10 pr-4 text-white text-sm outline-none focus:border-yellow-500 transition">
+      </div>
     </div>
 
-    <!-- Category Tabs -->
-    <div class="flex gap-2 overflow-x-auto hide-scroll mb-4 pb-2" id="category-tabs">
-      <button onclick="filterCategory('All')" class="cat-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">All Items</button>
+    <!-- CATEGORY TABS -->
+    <div class="px-4 md:px-6 py-3 overflow-x-auto hide-scroll flex gap-2 shrink-0 border-b border-slate-800">
+      <button onclick="filterCategory('All')" class="cat-btn bg-yellow-500 text-black px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition">All Drinks</button>
+      <!-- Categories injected by JS -->
     </div>
 
-    <!-- Product Grid -->
-    <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-      <p class="text-slate-400 text-sm animate-pulse col-span-full">Loading menu...</p>
+    <!-- PRODUCT GRID -->
+    <div class="flex-1 overflow-y-auto hide-scroll p-4 md:p-6">
+      <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+        <p class="text-slate-400 text-sm animate-pulse col-span-full">Loading menu...</p>
+      </div>
     </div>
   </div>
 
-  <!-- RIGHT SIDE: CART -->
-  <div class="w-full md:w-96 bg-slate-900 flex flex-col h-screen">
-    <div class="p-4 border-b border-slate-700/50 bg-slate-800/30">
-      <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="shopping-cart" class="w-5 h-5 text-emerald-400"></i> Current Order</h2>
+  <!-- RIGHT SIDE: CART & CHECKOUT -->
+  <div class="w-full md:w-[400px] bg-slate-900 flex flex-col h-[40vh] md:h-screen shrink-0 relative z-10 shadow-2xl">
+    
+    <!-- CART HEADER -->
+    <div class="p-4 border-b border-slate-700/50 bg-slate-800/30 flex justify-between items-center shrink-0">
+      <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-yellow-400"></i> Current Order</h2>
+      <button onclick="clearCart()" class="text-xs text-red-400 font-bold hover:text-red-300 transition">Clear</button>
     </div>
 
+    <!-- TABLE / GUEST NAME INPUT -->
+    <div class="px-4 py-3 bg-slate-800/50 border-b border-slate-700/50 shrink-0">
+      <input type="text" id="table-number" placeholder="Table No. or Guest Name (Optional)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white outline-none focus:border-yellow-500 transition">
+    </div>
+
+    <!-- CART ITEMS -->
     <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3 hide-scroll">
-      <p class="text-center text-slate-500 text-sm mt-10">No items added yet.</p>
+      <div class="h-full flex flex-col items-center justify-center text-slate-500">
+        <i data-lucide="glass-water" class="w-12 h-12 mb-3 opacity-20"></i>
+        <p class="text-sm">Tap a drink to add it</p>
+      </div>
     </div>
 
-    <div class="p-4 border-t border-slate-700/50 bg-slate-800/80">
+    <!-- TOTALS & PAYMENT -->
+    <div class="p-4 border-t border-slate-700/50 bg-slate-800/80 shrink-0">
       <div class="flex justify-between items-center mb-4">
         <span class="text-slate-400 font-medium">Total:</span>
-        <span id="cart-total" class="text-3xl font-black text-white">₦0</span>
+        <span id="cart-total" class="text-4xl font-black text-white">₦0</span>
       </div>
 
-      <!-- PAYMENT METHODS -->
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <button onclick="setPaymentMethod('Cash')" id="pay-cash" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95">Cash</button>
-        <button onclick="setPaymentMethod('POS')" id="pay-pos" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95">Card / POS</button>
-        <button onclick="setPaymentMethod('Transfer')" id="pay-transfer" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95">Transfer</button>
-        <button onclick="setPaymentMethod('Charge_to_Room')" id="pay-room" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95">To Room</button>
+      <!-- PAYMENT BUTTONS -->
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <button onclick="setPaymentMethod('Cash')" id="pay-cash" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="banknote" class="w-4 h-4"></i> Cash</button>
+        <button onclick="setPaymentMethod('POS')" id="pay-pos" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> POS</button>
+        <button onclick="setPaymentMethod('Transfer')" id="pay-transfer" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="smartphone" class="w-4 h-4"></i> Transfer</button>
+        <button onclick="setPaymentMethod('Charge_to_Room')" id="pay-room" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="door-closed" class="w-4 h-4"></i> To Room</button>
       </div>
 
-      <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-emerald-500 text-black py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition mt-2">Complete & Print</button>
+      <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-yellow-500 text-black py-4 rounded-xl font-black text-lg shadow-lg shadow-yellow-500/20 active:scale-95 transition flex items-center justify-center gap-2">
+        <i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0
+      </button>
     </div>
   </div>
 
   <!-- Room Selection Modal -->
   <div id="room-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-700 fade-in">
-      <h2 class="text-xl font-bold text-white mb-4 text-center">Charge to Room</h2>
-      <p class="text-xs text-slate-400 text-center mb-4">Select the guest's room to post this charge.</p>
-      <select id="room-select" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none font-bold text-lg mb-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in border-t-4 border-yellow-500">
+      <h2 class="text-xl font-bold text-white mb-2 text-center">Charge to Room</h2>
+      <p class="text-xs text-slate-400 text-center mb-6">Select the guest's room number.</p>
+      <select id="room-select" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none font-bold text-lg mb-6">
         <option value="">-- Select Room --</option>
       </select>
-      <div class="flex gap-2">
-        <button onclick="closeRoomModal()" class="w-1/3 bg-slate-700 text-white font-bold py-3 rounded-xl">Cancel</button>
-        <button onclick="confirmRoomCharge()" class="flex-1 bg-emerald-500 text-black font-bold py-3 rounded-xl shadow-lg">Confirm Room</button>
+      <div class="flex gap-3">
+        <button onclick="closeRoomModal()" class="w-1/3 bg-slate-800 text-white font-bold py-3 rounded-xl border border-slate-700">Cancel</button>
+        <button onclick="confirmRoomCharge()" class="flex-1 bg-yellow-500 text-black font-bold py-3 rounded-xl shadow-lg">Confirm</button>
       </div>
     </div>
   </div>
@@ -107,13 +136,12 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
+    // We will default to 'Bar' for this POS, but if it's Minimart it works too.
     const urlParams = new URLSearchParams(window.location.search);
     const department = urlParams.get('dept') || 'Bar';
     
-    document.getElementById('pos-dept').textContent = department + ' Station';
-    document.getElementById('pos-title').textContent = department + ' POS';
-
     let allProducts = [];
+    let filteredProducts = [];
     let cart = [];
     let currentUser = null;
     let selectedPaymentMethod = 'Cash';
@@ -123,13 +151,6 @@
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
-
-      // Check Shift Status
-      const { data: shifts } = await db.from('shifts').select('*').eq('user_id', user.id).eq('department', department).eq('status', 'Active').limit(1);
-      if (shifts && shifts.length > 0) {
-        document.getElementById('shift-status').textContent = "Active Shift";
-        document.getElementById('shift-status').className = "bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold text-emerald-400";
-      }
 
       loadProducts();
       loadRoomsForCharge();
@@ -143,43 +164,64 @@
       // Extract unique categories
       const categories = ['All', ...new Set(allProducts.map(p => p.category || 'Uncategorized'))];
       const tabsContainer = document.getElementById('category-tabs');
-      tabsContainer.innerHTML = categories.map(cat => `
-        <button onclick="filterCategory('${cat}')" class="cat-btn ${cat === 'All' ? 'bg-yellow-500 text-black' : 'bg-slate-800 text-slate-300'} px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md">${cat}</button>
-      `).join('');
+      
+      // Keep "All" button, clear others
+      tabsContainer.innerHTML = '';
+      
+      categories.forEach(cat => {
+        tabsContainer.innerHTML += `
+          <button onclick="filterCategory('${cat}')" class="cat-btn ${cat === 'All' ? 'bg-yellow-500 text-black' : 'bg-slate-800 text-slate-300'} px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-slate-700 transition">${cat}</button>
+        `;
+      });
 
-      renderProducts('All');
-    }
-
-    function renderProducts(category) {
-      const grid = document.getElementById('product-grid');
-      const filtered = category === 'All' ? allProducts : allProducts.filter(p => (p.category || 'Uncategorized') === category);
-
-      if (filtered.length === 0) {
-        grid.innerHTML = '<p class="text-slate-500 col-span-full">No items found.</p>';
-        return;
-      }
-
-      grid.innerHTML = filtered.map(p => `
-        <div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, ${p.stock_quantity})" class="bg-slate-800 p-3 rounded-xl border border-slate-700 shadow-sm cursor-pointer hover:border-yellow-500 transition active:scale-95 flex flex-col justify-between">
-          <div>
-            <h3 class="font-bold text-white text-sm leading-tight mb-1">${p.item_name}</h3>
-            <p class="text-yellow-400 font-black">₦${Number(p.price).toLocaleString()}</p>
-          </div>
-          <div class="mt-2 flex justify-between items-center">
-            <span class="text-[10px] ${p.stock_quantity > 5 ? 'text-slate-400' : 'text-red-400 font-bold'}">${p.stock_quantity} left</span>
-            <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-400"></i>
-          </div>
-        </div>
-      `).join('');
-      lucide.createIcons();
+      filterCategory('All');
     }
 
     function filterCategory(category) {
       document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.className = "cat-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md";
+        btn.className = "cat-btn bg-slate-800 text-slate-300 px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-slate-700 transition";
       });
-      event.target.className = "cat-btn bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md";
-      renderProducts(category);
+      event.target.className = "cat-btn bg-yellow-500 text-black px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-yellow-500 transition";
+      
+      if (category === 'All') {
+        filteredProducts = allProducts;
+      } else {
+        filteredProducts = allProducts.filter(p => (p.category || 'Uncategorized') === category);
+      }
+      
+      renderProducts();
+    }
+
+    function filterProducts() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      filteredProducts = allProducts.filter(p => p.item_name.toLowerCase().includes(query));
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('product-grid');
+      
+      if (filteredProducts.length === 0) {
+        grid.innerHTML = '<p class="text-slate-500 col-span-full text-center py-10">No drinks found.</p>';
+        return;
+      }
+
+      grid.innerHTML = filteredProducts.map(p => `
+        <div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, ${p.stock_quantity})" class="product-card glass-card p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition"><i data-lucide="${p.category === 'Beer' ? 'beer' : p.category === 'Spirits' ? 'wine' : 'glass-water'}" class="w-12 h-12 text-yellow-400"></i></div>
+          
+          <div class="relative z-10">
+            <h3 class="font-bold text-white text-sm leading-tight mb-1 line-clamp-2">${p.item_name}</h3>
+            <p class="text-yellow-400 font-black text-lg">₦${Number(p.price).toLocaleString()}</p>
+          </div>
+          
+          <div class="relative z-10 flex justify-between items-center mt-2 border-t border-slate-700/50 pt-2">
+            <span class="text-[10px] ${p.stock_quantity > 5 ? 'text-slate-400' : 'text-red-400 font-bold'}">${p.stock_quantity} left</span>
+            <div class="bg-yellow-500/20 p-1 rounded-md"><i data-lucide="plus" class="w-4 h-4 text-yellow-400"></i></div>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
     }
 
     function addToCart(id, name, price, stock) {
@@ -194,11 +236,32 @@
       renderCart();
     }
 
+    function changeQty(index, change) {
+      cart[index].qty += change;
+      if (cart[index].qty <= 0) cart.splice(index, 1);
+      renderCart();
+    }
+
+    function clearCart() {
+      if (cart.length === 0) return;
+      if (!confirm("Clear this order?")) return;
+      cart = [];
+      document.getElementById('table-number').value = '';
+      renderCart();
+    }
+
     function renderCart() {
       const list = document.getElementById('cart-items');
       if (cart.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-500 text-sm mt-10">No items added yet.</p>';
+        list.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-slate-500 fade-in">
+            <i data-lucide="glass-water" class="w-12 h-12 mb-3 opacity-20"></i>
+            <p class="text-sm">Tap a drink to add it</p>
+          </div>
+        `;
         document.getElementById('cart-total').textContent = '₦0';
+        document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0`;
+        lucide.createIcons();
         return;
       }
 
@@ -206,45 +269,39 @@
       list.innerHTML = cart.map((item, index) => {
         total += (item.price * item.qty);
         return `
-          <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
-            <div>
+          <div class="flex justify-between items-center bg-slate-800/80 p-3 rounded-xl border border-slate-700 fade-in">
+            <div class="flex-1">
               <p class="font-bold text-white text-sm">${item.name}</p>
-              <p class="text-xs text-yellow-400">₦${item.price.toLocaleString()}</p>
+              <p class="text-xs text-yellow-400 font-medium">₦${item.price.toLocaleString()}</p>
             </div>
-            <div class="flex items-center gap-3">
-              <button onclick="changeQty(${index}, -1)" class="bg-slate-700 w-8 h-8 rounded-full text-white font-bold flex items-center justify-center">-</button>
+            <div class="flex items-center gap-3 bg-slate-900 rounded-lg p-1">
+              <button onclick="changeQty(${index}, -1)" class="w-7 h-7 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center transition"><i data-lucide="minus" class="w-4 h-4"></i></button>
               <span class="font-bold text-white w-4 text-center">${item.qty}</span>
-              <button onclick="changeQty(${index}, 1)" class="bg-slate-700 w-8 h-8 rounded-full text-white font-bold flex items-center justify-center">+</button>
+              <button onclick="changeQty(${index}, 1)" class="w-7 h-7 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center transition"><i data-lucide="plus" class="w-4 h-4"></i></button>
             </div>
           </div>
         `;
       }).join('');
 
       document.getElementById('cart-total').textContent = `₦${total.toLocaleString()}`;
-    }
-
-    function changeQty(index, change) {
-      cart[index].qty += change;
-      if (cart[index].qty <= 0) cart.splice(index, 1);
-      renderCart();
+      document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦${total.toLocaleString()}`;
+      lucide.createIcons();
     }
 
     function setPaymentMethod(method) {
       selectedPaymentMethod = method;
-      ['Cash', 'POS', 'Transfer', 'Charge_to_Room'].forEach(m => {
-        const btn = document.getElementById(`pay-${m.toLowerCase().replace('_', '-')}`) || document.getElementById(`pay-room`);
-        // Reset all
-        document.getElementById('pay-cash').className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95";
-        document.getElementById('pay-pos').className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95";
-        document.getElementById('pay-transfer').className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95";
-        document.getElementById('pay-room').className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95";
+      
+      // Reset all buttons
+      ['pay-cash', 'pay-pos', 'pay-transfer', 'pay-room'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2 border border-slate-600";
       });
 
       // Highlight active
-      if (method === 'Cash') document.getElementById('pay-cash').className = "py-3 rounded-xl font-bold bg-emerald-500 text-black shadow-md transition active:scale-95";
-      if (method === 'POS') document.getElementById('pay-pos').className = "py-3 rounded-xl font-bold bg-blue-500 text-white shadow-md transition active:scale-95";
-      if (method === 'Transfer') document.getElementById('pay-transfer').className = "py-3 rounded-xl font-bold bg-purple-500 text-white shadow-md transition active:scale-95";
-      if (method === 'Charge_to_Room') document.getElementById('pay-room').className = "py-3 rounded-xl font-bold bg-orange-500 text-white shadow-md transition active:scale-95";
+      if (method === 'Cash') document.getElementById('pay-cash').className = "py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-emerald-400";
+      if (method === 'POS') document.getElementById('pay-pos').className = "py-3 rounded-xl font-bold bg-blue-500 text-white shadow-md shadow-blue-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-blue-400";
+      if (method === 'Transfer') document.getElementById('pay-transfer').className = "py-3 rounded-xl font-bold bg-purple-500 text-white shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-purple-400";
+      if (method === 'Charge_to_Room') document.getElementById('pay-room').className = "py-3 rounded-xl font-bold bg-orange-500 text-white shadow-md shadow-orange-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-orange-400";
     }
 
     async function loadRoomsForCharge() {
@@ -269,7 +326,7 @@
       if (!room) return alert("Please select a room.");
       selectedRoomForCharge = room;
       closeRoomModal();
-      processCheckout(); // Proceed immediately after room selection
+      processCheckout(); 
     }
 
     async function processCheckout() {
@@ -287,6 +344,7 @@
 
       let total = 0;
       cart.forEach(item => total += (item.price * item.qty));
+      const tableNum = document.getElementById('table-number').value.trim();
 
       try {
         // 1. Insert into POS Orders
@@ -294,7 +352,8 @@
           department: department,
           total_amount: total,
           payment_method: selectedPaymentMethod,
-          created_by: currentUser.id
+          created_by: currentUser.id,
+          table_number: tableNum || null // Save table/guest name if provided
         }).select().single();
         
         if (orderErr) throw orderErr;
@@ -330,16 +389,22 @@
           }
         }
 
-        alert(`✅ Order Completed!\nTotal: ₦${total.toLocaleString()}\nPaid via: ${selectedPaymentMethod}`);
+        // Success Animation / Sound
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+        audio.play().catch(e => console.log('Audio block'));
+
+        alert(`✅ Order Completed!\nTotal: ₦${total.toLocaleString()}\nMethod: ${selectedPaymentMethod}${tableNum ? '\nTable: '+tableNum : ''}`);
+        
+        // Reset for next customer
         cart = [];
         selectedRoomForCharge = null;
+        document.getElementById('table-number').value = '';
         renderCart();
         loadProducts(); // Reload to show updated stock
         
       } catch (err) {
         alert("Checkout Error: " + err.message);
       } finally {
-        btn.innerHTML = `Complete & Print`;
         btn.disabled = false;
       }
     }
