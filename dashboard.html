@@ -123,19 +123,22 @@
       </div>
     </div>
 
-    <!-- ================= DARK MODE VIEW (BARMAN & CHEF) ================= -->
+    <!-- ================= DARK MODE VIEW (F&B STAFF) ================= -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
       <div id="ops-low-stock-banner" class="hidden glass-card bg-red-500/10 border-red-500/30 p-4 rounded-xl flex items-start gap-3">
         <div class="bg-red-500/20 p-2 rounded-full text-red-400 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
         <div><h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3><p id="ops-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p></div>
       </div>
+      
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Total Sales Today</p><p id="ops-total-sales" class="text-2xl font-black gold-text">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Credits</p><p id="ops-credit-sales" class="text-2xl font-black text-amber-400">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Cash to Remit</p><p id="ops-cash-sales" class="text-2xl font-black text-emerald-400">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-indigo-500/20 to-transparent border-indigo-500/30"><p class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider mb-1">Shift Status</p><p id="ops-shift-status" class="text-lg font-bold text-white">No Active Shift</p></div>
       </div>
+      
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in" id="ops-action-buttons"></div>
+      
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
         <div class="glass-card p-5 rounded-2xl"><div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 id="ops-bills-title" class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bills (Checkout Due)</h3></div><div id="ops-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center"><div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div><h3 class="font-bold text-white mb-2">Received New Stock?</h3><p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p><a id="ops-stock-request-link" href="#" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a></div>
@@ -209,9 +212,12 @@
         const { data: profile } = await db.from('profiles').select('full_name, role').eq('id', user.id).single();
         if (!profile) return;
 
-        currentRole = profile.role;
+        currentRole = profile.role; // Read exact role from DB
+        
         document.getElementById('admin-name').textContent = profile.full_name;
         document.getElementById('user-role-display').textContent = profile.role;
+        
+        // --- BULLETPROOF ROLE ROUTING ---
         
         if (currentRole === 'receptionist') {
           document.getElementById('receptionist-view').classList.remove('hidden');
@@ -219,14 +225,22 @@
           loadReceptionistData();
           startHeartbeat();
         } 
-        else if (currentRole === 'barman' || currentRole === 'chef' || currentRole === 'kitchen') {
+        // GROUP ALL F&B STAFF TOGETHER
+        else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
           document.body.classList.add('dark-theme');
           document.getElementById('nav-brand').classList.add('text-white');
           document.getElementById('nav-welcome').classList.add('text-white');
           document.getElementById('dark-ops-view').classList.remove('hidden');
-          document.getElementById('duty-title').textContent = currentRole === 'barman' ? 'Barman on Duty' : 'Chef on Duty';
+          
+          let title = 'Staff on Duty';
+          if (currentRole === 'barman' || currentRole === 'bar') title = 'Barman on Duty';
+          if (currentRole === 'chef' || currentRole === 'kitchen') title = 'Chef on Duty';
+          if (currentRole === 'waitress') title = 'Waitress on Duty';
+          
+          document.getElementById('duty-title').textContent = title;
           loadDarkOpsData(currentRole);
         }
+        // FALLBACK FOR OTHERS (Manager, Admin, etc.)
         else {
           document.getElementById('standard-view').classList.remove('hidden');
           document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
@@ -456,7 +470,7 @@
 
     async function loadDarkOpsData(role) {
       const today = new Date().toISOString().split('T')[0];
-      const dept = role === 'barman' ? 'Bar' : 'Kitchen';
+      const dept = role === 'barman' ? 'Bar' : role === 'waitress' ? 'Waitress' : 'Kitchen';
       
       const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', dept).gte('created_at', today);
       let cash = 0, credit = 0;
@@ -470,28 +484,35 @@
       if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; } 
       else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
 
-      const { data: lowStock } = await db.from('inventory').select('*').eq('department', dept).lte('stock_quantity', 5);
-      const banner = document.getElementById('ops-low-stock-banner');
-      if (lowStock && lowStock.length > 0) { banner.classList.remove('hidden'); document.getElementById('ops-low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', '); } 
-      else { banner.classList.add('hidden'); }
-
       const btnContainer = document.getElementById('ops-action-buttons');
-      const posLink = `pos.html?dept=${dept}`;
-      const shiftLink = `shift-handover.html`; // UPDATED TO NEW FILE
-      const ordersLink = role === 'barman' ? 'bar-orders.html' : 'order-board.html';
-      const stockLink = `stock-request.html?dept=${dept}`;
-      const icon = role === 'barman' ? 'wine' : 'chef-hat';
-      const title = role === 'barman' ? 'Bar' : 'Kitchen';
+      let buttonsHtml = '';
 
-      btnContainer.innerHTML = `
-        <a href="${posLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="${icon}" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">${title} POS</span></a>
-        <a href="${shiftLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Shift & Handover</span></a>
-        <a href="${ordersLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">${title} Orders</span></a>
-        <a href="stock-request.html?dept=${dept}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="package" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Stock Req</span></a>
-      `;
+      if (dept === 'Waitress') {
+          buttonsHtml = `
+            <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="utensils-crossed" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Take Order</span></a>
+            <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift & Handover</span></a>
+            <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">My Orders</span></a>
+            <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="receipt" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Room Charges</span></a>
+          `;
+      } else if (dept === 'Kitchen') {
+          buttonsHtml = `
+            <a href="pos.html?dept=Kitchen" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="chef-hat" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Kitchen POS</span></a>
+            <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift & Handover</span></a>
+            <a href="order-board.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Kitchen Orders</span></a>
+            <a href="stock-request.html?dept=Kitchen" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="package" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Stock Req</span></a>
+          `;
+      } else {
+          buttonsHtml = `
+            <a href="pos.html?dept=Bar" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="wine" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar POS</span></a>
+            <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift & Handover</span></a>
+            <a href="bar-orders.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar Orders</span></a>
+            <a href="stock-request.html?dept=Bar" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="package" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Stock Req</span></a>
+          `;
+      }
       
-      document.getElementById('ops-stock-request-link').href = stockLink;
-      document.getElementById('ops-bills-title').innerHTML = `<i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room ${title} Bills (Checkout Due)`;
+      btnContainer.innerHTML = buttonsHtml;
+      document.getElementById('ops-stock-request-link').href = `stock-request.html?dept=${dept}`;
+      document.getElementById('ops-bills-title').innerHTML = `<i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room ${dept} Bills (Checkout Due)`;
 
       const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
       const list = document.getElementById('ops-room-bills-list');
@@ -500,10 +521,10 @@
         let billsHtml = '', hasBills = false;
         departures.forEach(d => {
            const totalOwed = (charges?.filter(c => c.booking_id === d.id) || []).reduce((sum, c) => sum + Number(c.amount), 0);
-           if (totalOwed > 0) { hasBills = true; billsHtml += `<div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">${title} Bill</p></div></div>`; }
+           if (totalOwed > 0) { hasBills = true; billsHtml += `<div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">${dept} Bill</p></div></div>`; }
         });
         if (hasBills) list.innerHTML = billsHtml;
-        else list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No ${title.toLowerCase()} bills owed by checking-out guests today.</p>`;
+        else list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No ${dept.toLowerCase()} bills owed by checking-out guests today.</p>`;
       } else { list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>'; }
       
       lucide.createIcons();
