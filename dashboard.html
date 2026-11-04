@@ -42,7 +42,6 @@
     
     .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
     
-    /* BLINKING ALERT ANIMATION */
     @keyframes blink {
       0% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -69,7 +68,6 @@
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
       
-      <!-- LIVE UPGRADE REQUEST ALERT -->
       <div id="live-upgrade-alert" class="hidden bg-red-600 text-white p-4 rounded-xl shadow-lg fade-in flex justify-between items-center blink-alert cursor-pointer" onclick="window.location.href='manage-booking.html'">
         <div class="flex items-center gap-3">
             <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
@@ -222,8 +220,6 @@
           document.getElementById('receptionist-view').classList.remove('hidden');
           document.getElementById('duty-title').textContent = 'Receptionist on Duty';
           loadReceptionistData();
-          
-          // START THE LIVE HEARTBEAT
           startHeartbeat();
         } 
         else if (currentRole === 'barman' || currentRole === 'chef' || currentRole === 'kitchen') {
@@ -246,33 +242,40 @@
       }
     }
 
-    // --- HEARTBEAT LOGIC (Checks for updates every 10 seconds) ---
     function startHeartbeat() {
-        checkUpgradeRequests(); // Run immediately
+        checkUpgradeRequests(); 
         heartbeatInterval = setInterval(() => {
             checkUpgradeRequests();
-        }, 10000); // 10 seconds
+        }, 10000); 
     }
 
     async function checkUpgradeRequests() {
-        const { data: requests, error } = await db.from('guest_orders')
+        const { data: pending } = await db.from('guest_orders')
             .select('*')
             .eq('department', 'Upgrade Request')
             .eq('status', 'Pending');
 
+        const { data: autoLogs } = await db.from('guest_orders')
+            .select('*')
+            .eq('department', 'Upgrade Log')
+            .eq('status', 'Completed')
+            .gte('created_at', new Date(Date.now() - 5 * 60000).toISOString());
+
         const alertBanner = document.getElementById('live-upgrade-alert');
-        
-        if (requests && requests.length > 0) {
+        const alertText = document.getElementById('live-upgrade-text');
+
+        if (pending && pending.length > 0) {
             alertBanner.classList.remove('hidden');
-            document.getElementById('live-upgrade-text').textContent = `You have ${requests.length} pending guest upgrade request(s) waiting for approval.`;
-            
-            // Play a notification sound
-            try {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                audio.volume = 0.5;
-                audio.play().catch(e => {}); 
-            } catch(err) {}
-        } else {
+            alertBanner.classList.replace('bg-emerald-600', 'bg-red-600');
+            alertText.textContent = `URGENT: ${pending.length} guest(s) requested a manual upgrade. Click to review.`;
+            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
+        } 
+        else if (autoLogs && autoLogs.length > 0) {
+            alertBanner.classList.remove('hidden');
+            alertBanner.classList.replace('bg-red-600', 'bg-emerald-600');
+            alertText.textContent = `NOTICE: ${autoLogs.length} guest(s) upgraded their room via the app. Room status updated automatically.`;
+        } 
+        else {
             alertBanner.classList.add('hidden');
         }
     }
@@ -601,8 +604,8 @@
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out'); const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
       
       if (role === 'super_admin') { buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network'); buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); }
-      else if (['md', 'admin', 'manager'].includes(role)) { buttons += auditBtn; buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights'); buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); buttons += btn('checkout.html', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); buttons += btn('guest-history.html', 'users', 'text-indigo-400', 'bg-indigo-500/20', 'Guest Directory'); buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); buttons += orderBtn; buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager'); buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); buttons += clockBtn; buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal'); }
-      else if (role === 'accountant') { buttons += auditBtn; buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('pos.html?dept=Kitchen&tab=orders', 'bell', 'text-orange-400', 'bg-orange-500/20', 'Live Orders'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += clockBtn; }
+      else if (['md', 'admin', 'manager'].includes(role)) { buttons += auditBtn; buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit'); buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights'); buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); buttons += btn('checkout.html', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); buttons += btn('guest-history.html', 'users', 'text-indigo-400', 'bg-indigo-500/20', 'Guest Directory'); buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); buttons += orderBtn; buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager'); buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); buttons += clockBtn; buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal'); }
+      else if (role === 'accountant') { buttons += auditBtn; buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit'); buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('pos.html?dept=Kitchen&tab=orders', 'bell', 'text-orange-400', 'bg-orange-500/20', 'Live Orders'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += clockBtn; }
       else if (role === 'supervisor') { buttons += auditBtn; buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
       else if (role === 'housekeeping') { buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
       else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += clockBtn; }

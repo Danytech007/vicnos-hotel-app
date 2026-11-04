@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Night Audit</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script> 
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #0b1120; color: #f8fafc; }
+    .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-slate-900/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50 p-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-slate-800 p-2 rounded-xl text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-white text-lg leading-tight">Night Audit</h1><p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">End of Day Report</p></div>
+    </div>
+    <div class="bg-indigo-500/20 p-2 rounded-full text-indigo-400"><i data-lucide="moon" class="w-5 h-5"></i></div>
+  </nav>
+
+  <main class="p-4 max-w-4xl mx-auto space-y-6 mt-4">
+    
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-bold text-white mb-1">Daily Sales Summary</h2>
+      <p id="audit-date" class="text-sm text-slate-400 font-medium">Loading date...</p>
+    </div>
+
+    <!-- REVENUE CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+        <i data-lucide="bed" class="absolute -right-4 -bottom-4 w-24 h-24 text-blue-500/10"></i>
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Revenue</p>
+        <p id="room-revenue" class="text-3xl font-black text-blue-400">₦0</p>
+        <p id="room-count" class="text-xs text-slate-500 mt-2">0 Check-ins today</p>
+      </div>
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+        <i data-lucide="wine" class="absolute -right-4 -bottom-4 w-24 h-24 text-amber-500/10"></i>
+        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Bar & Kitchen</p>
+        <p id="pos-revenue" class="text-3xl font-black text-amber-400">₦0</p>
+        <p class="text-xs text-slate-500 mt-2">Minimart: <span id="minimart-revenue" class="text-slate-300 font-bold">₦0</span></p>
+      </div>
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden border-emerald-500/30">
+        <i data-lucide="banknote" class="absolute -right-4 -bottom-4 w-24 h-24 text-emerald-500/10"></i>
+        <p class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider mb-1">Total Revenue</p>
+        <p id="total-revenue" class="text-3xl font-black text-emerald-400">₦0</p>
+        <p class="text-xs text-slate-500 mt-2">Combined Gross</p>
+      </div>
+    </div>
+
+    <!-- BREAKDOWN -->
+    <div class="glass-card p-6 rounded-2xl mt-6">
+      <h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">Revenue Breakdown</h3>
+      
+      <div class="space-y-4 text-sm">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-300">Total Cash Collected</span>
+          <span id="total-cash" class="font-bold text-emerald-400 text-lg">₦0</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-300">Total Charged to Rooms (Credits)</span>
+          <span id="total-credit" class="font-bold text-amber-400 text-lg">₦0</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-300">Bar Sales Breakdown</span>
+          <span id="bar-sales" class="font-bold text-slate-200">₦0</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-300">Kitchen Sales Breakdown</span>
+          <span id="kitchen-sales" class="font-bold text-slate-200">₦0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTION BUTTON -->
+    <div class="mt-8">
+      <button onclick="runNightAudit()" id="audit-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2 text-lg">
+        <i data-lucide="check-circle" class="w-6 h-6"></i> Run Night Audit & Close Day
+      </button>
+      <p class="text-center text-xs text-slate-500 mt-4">This will permanently save today's report to the database. This action cannot be undone.</p>
+    </div>
+
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let auditData = {
+        roomRevenue: 0, barRevenue: 0, kitchenRevenue: 0, minimartRevenue: 0,
+        cashTotal: 0, creditTotal: 0, totalRevenue: 0
+    };
+
+    async function init() {
+        const { data: { user } } = await db.auth.getUser();
+        if (!user) { window.location.href = 'index.html'; return; }
+        currentUser = user;
+
+        const today = new Date();
+        document.getElementById('audit-date').textContent = today.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        await calculateTotals();
+    }
+
+    async function calculateTotals() {
+        const today = new Date().toISOString().split('T')[0];
+
+        // 1. Room Revenue (Bookings checked in today)
+        const { data: bookings } = await db.from('bookings')
+            .select('id, rooms(price_per_night)')
+            .gte('check_in_date', today + 'T00:00:00')
+            .lte('check_in_date', today + 'T23:59:59');
+        
+        if (bookings) {
+            bookings.forEach(b => {
+                if (b.rooms && b.rooms.price_per_night) auditData.roomRevenue += Number(b.rooms.price_per_night);
+            });
+            document.getElementById('room-count').textContent = `${bookings.length} Check-ins today`;
+        }
+        document.getElementById('room-revenue').textContent = `₦${auditData.roomRevenue.toLocaleString()}`;
+
+        // 2. POS Revenue (Bar, Kitchen, Minimart)
+        const { data: posOrders } = await db.from('pos_orders')
+            .select('total_amount, department, payment_method')
+            .gte('created_at', today + 'T00:00:00')
+            .lte('created_at', today + 'T23:59:59');
+
+        if (posOrders) {
+            posOrders.forEach(order => {
+                const amt = Number(order.total_amount);
+                auditData.totalRevenue += amt; // Add to total
+
+                if (order.department === 'Bar') auditData.barRevenue += amt;
+                if (order.department === 'Kitchen') auditData.kitchenRevenue += amt;
+                if (order.department === 'Minimart') auditData.minimartRevenue += amt;
+
+                if (order.payment_method === 'Charge_to_Room') {
+                    auditData.creditTotal += amt;
+                } else {
+                    auditData.cashTotal += amt;
+                }
+            });
+        }
+
+        // Add Room Revenue to total and cash (assuming rooms are paid at check-in)
+        auditData.totalRevenue += auditData.roomRevenue;
+        auditData.cashTotal += auditData.roomRevenue;
+
+        // 3. Update UI
+        document.getElementById('pos-revenue').textContent = `₦${(auditData.barRevenue + auditData.kitchenRevenue).toLocaleString()}`;
+        document.getElementById('minimart-revenue').textContent = `₦${auditData.minimartRevenue.toLocaleString()}`;
+        document.getElementById('total-revenue').textContent = `₦${auditData.totalRevenue.toLocaleString()}`;
+        
+        document.getElementById('total-cash').textContent = `₦${auditData.cashTotal.toLocaleString()}`;
+        document.getElementById('total-credit').textContent = `₦${auditData.creditTotal.toLocaleString()}`;
+        
+        document.getElementById('bar-sales').textContent = `₦${auditData.barRevenue.toLocaleString()}`;
+        document.getElementById('kitchen-sales').textContent = `₦${auditData.kitchenRevenue.toLocaleString()}`;
+    }
+
+    async function runNightAudit() {
+        if (!confirm("Are you sure you want to close the day? This will save the report permanently.")) return;
+
+        const btn = document.getElementById('audit-btn');
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Saving Report...`;
+        btn.disabled = true;
+
+        const today = new Date().toISOString().split('T')[0];
+
+        try {
+            // Insert into the night_audits table
+            const { error } = await db.from('night_audits').insert({
+                audit_date: today,
+                total_room_revenue: auditData.roomRevenue,
+                total_bar_revenue: auditData.barRevenue,
+                total_kitchen_revenue: auditData.kitchenRevenue,
+                total_minimart_revenue: auditData.minimartRevenue,
+                total_cash_collected: auditData.cashTotal,
+                total_room_credits: auditData.creditTotal,
+                total_revenue: auditData.totalRevenue,
+                audited_by: currentUser.id
+            });
+
+            if (error) throw error;
+
+            alert("✅ Night Audit Successful!\n\nThe daily report has been saved permanently. The system is now ready for tomorrow.");
+            window.location.href = 'dashboard.html';
+
+        } catch (err) {
+            alert("Audit Failed: " + err.message);
+            btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Run Night Audit & Close Day`;
+            btn.disabled = false;
+        }
+    }
+
+    init();
+  </script>
+</body>
+</html>
