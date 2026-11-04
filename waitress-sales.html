@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vicnos - Waitress Portal</title>
+  <title>Vicnos - Waitress POS</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#f8fafc">
@@ -20,31 +20,31 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
+    .cart-panel { transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+    .cart-panel.open { transform: translateY(0); }
   </style>
 </head>
 <body class="flex flex-col">
 
-  <nav class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100 shrink-0">
+  <nav class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-40 border-b border-gray-100 shrink-0">
     <div class="flex items-center gap-3">
       <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
-      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Waitress Portal</h1><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Orders & Kitchen Stock</p></div>
+      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Waitress Portal</h1><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Floor Manager</p></div>
     </div>
     <div class="bg-indigo-50 p-2 rounded-full text-indigo-600"><i data-lucide="utensils-crossed" class="w-5 h-5"></i></div>
   </nav>
 
-  <!-- LOW STOCK BANNER (KITCHEN ONLY) -->
   <div id="low-stock-banner" class="hidden bg-red-50 border-b border-red-200 p-3 flex items-start gap-2 shrink-0">
     <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mt-0.5"></i>
     <div><p class="text-xs text-red-800 font-bold">Kitchen Low Stock Alert!</p><p id="low-stock-items" class="text-[10px] text-red-600 font-medium">Loading...</p></div>
   </div>
 
-  <!-- LIVE BLINKING ALERT -->
   <div id="live-order-alert" class="hidden fixed top-20 left-4 right-4 z-[60] bg-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between cursor-pointer blink-alert" onclick="switchTab('orders')">
     <div class="flex items-center gap-3">
       <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
       <div>
-        <h3 class="font-black text-lg">NEW ORDER READY!</h3>
-        <p class="text-red-100 text-xs font-medium">Tap here to view and deliver.</p>
+        <h3 class="font-black text-lg">ORDER READY FOR PICKUP!</h3>
+        <p class="text-red-100 text-xs font-medium">The Bar or Kitchen has finished a docket.</p>
       </div>
     </div>
     <i data-lucide="chevron-right" class="w-8 h-8"></i>
@@ -52,67 +52,69 @@
 
   <div class="max-w-4xl mx-auto px-4 mt-4 flex gap-2 overflow-x-auto hide-scroll w-full shrink-0">
     <button onclick="switchTab('pos')" id="tab-btn-pos" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md whitespace-nowrap transition">Take Order</button>
-    <button onclick="switchTab('orders')" id="tab-btn-orders" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition flex items-center justify-center gap-1">My Orders <span id="order-badge" class="hidden bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span></button>
-    <button onclick="switchTab('shift')" id="tab-btn-shift" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition">Shift & Stock</button>
+    <button onclick="switchTab('orders')" id="tab-btn-orders" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition flex items-center justify-center gap-1">Live Board <span id="order-badge" class="hidden bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span></button>
+    <button onclick="switchTab('shift')" id="tab-btn-shift" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition">Shift</button>
   </div>
 
-  <main class="flex-1 flex flex-col w-full overflow-hidden max-w-4xl mx-auto p-4 pb-0">
+  <main class="flex-1 flex flex-col w-full overflow-hidden max-w-4xl mx-auto p-4 pb-0 relative">
 
     <!-- TAB 1: TAKE ORDER -->
     <div id="tab-pos" class="flex-1 flex flex-col min-h-0 fade-in">
-      
-      <!-- Table Input -->
       <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 mb-3 shrink-0 flex items-center gap-2">
         <i data-lucide="map-pin" class="w-5 h-5 text-indigo-500"></i>
-        <input type="text" id="table-input" placeholder="Table No. / Location" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-xl outline-none font-bold text-lg focus:border-indigo-500 transition">
+        <input type="text" id="table-input" placeholder="Table No. / Room No." class="w-full bg-gray-50 border border-gray-200 p-2 rounded-xl outline-none font-bold text-lg focus:border-indigo-500 transition">
       </div>
-
-      <!-- Category Tabs -->
       <div class="flex gap-2 overflow-x-auto hide-scroll pb-2 shrink-0" id="category-tabs"></div>
-      
-      <!-- Product Grid (Scrollable) -->
-      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4 min-h-0">
+      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-24 min-h-0">
         <p class="text-gray-500 text-sm animate-pulse col-span-full">Loading menu...</p>
       </div>
+      <div class="fixed bottom-6 right-6 z-40">
+        <button onclick="toggleCart()" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center gap-2 font-bold text-lg active:scale-95 transition">
+          <i data-lucide="shopping-cart" class="w-6 h-6"></i>
+          <span id="mobile-cart-total">₦0</span>
+        </button>
+      </div>
+    </div>
 
-      <!-- Fixed Bottom Cart -->
-      <div class="w-full bg-white rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.05)] border border-gray-200 flex flex-col shrink-0 h-[40vh] relative z-20 mt-2 -mx-4 px-4 pt-4 pb-4 rounded-b-none md:mx-0 md:px-0 md:pb-0 md:rounded-b-2xl md:h-auto">
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-4 h-4 text-indigo-500"></i> Current Order</h3>
-          <button onclick="clearCart()" class="text-xs text-red-500 font-bold">Clear</button>
-        </div>
+    <!-- TAB 2: LIVE BOARD -->
+    <div id="tab-orders" class="hidden flex-1 flex flex-col min-h-0 fade-in pb-24">
+      <div class="flex justify-between items-center mb-2 shrink-0">
+        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="monitor" class="w-5 h-5 text-indigo-500"></i> Live Orders Board</h2>
+        <button onclick="loadLiveOrders()" class="text-gray-400 hover:text-indigo-600"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-gray-500 mb-4 shrink-0">Track the Kitchen and Bar in real-time. Deliver orders when ready.</p>
+      
+      <div class="flex-1 overflow-y-auto hide-scroll space-y-6">
         
-        <div id="cart-items" class="flex-1 overflow-y-auto space-y-2 hide-scroll min-h-0 mb-2">
-          <p class="text-center text-gray-400 text-sm mt-4">Add items to order</p>
-        </div>
-        
-        <div class="border-t border-gray-100 pt-2 shrink-0">
-          <div class="flex justify-between items-center mb-2">
-            <span class="font-bold text-gray-600">Total:</span>
-            <span id="cart-total" class="text-2xl font-black text-indigo-600">₦0</span>
+        <!-- COOKING / MIXING -->
+        <div>
+          <h3 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i> Cooking & Mixing</h3>
+          <div id="cooking-list" class="space-y-2">
+            <p class="text-xs text-gray-400">Nothing on the stove or at the bar yet.</p>
           </div>
-          <button onclick="sendOrder()" id="send-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
-            <i data-lucide="send" class="w-5 h-5"></i> Send to Kitchen & Bar
-          </button>
         </div>
+
+        <!-- READY FOR PICKUP -->
+        <div>
+          <h3 class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> Ready for Pickup</h3>
+          <div id="ready-list" class="space-y-2">
+            <p class="text-xs text-gray-400">No food or drinks ready.</p>
+          </div>
+        </div>
+
+        <!-- DELIVERED (Today) -->
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Recently Delivered</h3>
+          <div id="delivered-list" class="space-y-2 opacity-60">
+            <p class="text-xs text-gray-400">No recent deliveries.</p>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- TAB 2: MY ORDERS -->
-    <div id="tab-orders" class="hidden flex-1 overflow-y-auto hide-scroll fade-in">
-      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-indigo-500"></i> Active Orders</h2>
-          <button onclick="loadLiveOrders()" class="text-gray-400 hover:text-indigo-600"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
-        </div>
-        <div id="orders-list" class="space-y-3"><p class="text-center text-gray-500 text-sm py-4 animate-pulse">Loading...</p></div>
-      </div>
-    </div>
-
-    <!-- TAB 3: SHIFT & KITCHEN STOCK -->
-    <div id="tab-shift" class="hidden flex-1 overflow-y-auto hide-scroll space-y-4 fade-in pb-10">
-        
-        <!-- Active Shift -->
+    <!-- TAB 3: SHIFT -->
+    <div id="tab-shift" class="hidden flex-1 overflow-y-auto hide-scroll space-y-4 fade-in pb-24">
         <div id="active-shift-panel" class="hidden space-y-4">
             <div class="bg-slate-900 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden">
               <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Active Shift Sales</h2>
@@ -126,43 +128,64 @@
               <i data-lucide="door-closed" class="w-5 h-5"></i> End Shift & Count Kitchen
             </button>
         </div>
-
-        <!-- Pending Approval -->
         <div id="pending-shift-panel" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-gray-200 text-center">
-            <div class="bg-amber-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i data-lucide="hourglass" class="w-8 h-8 text-amber-500"></i>
-            </div>
+            <div class="bg-amber-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="hourglass" class="w-8 h-8 text-amber-500"></i></div>
             <h2 class="text-xl font-bold text-gray-900 mb-1">Shift Ended</h2>
             <p class="text-xs text-gray-500 mb-6">Waiting for Manager approval.</p>
         </div>
-
-        <!-- Start Shift with Kitchen Stock Verification -->
         <div id="start-shift-panel" class="hidden bg-white p-5 rounded-3xl shadow-sm border border-gray-200">
             <div class="text-center mb-6">
-                <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i data-lucide="clipboard-check" class="w-8 h-8 text-indigo-600"></i>
-                </div>
+                <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="clipboard-check" class="w-8 h-8 text-indigo-600"></i></div>
                 <h2 class="text-xl font-bold text-gray-900 mb-1">Start New Shift</h2>
-                <p class="text-xs text-gray-500">Verify the physical KITCHEN stock before starting.</p>
+                <p class="text-xs text-gray-500">Verify physical KITCHEN stock before starting.</p>
             </div>
-
             <p class="text-xs font-bold text-gray-500 uppercase mb-2">Kitchen Food Stock</p>
             <div class="overflow-x-auto max-h-[40vh] mb-4 border rounded-xl">
                 <table class="w-full text-left text-sm text-gray-600">
                     <thead class="text-xs uppercase bg-gray-100 text-gray-500 sticky top-0">
-                        <tr>
-                            <th class="px-3 py-2">Item</th>
-                            <th class="px-3 py-2 text-center">Expected</th>
-                            <th class="px-3 py-2 text-center">Physical</th>
-                        </tr>
+                        <tr><th class="px-3 py-2">Item</th><th class="px-3 py-2 text-center">Expected</th><th class="px-3 py-2 text-center">Physical</th></tr>
                     </thead>
                     <tbody id="start-shift-table-body"></tbody>
                 </table>
             </div>
-
             <button onclick="submitOpeningCount()" id="start-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition">Confirm Count & Start</button>
         </div>
+    </div>
 
+    <!-- SLIDING CART PANEL -->
+    <div id="cart-panel" class="cart-panel fixed inset-0 bg-black/60 z-[70] hidden flex-col justify-end">
+      <div class="bg-white w-full max-w-2xl mx-auto rounded-t-3xl h-[80vh] flex flex-col shadow-2xl relative">
+        <div class="p-4 border-b border-gray-100 flex justify-between items-center shrink-0">
+          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-indigo-500"></i> Current Order</h2>
+          <button onclick="toggleCart()" class="bg-gray-100 p-2 rounded-full text-gray-600 hover:bg-gray-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-2 hide-scroll min-h-0">
+          <p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>
+        </div>
+        <div class="p-4 border-t border-gray-100 bg-gray-50 shrink-0 pb-8">
+          <div class="flex justify-between items-center mb-4">
+            <span class="font-bold text-gray-600">Total:</span>
+            <span id="cart-total" class="text-3xl font-black text-indigo-600">₦0</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <button onclick="setPaymentMethod('Cash')" id="pay-cash" class="py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="banknote" class="w-4 h-4"></i> Cash</button>
+            <button onclick="setPaymentMethod('POS')" id="pay-pos" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> Card/POS</button>
+            <button onclick="setPaymentMethod('Transfer')" id="pay-transfer" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="smartphone" class="w-4 h-4"></i> Transfer</button>
+            <button onclick="setPaymentMethod('Charge_to_Room')" id="pay-room" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="door-closed" class="w-4 h-4"></i> To Room</button>
+          </div>
+          <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Selection Modal -->
+    <div id="room-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+      <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in border-t-4 border-indigo-500">
+        <h2 class="text-xl font-bold text-gray-900 mb-2 text-center">Charge to Room</h2>
+        <p class="text-xs text-gray-500 text-center mb-6">Select the guest's room number.</p>
+        <select id="room-select" class="w-full bg-gray-50 border border-gray-300 p-4 rounded-xl text-gray-900 outline-none font-bold text-lg mb-6"><option value="">-- Select Room --</option></select>
+        <div class="flex gap-3"><button onclick="closeRoomModal()" class="w-1/3 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Cancel</button><button onclick="confirmRoomCharge()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">Confirm</button></div>
+      </div>
     </div>
 
   </main>
@@ -183,6 +206,9 @@
     let activeShift = null;
     let shiftSales = { cash: 0, credit: 0, total: 0 };
     let lastOrderCount = 0;
+    
+    let selectedPaymentMethod = 'Cash';
+    let selectedRoomForCharge = null;
 
     async function init() {
         const { data: { user } } = await db.auth.getUser();
@@ -193,6 +219,7 @@
         loadLowStock();
         checkShiftStatus();
         loadLiveOrders();
+        loadRoomsForCharge();
         
         setInterval(() => { loadLiveOrders(true); }, 10000);
     }
@@ -212,7 +239,52 @@
         }
     }
 
-    // --- SHIFT & KITCHEN STOCK LOGIC ---
+    // --- CART SLIDER ---
+    function toggleCart() {
+        const panel = document.getElementById('cart-panel');
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            panel.classList.add('flex');
+            setTimeout(() => panel.querySelector('.cart-panel').classList.add('open'), 10);
+        } else {
+            panel.querySelector('.cart-panel').classList.remove('open');
+            setTimeout(() => { panel.classList.add('hidden'); panel.classList.remove('flex'); }, 300);
+        }
+    }
+
+    // --- PAYMENT METHODS ---
+    function setPaymentMethod(method) {
+        selectedPaymentMethod = method;
+        ['pay-cash', 'pay-pos', 'pay-transfer', 'pay-room'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2 border border-slate-600";
+        });
+
+        if (method === 'Cash') document.getElementById('pay-cash').className = "py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-emerald-400";
+        if (method === 'POS') document.getElementById('pay-pos').className = "py-3 rounded-xl font-bold bg-blue-500 text-white shadow-md shadow-blue-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-blue-400";
+        if (method === 'Transfer') document.getElementById('pay-transfer').className = "py-3 rounded-xl font-bold bg-purple-500 text-white shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-purple-400";
+        if (method === 'Charge_to_Room') document.getElementById('pay-room').className = "py-3 rounded-xl font-bold bg-orange-500 text-white shadow-md shadow-orange-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-orange-400";
+    }
+
+    async function loadRoomsForCharge() {
+      const { data: rooms } = await db.from('rooms').select('id, room_number');
+      const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
+      
+      const occupiedRoomIds = activeBookings ? activeBookings.map(b => b.room_id) : [];
+      const occupiedRooms = rooms ? rooms.filter(r => occupiedRoomIds.includes(r.id)) : [];
+      
+      const select = document.getElementById('room-select');
+      select.innerHTML = '<option value="">-- Select Room --</option>';
+      if (occupiedRooms.length > 0) {
+        occupiedRooms.sort((a, b) => a.room_number.localeCompare(b.room_number));
+        occupiedRooms.forEach(r => { select.innerHTML += `<option value="${r.room_number}">Room ${r.room_number}</option>`; });
+      } else { select.innerHTML = '<option value="">No active guests found.</option>'; }
+    }
+
+    function closeRoomModal() { document.getElementById('room-modal').classList.add('hidden'); document.getElementById('room-modal').classList.remove('flex'); }
+    function confirmRoomCharge() { const room = document.getElementById('room-select').value; if (!room) return alert("Please select a room."); selectedRoomForCharge = room; closeRoomModal(); processCheckout(); }
+
+    // --- SHIFT & STOCK ---
     async function checkShiftStatus() {
         document.getElementById('start-shift-panel').classList.add('hidden');
         document.getElementById('active-shift-panel').classList.add('hidden');
@@ -220,79 +292,32 @@
 
         const { data: myActive } = await db.from('shifts').select('*').eq('user_id', myUserId).eq('department', 'Waitress').eq('status', 'Active').limit(1);
         if (myActive && myActive.length > 0) {
-            activeShift = myActive[0];
-            document.getElementById('active-shift-panel').classList.remove('hidden');
-            loadLiveSales();
-            return;
+            activeShift = myActive[0]; document.getElementById('active-shift-panel').classList.remove('hidden'); loadLiveSales(); return;
         }
-
         const { data: myPending } = await db.from('shifts').select('*').eq('user_id', myUserId).eq('department', 'Waitress').eq('status', 'Pending_Approval').limit(1);
-        if (myPending && myPending.length > 0) {
-            document.getElementById('pending-shift-panel').classList.remove('hidden');
-            return;
-        }
-
-        document.getElementById('start-shift-panel').classList.remove('hidden');
-        loadOpeningCount();
+        if (myPending && myPending.length > 0) { document.getElementById('pending-shift-panel').classList.remove('hidden'); return; }
+        document.getElementById('start-shift-panel').classList.remove('hidden'); loadOpeningCount();
     }
 
     async function loadOpeningCount() {
         const tbody = document.getElementById('start-shift-table-body');
         tbody.innerHTML = '';
-
-        // FETCH ONLY KITCHEN ITEMS
         const { data: items } = await db.from('inventory').select('*').eq('department', 'Kitchen');
-        
-        if (!items || items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-500">No Kitchen items found.</td></tr>';
-            return;
-        }
-
-        items.forEach(item => {
-            tbody.innerHTML += `
-                <tr class="border-b border-gray-100">
-                    <td class="px-3 py-3 font-bold text-gray-800 text-xs">${item.item_name}</td>
-                    <td class="px-3 py-3 text-center text-gray-500 font-bold text-xs">${item.stock_quantity}</td>
-                    <td class="px-3 py-3 text-center">
-                        <input type="number" id="open-phys-${item.id}" placeholder="${item.stock_quantity}" class="w-16 bg-gray-50 border border-gray-300 rounded-lg p-1.5 text-center text-gray-800 outline-none focus:border-indigo-500 font-bold text-xs">
-                    </td>
-                </tr>
-            `;
-        });
+        if (!items || items.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-500">No Kitchen items found.</td></tr>'; return; }
+        items.forEach(item => { tbody.innerHTML += `<tr class="border-b border-gray-100"><td class="px-3 py-3 font-bold text-gray-800 text-xs">${item.item_name}</td><td class="px-3 py-3 text-center text-gray-500 font-bold text-xs">${item.stock_quantity}</td><td class="px-3 py-3 text-center"><input type="number" id="open-phys-${item.id}" placeholder="${item.stock_quantity}" class="w-16 bg-gray-50 border border-gray-300 rounded-lg p-1.5 text-center text-gray-800 outline-none focus:border-indigo-500 font-bold text-xs"></td></tr>`; });
     }
 
     async function submitOpeningCount() {
         const rows = document.querySelectorAll('[id^="open-phys-"]');
-        let counts = [];
-        let hasEmpty = false;
-
-        rows.forEach(input => {
-            if (!input.value) hasEmpty = true;
-            const id = input.id.replace('open-phys-', '');
-            counts.push({ id, physical: parseInt(input.value) || 0 });
-        });
-
+        let counts = []; let hasEmpty = false;
+        rows.forEach(input => { if (!input.value) hasEmpty = true; counts.push({ id: input.id.replace('open-phys-', ''), physical: parseInt(input.value) || 0 }); });
         if (hasEmpty) return alert("Please enter the physical count for ALL kitchen items.");
-
-        const btn = document.getElementById('start-btn');
-        btn.textContent = "Starting..."; btn.disabled = true;
-
+        const btn = document.getElementById('start-btn'); btn.textContent = "Starting..."; btn.disabled = true;
         try {
-            // Update Inventory to match her physical count
-            for (const c of counts) {
-                await db.from('inventory').update({ stock_quantity: c.physical }).eq('id', c.id);
-            }
-
-            // Start Shift
+            for (const c of counts) { await db.from('inventory').update({ stock_quantity: c.physical }).eq('id', c.id); }
             await db.from('shifts').insert({ user_id: myUserId, department: 'Waitress', status: 'Active' });
-
-            alert("✅ Shift started!");
-            checkShiftStatus();
-
-        } catch (err) {
-            alert("Error: " + err.message);
-            btn.textContent = "Confirm Count & Start"; btn.disabled = false;
-        }
+            alert("✅ Shift started!"); checkShiftStatus();
+        } catch (err) { alert("Error: " + err.message); btn.textContent = "Confirm Count & Start"; btn.disabled = false; }
     }
 
     async function loadLiveSales() {
@@ -308,78 +333,42 @@
 
     async function endShift() {
         if (!confirm("End shift and count remaining kitchen stock?")) return;
-        
-        // Before ending, we force them to do the end-of-shift count
         document.getElementById('start-shift-panel').classList.remove('hidden');
         document.getElementById('active-shift-panel').classList.add('hidden');
-        
-        // Modify the start panel title for end of shift
         document.querySelector('#start-shift-panel h2').textContent = "End Shift Handover";
-        document.querySelector('#start-shift-panel p').textContent = "Enter the final physical KITCHEN count before leaving.";
+        document.querySelector('#start-shift-panel p').textContent = "Enter final physical KITCHEN count.";
         document.querySelector('#start-btn').textContent = "Confirm Count & End Shift";
         
-        // Change the onclick handler temporarily
         document.getElementById('start-btn').onclick = async () => {
             const rows = document.querySelectorAll('[id^="open-phys-"]');
-            for (const input of rows) {
-                const id = input.id.replace('open-phys-', '');
-                const physical = parseInt(input.value) || 0;
-                await db.from('inventory').update({ stock_quantity: physical }).eq('id', id);
-            }
-            
-            await db.from('shifts').update({ 
-                status: 'Pending_Approval', 
-                end_time: new Date().toISOString(), 
-                total_cash_sales: shiftSales.cash, 
-                total_credit_sales: shiftSales.credit 
-            }).eq('id', activeShift.id);
-            
-            alert("✅ Shift ended and kitchen stock updated. Please hand over cash.");
-            window.location.reload();
+            for (const input of rows) { await db.from('inventory').update({ stock_quantity: parseInt(input.value) || 0 }).eq('id', input.id.replace('open-phys-', '')); }
+            await db.from('shifts').update({ status: 'Pending_Approval', end_time: new Date().toISOString(), total_cash_sales: shiftSales.cash, total_credit_sales: shiftSales.credit }).eq('id', activeShift.id);
+            alert("✅ Shift ended and stock updated."); window.location.reload();
         };
-
         loadOpeningCount();
     }
 
-    // --- LOW STOCK (KITCHEN ONLY) ---
     async function loadLowStock() {
         const { data: lowStock } = await db.from('inventory').select('*').eq('department', 'Kitchen').lte('stock_quantity', 5);
         const banner = document.getElementById('low-stock-banner');
-        if (lowStock && lowStock.length > 0) {
-            banner.classList.remove('hidden');
-            document.getElementById('low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', ');
-        } else {
-            banner.classList.add('hidden');
-        }
+        if (lowStock && lowStock.length > 0) { banner.classList.remove('hidden'); document.getElementById('low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', '); } else { banner.classList.add('hidden'); }
     }
 
     async function loadMenu() {
-        const { data: products } = await db.from('inventory')
-            .select('id, item_name, price, stock_quantity, category, department')
-            .in('department', ['Kitchen', 'Bar'])
-            .order('item_name');
-        
+        const { data: products } = await db.from('inventory').select('id, item_name, price, stock_quantity, category, department').in('department', ['Kitchen', 'Bar']).order('item_name');
         allProducts = products || [];
         const categories = ['All', 'Kitchen', 'Bar'];
         const tabsContainer = document.getElementById('category-tabs');
         tabsContainer.innerHTML = '';
-        
-        categories.forEach(cat => {
-            tabsContainer.innerHTML += `
-                <button onclick="filterCategory('${cat}', this)" class="cat-btn ${cat === 'All' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'} px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm transition">${cat}</button>
-            `;
-        });
+        categories.forEach(cat => { tabsContainer.innerHTML += `<button onclick="filterCategory('${cat}', this)" class="cat-btn ${cat === 'All' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'} px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm transition">${cat}</button>`; });
         filterCategory('All', null);
     }
 
     function filterCategory(category, btnElement) {
         currentCategory = category;
-        document.querySelectorAll('.cat-btn').forEach(btn => {
-            btn.className = "cat-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm transition";
-        });
+        document.querySelectorAll('.cat-btn').forEach(btn => { btn.className = "cat-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm transition"; });
         if (btnElement) btnElement.className = "cat-btn bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm transition";
         else document.querySelector('.cat-btn').className = "cat-btn bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm transition";
-
         let filtered = category === 'All' ? allProducts : allProducts.filter(p => p.department === category);
         renderProducts(filtered);
     }
@@ -387,154 +376,175 @@
     function renderProducts(products) {
         const grid = document.getElementById('product-grid');
         if (products.length === 0) { grid.innerHTML = '<p class="text-gray-500 col-span-full">No items found.</p>'; return; }
-        
-        grid.innerHTML = products.map(p => `
-            <div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, '${p.department}')" class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-500 transition active:scale-95 flex flex-col justify-between h-28">
-                <div>
-                    <span class="text-[9px] font-bold uppercase ${p.department === 'Bar' ? 'text-amber-500' : 'text-emerald-500'}">${p.department}</span>
-                    <h3 class="font-bold text-gray-800 text-sm leading-tight mt-1">${p.item_name}</h3>
-                </div>
-                <p class="text-indigo-600 font-black mt-2">₦${Number(p.price).toLocaleString()}</p>
-            </div>
-        `).join('');
+        grid.innerHTML = products.map(p => `<div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, '${p.department}')" class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-500 transition active:scale-95 flex flex-col justify-between h-28"><div><span class="text-[9px] font-bold uppercase ${p.department === 'Bar' ? 'text-amber-500' : 'text-emerald-500'}">${p.department}</span><h3 class="font-bold text-gray-800 text-sm leading-tight mt-1">${p.item_name}</h3></div><p class="text-indigo-600 font-black mt-2">₦${Number(p.price).toLocaleString()}</p></div>`).join('');
     }
 
-    function addToCart(id, name, price, dept) {
-        const existing = cart.find(i => i.id === id);
-        if (existing) existing.qty++;
-        else cart.push({ id, name, price, dept, qty: 1 });
-        renderCart();
-    }
+    function addToCart(id, name, price, dept) { const existing = cart.find(i => i.id === id); if (existing) existing.qty++; else cart.push({ id, name, price, dept, qty: 1 }); renderCart(); }
 
     function renderCart() {
         const list = document.getElementById('cart-items');
-        if (cart.length === 0) {
-            list.innerHTML = '<p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>';
-            document.getElementById('cart-total').textContent = '₦0';
-            return;
-        }
+        if (cart.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>'; document.getElementById('cart-total').textContent = '₦0'; document.getElementById('mobile-cart-total').textContent = '₦0'; document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0`; return; }
         let total = 0;
-        list.innerHTML = cart.map((item, index) => {
-            total += item.price * item.qty;
-            return `
-                <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100 fade-in">
-                    <div><p class="font-bold text-gray-800 text-xs">${item.name}</p><p class="text-[10px] text-indigo-600">₦${item.price.toLocaleString()}</p></div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="cart[${index}].qty--; if(cart[${index}].qty<=0) cart.splice(${index},1); renderCart();" class="bg-white border w-6 h-6 rounded text-gray-600">-</button>
-                        <span class="font-bold text-xs">${item.qty}</span>
-                        <button onclick="cart[${index}].qty++; renderCart();" class="bg-white border w-6 h-6 rounded text-gray-600">+</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        list.innerHTML = cart.map((item, index) => { total += item.price * item.qty; return `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100 fade-in"><div><p class="font-bold text-gray-800 text-xs">${item.name}</p><p class="text-[10px] text-indigo-600">₦${item.price.toLocaleString()}</p></div><div class="flex items-center gap-2"><button onclick="cart[${index}].qty--; if(cart[${index}].qty<=0) cart.splice(${index},1); renderCart();" class="bg-white border w-6 h-6 rounded text-gray-600">-</button><span class="font-bold text-xs">${item.qty}</span><button onclick="cart[${index}].qty++; renderCart();" class="bg-white border w-6 h-6 rounded text-gray-600">+</button></div></div>`; }).join('');
         document.getElementById('cart-total').textContent = `₦${total.toLocaleString()}`;
+        document.getElementById('mobile-cart-total').textContent = `₦${total.toLocaleString()}`;
+        document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦${total.toLocaleString()}`;
     }
 
     function clearCart() { cart = []; renderCart(); }
 
-    async function sendOrder() {
+    // --- PROCESS CHECKOUT & SPLIT BILL ---
+    async function processCheckout() {
         const table = document.getElementById('table-input').value.trim();
-        if (!table) return alert("Please enter a Table Number.");
+        if (!table) return alert("Please enter a Table / Room Number.");
         if (cart.length === 0) return alert("Cart is empty.");
+        if (selectedPaymentMethod === 'Charge_to_Room' && !selectedRoomForCharge) { document.getElementById('room-modal').classList.remove('hidden'); document.getElementById('room-modal').classList.add('flex'); return; }
 
-        const btn = document.getElementById('send-btn');
-        btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Sending...`;
+        const btn = document.getElementById('checkout-btn');
+        btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processing...`;
 
+        let total = 0; cart.forEach(item => total += (item.price * item.qty));
         let kitchenItems = cart.filter(i => i.dept === 'Kitchen');
         let barItems = cart.filter(i => i.dept === 'Bar');
 
         try {
-            if (kitchenItems.length > 0) {
-                await db.from('guest_orders').insert({
-                    department: 'Kitchen', table_number: table,
-                    items: kitchenItems.map(i => ({ name: i.name, qty: i.qty })),
-                    total_amount: kitchenItems.reduce((sum, i) => sum + (i.price * i.qty), 0), status: 'Pending'
-                });
+            // 1. Create POS order header
+            const { data: order, error: orderErr } = await db.from('pos_orders').insert({ department: 'Waitress', total_amount: total, payment_method: selectedPaymentMethod, created_by: myUserId }).select().single();
+            if (orderErr) throw orderErr;
+
+            // 2. Save POS order items
+            for (const item of cart) { await db.from('pos_order_items').insert({ pos_order_id: order.id, item_name: item.name, quantity: item.qty, price: item.price }); }
+
+            // 3. Send Kitchen Ticket (If there is food)
+            if (kitchenItems.length > 0) { 
+                await db.from('guest_orders').insert({ 
+                    department: 'Kitchen', 
+                    table_number: table, 
+                    items: kitchenItems.map(i => ({ name: i.name, qty: i.qty })), 
+                    total_amount: kitchenItems.reduce((sum, i) => sum + (i.price * i.qty), 0), 
+                    status: 'Pending' 
+                }); 
             }
-            if (barItems.length > 0) {
-                await db.from('guest_orders').insert({
-                    department: 'Bar', table_number: table,
-                    items: barItems.map(i => ({ name: i.name, qty: i.qty })),
-                    total_amount: barItems.reduce((sum, i) => sum + (i.price * i.qty), 0), status: 'Pending'
-                });
+
+            // 4. Send Bar Ticket (If there are drinks)
+            if (barItems.length > 0) { 
+                await db.from('guest_orders').insert({ 
+                    department: 'Bar', 
+                    table_number: table, 
+                    items: barItems.map(i => ({ name: i.name, qty: i.qty })), 
+                    total_amount: barItems.reduce((sum, i) => sum + (i.price * i.qty), 0), 
+                    status: 'Pending' 
+                }); 
             }
-            alert("✅ Order sent!");
-            clearCart();
-            document.getElementById('table-input').value = '';
-            switchTab('orders');
-        } catch (err) {
-            alert("Failed: " + err.message);
-        } finally {
-            btn.disabled = false; btn.innerHTML = `<i data-lucide="send" class="w-5 h-5"></i> Send to Kitchen & Bar`;
-            lucide.createIcons();
-        }
+
+            // 5. Charge to Room if selected
+            if (selectedPaymentMethod === 'Charge_to_Room' && selectedRoomForCharge) {
+                const { data: roomData } = await db.from('rooms').select('id').eq('room_number', selectedRoomForCharge).single();
+                const { data: booking } = await db.from('bookings').select('id').eq('room_id', roomData.id).eq('status', 'Checked In').single();
+                if (booking) { await db.from('folio_charges').insert({ booking_id: booking.id, department: 'Waitress', description: cart.map(i => `${i.qty}x ${i.name}`).join(', '), amount: total }); }
+            }
+
+            alert(`✅ Order Charged!\nTotal: ₦${total.toLocaleString()}\nPayment: ${selectedPaymentMethod}${table ? '\nTable: '+table : ''}`);
+            
+            cart = []; selectedRoomForCharge = null; document.getElementById('table-input').value = '';
+            renderCart(); toggleCart(); switchTab('orders');
+            
+        } catch (err) { alert("Checkout Failed: " + err.message); } finally { btn.disabled = false; btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge`; }
     }
 
-    // --- LIVE ORDERS ---
+    // --- LIVE BOARD (COOKING, READY, DELIVERED) ---
     async function loadLiveOrders(isBackgroundPoll = false) {
-        const list = document.getElementById('orders-list');
-        const { data: orders } = await db.from('guest_orders').select('*').in('department', ['Kitchen', 'Bar']).not('status', 'in', '("Delivered","Completed","Cancelled")').order('created_at', { ascending: true });
+        const cookingList = document.getElementById('cooking-list');
+        const readyList = document.getElementById('ready-list');
+        const deliveredList = document.getElementById('delivered-list');
+        
+        const today = new Date().toISOString().split('T')[0];
+
+        // Fetch orders from today
+        const { data: orders } = await db.from('guest_orders')
+            .select('*')
+            .in('department', ['Kitchen', 'Bar'])
+            .gte('created_at', today)
+            .order('created_at', { ascending: true });
 
         if (!orders || orders.length === 0) {
-            list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active orders.</p>';
+            cookingList.innerHTML = '<p class="text-xs text-gray-400">Nothing on the stove or at the bar yet.</p>';
+            readyList.innerHTML = '<p class="text-xs text-gray-400">No food or drinks ready.</p>';
+            deliveredList.innerHTML = '<p class="text-xs text-gray-400">No recent deliveries.</p>';
             document.getElementById('order-badge').classList.add('hidden');
             return;
         }
 
-        if (isBackgroundPoll && orders.length > lastOrderCount) {
+        // Count ready orders for the badge
+        const readyOrders = orders.filter(o => o.status === 'Ready');
+        if (isBackgroundPoll && readyOrders.length > lastOrderCount) {
             document.getElementById('live-order-alert').classList.remove('hidden');
             try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(e){}
         }
-        lastOrderCount = orders.length;
+        lastOrderCount = readyOrders.length;
 
-        document.getElementById('order-badge').innerText = orders.length;
-        document.getElementById('order-badge').classList.remove('hidden');
+        if (readyOrders.length > 0) {
+            document.getElementById('order-badge').innerText = readyOrders.length;
+            document.getElementById('order-badge').classList.remove('hidden');
+        } else {
+            document.getElementById('order-badge').classList.add('hidden');
+        }
 
+        // If the user is not on the orders tab, don't render the HTML (saves processing)
         if (document.getElementById('tab-orders').classList.contains('hidden')) return;
 
-        list.innerHTML = orders.map(order => {
-            let itemsHtml = '';
-            try {
-                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                if (Array.isArray(items)) {
-                    itemsHtml = items.map(i => {
-                        const qty = i.qty || i.quantity || 1;
-                        const name = i.name || i.item_name || i.request || 'Item';
-                        return `<li class="flex justify-between text-xs text-gray-600 border-b border-gray-100 py-1 last:border-0"><span>${qty}x ${name}</span></li>`;
-                    }).join('');
-                }
-            } catch(e) { itemsHtml = `<li class="text-xs text-red-500">Error reading items</li>`; }
+        // 1. COOKING / MIXING
+        const cooking = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing');
+        if (cooking.length === 0) {
+            cookingList.innerHTML = '<p class="text-xs text-gray-400">Nothing on the stove or at the bar yet.</p>';
+        } else {
+            cookingList.innerHTML = cooking.map(o => renderCard(o, 'blue')).join('');
+        }
 
-            let statusBadge = `<span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-1 rounded">${order.status}</span>`;
-            if (order.status === 'Pending') statusBadge = `<span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded animate-pulse">PENDING</span>`;
-            if (order.status === 'Preparing') statusBadge = `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded animate-pulse">PREPARING</span>`;
-            if (order.status === 'Ready') statusBadge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">READY</span>`;
+        // 2. READY FOR PICKUP
+        if (readyOrders.length === 0) {
+            readyList.innerHTML = '<p class="text-xs text-gray-400">No food or drinks ready.</p>';
+        } else {
+            readyList.innerHTML = readyOrders.map(o => renderCard(o, 'emerald')).join('');
+        }
 
-            const isClickable = order.status === 'Ready';
-            const clickAction = isClickable ? `onclick="updateOrderStatus('${order.id}', 'Delivered')"` : '';
-            const cursorClass = isClickable ? 'cursor-pointer hover:border-emerald-500 active:scale-95' : '';
+        // 3. DELIVERED
+        const delivered = orders.filter(o => o.status === 'Delivered').reverse().slice(0, 5); // Last 5 delivered
+        if (delivered.length === 0) {
+            deliveredList.innerHTML = '<p class="text-xs text-gray-400">No recent deliveries.</p>';
+        } else {
+            deliveredList.innerHTML = delivered.map(o => renderCard(o, 'gray')).join('');
+        }
 
-            return `
-                <div ${clickAction} class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition ${cursorClass}">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded border uppercase bg-gray-50 text-gray-700">${order.department}</span>
-                            <h3 class="text-gray-900 font-bold text-lg mt-1">${order.room_number ? 'Room '+order.room_number : 'Table '+order.table_number}</h3>
-                        </div>
-                        ${statusBadge}
-                    </div>
-                    <ul class="mb-3">${itemsHtml}</ul>
-                    <div class="flex justify-between items-center border-t pt-3">
-                        <p class="font-black text-gray-900">₦${Number(order.total_amount).toLocaleString()}</p>
-                        ${isClickable ? `<span class="bg-emerald-600 text-white text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm">Tap to Deliver</span>` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
+        lucide.createIcons();
     }
 
-    async function updateOrderStatus(orderId, newStatus) {
-        await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+    function renderCard(order, color) {
+        let itemsHtml = '';
+        try {
+            const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+            itemsHtml = items.map(i => `<span class="inline-block bg-white/50 text-[10px] font-bold px-1.5 py-0.5 rounded mr-1 mb-1 border border-${color}-200">${i.qty || i.quantity || 1}x ${i.name || i.item_name}</span>`).join('');
+        } catch(e) {}
+
+        const bgClass = color === 'blue' ? 'bg-blue-50 border-blue-200' : color === 'emerald' ? 'bg-emerald-50 border-emerald-200 cursor-pointer hover:bg-emerald-100' : 'bg-gray-50 border-gray-200';
+        const textClass = color === 'blue' ? 'text-blue-700' : color === 'emerald' ? 'text-emerald-700' : 'text-gray-600';
+        const clickAction = color === 'emerald' ? `onclick="deliverOrder('${order.id}')"` : '';
+
+        return `
+            <div ${clickAction} class="border rounded-xl p-3 shadow-sm transition ${bgClass}">
+                <div class="flex justify-between items-center mb-1">
+                    <h4 class="font-bold text-gray-900 text-sm">Table ${order.table_number || order.room_number}</h4>
+                    <span class="text-[9px] uppercase font-bold ${textClass}">${order.department}</span>
+                </div>
+                <div class="mb-2">${itemsHtml}</div>
+                ${color === 'emerald' ? `<p class="text-[10px] text-emerald-600 font-bold text-right">Tap to mark Served</p>` : ''}
+            </div>
+        `;
+    }
+
+    async function deliverOrder(orderId) {
+        if (!confirm("Confirm you have delivered this item to the table?")) return;
+        await db.from('guest_orders').update({ status: 'Delivered' }).eq('id', orderId);
         loadLiveOrders();
     }
 
