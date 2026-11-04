@@ -21,6 +21,7 @@
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
+    /* CART ANIMATION */
     #cart-panel {
       position: fixed;
       inset: 0;
@@ -45,6 +46,13 @@
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     #cart-panel.active #cart-content { transform: translateY(0); }
+
+    /* PRINT STYLES */
+    @media print {
+      body * { visibility: hidden; }
+      #receipt-area, #receipt-area * { visibility: visible; }
+      #receipt-area { position: absolute; left: 0; top: 0; width: 80mm; color: black; background: white; padding: 10px; font-family: monospace; }
+    }
   </style>
 </head>
 <body class="flex flex-col">
@@ -165,23 +173,22 @@
           <button onclick="setPaymentMethod('Charge_to_Room')" id="pay-room" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="door-closed" class="w-4 h-4"></i> To Room</button>
         </div>
 
-        <!-- Room Charge Info (Hidden by default, shows when To Room is selected) -->
         <div id="selected-room-display" class="hidden bg-orange-50 border border-orange-200 p-3 rounded-xl mb-3 text-center">
             <p class="text-xs text-orange-800 font-bold">Charging to: <span id="room-display-name" class="text-lg">---</span></p>
         </div>
 
         <button onclick="handleChargeButton()" id="checkout-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
-          <i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0
+          <i data-lucide="printer" class="w-6 h-6"></i> Charge & Print
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Room Selection Modal (Auto-populated) -->
+  <!-- Room Selection Modal -->
   <div id="room-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[10000] p-4">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in border-t-4 border-indigo-500">
       <h2 class="text-xl font-bold text-gray-900 mb-2 text-center">Charge to Room</h2>
-      <p class="text-xs text-gray-500 text-center mb-6">Select the guest's room number from the active list.</p>
+      <p class="text-xs text-gray-500 text-center mb-6">Select the guest's room number.</p>
       
       <select id="room-select" class="w-full bg-gray-50 border border-gray-300 p-4 rounded-xl text-gray-900 outline-none font-bold text-lg mb-6">
         <option value="">-- Loading Active Rooms... --</option>
@@ -194,6 +201,32 @@
     </div>
   </div>
 
+  <!-- HIDDEN RECEIPT AREA FOR PRINTING -->
+  <div id="receipt-area" class="hidden">
+    <div class="text-center mb-4">
+      <h1 class="font-bold text-lg uppercase">Vicnos Hotel</h1>
+      <p class="text-[10px] leading-tight">Outdoor Bar & Restaurant</p>
+      <p class="mt-2 text-sm font-bold uppercase">GUEST RECEIPT</p>
+      <p id="r-date" class="text-xs mt-1"></p>
+    </div>
+    <div class="border-t border-dashed border-black my-2"></div>
+    <div class="text-xs mb-2">
+      <p><strong>Table/Room:</strong> <span id="r-table"></span></p>
+      <p><strong>Served By:</strong> <span id="r-waitress"></span></p>
+    </div>
+    <div class="border-t border-dashed border-black my-2"></div>
+    
+    <!-- FIXED: Items list clearly shows everything ordered -->
+    <div id="r-items" class="mb-4 text-xs space-y-1"></div>
+    
+    <div class="border-t border-dashed border-black pt-2">
+      <p class="flex justify-between font-bold text-base"><span>TOTAL</span> <span id="r-total"></span></p>
+      <p class="flex justify-between text-xs mt-1"><span>Payment:</span> <span id="r-method"></span></p>
+    </div>
+    <p class="text-center mt-6 text-xs">Thank you for your patronage!</p>
+    <p class="text-center text-[10px] mt-1">Powered by DEKY</p>
+  </div>
+
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
@@ -204,6 +237,7 @@
     lucide.createIcons();
 
     let myUserId = null;
+    let myUserName = '';
     let currentCategory = 'All';
     let allProducts = [];
     let cart = [];
@@ -219,11 +253,14 @@
         if (!user) { window.location.href = 'index.html'; return; }
         myUserId = user.id;
         
+        const { data: profile } = await db.from('profiles').select('full_name').eq('id', user.id).single();
+        if (profile) myUserName = profile.full_name;
+        
         loadMenu();
         loadLowStock();
         checkShiftStatus();
         loadLiveOrders();
-        loadRoomsForCharge(); // Load the dropdown immediately
+        loadRoomsForCharge();
         
         setInterval(() => { loadLiveOrders(true); }, 10000);
     }
@@ -240,47 +277,31 @@
         if (tab === 'orders') loadLiveOrders();
     }
 
-    // --- CART ANIMATION ---
-    function openCart() {
-        document.getElementById('cart-panel').classList.add('active');
-    }
-    function closeCart() {
-        document.getElementById('cart-panel').classList.remove('active');
-    }
+    function openCart() { document.getElementById('cart-panel').classList.add('active'); }
+    function closeCart() { document.getElementById('cart-panel').classList.remove('active'); }
 
-    // --- PAYMENT METHODS ---
     function setPaymentMethod(method) {
         selectedPaymentMethod = method;
-        
-        // Reset all
         ['pay-cash', 'pay-pos', 'pay-transfer', 'pay-room'].forEach(id => {
             const el = document.getElementById(id);
             if(el) el.className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2 border border-slate-600";
         });
 
-        // Highlight active
         if (method === 'Cash') document.getElementById('pay-cash').className = "py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-emerald-400";
         if (method === 'POS') document.getElementById('pay-pos').className = "py-3 rounded-xl font-bold bg-blue-500 text-white shadow-md shadow-blue-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-blue-400";
         if (method === 'Transfer') document.getElementById('pay-transfer').className = "py-3 rounded-xl font-bold bg-purple-500 text-white shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-purple-400";
         if (method === 'Charge_to_Room') document.getElementById('pay-room').className = "py-3 rounded-xl font-bold bg-orange-500 text-white shadow-md shadow-orange-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-orange-400";
 
-        // Show/hide room display
         if (method === 'Charge_to_Room') {
             document.getElementById('selected-room-display').classList.remove('hidden');
-            if (!selectedRoomForCharge) {
-                document.getElementById('room-display-name').textContent = 'Select Room...';
-            }
+            if (!selectedRoomForCharge) document.getElementById('room-display-name').textContent = 'Select Room...';
         } else {
             document.getElementById('selected-room-display').classList.add('hidden');
         }
     }
 
-    // --- AUTO-LOAD ROOMS INTO DROPDOWN ---
     async function loadRoomsForCharge() {
-      // 1. Fetch all rooms
       const { data: rooms } = await db.from('rooms').select('id, room_number');
-      
-      // 2. Fetch active bookings to know who is actually checked in
       const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
       
       const occupiedRoomIds = activeBookings ? activeBookings.map(b => b.room_id) : [];
@@ -288,21 +309,13 @@
       
       const select = document.getElementById('room-select');
       select.innerHTML = '<option value="">-- Select Room --</option>';
-      
       if (occupiedRooms.length > 0) {
-        // Sort rooms numerically
         occupiedRooms.sort((a, b) => a.room_number.localeCompare(b.room_number));
-        
-        occupiedRooms.forEach(r => { 
-            select.innerHTML += `<option value="${r.room_number}">Room ${r.room_number}</option>`; 
-        });
-      } else { 
-          select.innerHTML = '<option value="">No active guests found.</option>'; 
-      }
+        occupiedRooms.forEach(r => { select.innerHTML += `<option value="${r.room_number}">Room ${r.room_number}</option>`; });
+      } else { select.innerHTML = '<option value="">No active guests found.</option>'; }
     }
 
     function closeRoomModal() { document.getElementById('room-modal').classList.add('hidden'); document.getElementById('room-modal').classList.remove('flex'); }
-    
     function confirmRoomCharge() { 
         const room = document.getElementById('room-select').value; 
         if (!room) return alert("Please select a room."); 
@@ -312,22 +325,16 @@
         processCheckout(); 
     }
 
-    // --- CHARGE BUTTON HANDLER ---
     function handleChargeButton() {
         if (cart.length === 0) return alert("Cart is empty.");
-        
-        // If they chose "To Room" but haven't selected a room yet, open the modal
         if (selectedPaymentMethod === 'Charge_to_Room' && !selectedRoomForCharge) {
             document.getElementById('room-modal').classList.remove('hidden');
             document.getElementById('room-modal').classList.add('flex');
             return;
         }
-        
-        // Otherwise, proceed to checkout
         processCheckout();
     }
 
-    // --- SHIFT & STOCK ---
     async function checkShiftStatus() {
         document.getElementById('start-shift-panel').classList.add('hidden');
         document.getElementById('active-shift-panel').classList.add('hidden');
@@ -426,19 +433,17 @@
 
     function renderCart() {
         const list = document.getElementById('cart-items');
-        if (cart.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>'; document.getElementById('cart-total').textContent = '₦0'; document.getElementById('mobile-cart-total').textContent = '₦0'; document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0`; return; }
+        if (cart.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>'; document.getElementById('cart-total').textContent = '₦0'; document.getElementById('mobile-cart-total').textContent = '₦0'; document.getElementById('checkout-btn').innerHTML = `<i data-lucide="printer" class="w-6 h-6"></i> Charge & Print ₦0`; return; }
         let total = 0;
         list.innerHTML = cart.map((item, index) => { total += item.price * item.qty; return `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100 fade-in"><div><p class="font-bold text-gray-800 text-xs">${item.name}</p><p class="text-[10px] text-indigo-600">₦${item.price.toLocaleString()}</p></div><div class="flex items-center gap-2"><button onclick="cart[${index}].qty--; if(cart[${index}].qty<=0) cart.splice(${index},1); renderCart();" class="bg-white border w-6 h-6 rounded text-gray-600">-</button><span class="font-bold text-xs">${item.qty}</span><button onclick="cart[${index}].qty++; renderCart();" class="bg-white border w-6 h-6 rounded text-gray-600">+</button></div></div>`; }).join('');
         document.getElementById('cart-total').textContent = `₦${total.toLocaleString()}`;
         document.getElementById('mobile-cart-total').textContent = `₦${total.toLocaleString()}`;
-        document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦${total.toLocaleString()}`;
+        document.getElementById('checkout-btn').innerHTML = `<i data-lucide="printer" class="w-6 h-6"></i> Charge & Print ₦${total.toLocaleString()}`;
     }
 
-    // --- PROCESS CHECKOUT & SPLIT BILL ---
+    // --- PROCESS CHECKOUT, PRINT, AND SPLIT BILL ---
     async function processCheckout() {
         if (cart.length === 0) return alert("Cart is empty.");
-        
-        // Final safety check for room charge
         if (selectedPaymentMethod === 'Charge_to_Room' && !selectedRoomForCharge) { 
             document.getElementById('room-modal').classList.remove('hidden'); 
             document.getElementById('room-modal').classList.add('flex'); 
@@ -451,58 +456,81 @@
         let total = 0; cart.forEach(item => total += (item.price * item.qty));
         let kitchenItems = cart.filter(i => i.dept === 'Kitchen');
         let barItems = cart.filter(i => i.dept === 'Bar');
-        
         const tableIdentifier = selectedPaymentMethod === 'Charge_to_Room' ? `Room ${selectedRoomForCharge}` : 'Walk-in';
 
         try {
-            // 1. Create POS order header
             const { data: order, error: orderErr } = await db.from('pos_orders').insert({ department: 'Waitress', total_amount: total, payment_method: selectedPaymentMethod, created_by: myUserId }).select().single();
             if (orderErr) throw orderErr;
 
-            // 2. Save POS order items
             for (const item of cart) { await db.from('pos_order_items').insert({ pos_order_id: order.id, item_name: item.name, quantity: item.qty, price: item.price }); }
 
-            // 3. Send Kitchen Ticket (If there is food)
             if (kitchenItems.length > 0) { 
                 await db.from('guest_orders').insert({ 
-                    department: 'Kitchen', 
-                    table_number: tableIdentifier, 
+                    department: 'Kitchen', table_number: tableIdentifier, 
                     items: kitchenItems.map(i => ({ name: i.name, qty: i.qty })), 
-                    total_amount: kitchenItems.reduce((sum, i) => sum + (i.price * i.qty), 0), 
-                    status: 'Pending' 
+                    total_amount: kitchenItems.reduce((sum, i) => sum + (i.price * i.qty), 0), status: 'Pending' 
                 }); 
             }
-
-            // 4. Send Bar Ticket (If there are drinks)
             if (barItems.length > 0) { 
                 await db.from('guest_orders').insert({ 
-                    department: 'Bar', 
-                    table_number: tableIdentifier, 
+                    department: 'Bar', table_number: tableIdentifier, 
                     items: barItems.map(i => ({ name: i.name, qty: i.qty })), 
-                    total_amount: barItems.reduce((sum, i) => sum + (i.price * i.qty), 0), 
-                    status: 'Pending' 
+                    total_amount: barItems.reduce((sum, i) => sum + (i.price * i.qty), 0), status: 'Pending' 
                 }); 
             }
 
-            // 5. Charge to Room if selected
             if (selectedPaymentMethod === 'Charge_to_Room' && selectedRoomForCharge) {
                 const { data: roomData } = await db.from('rooms').select('id').eq('room_number', selectedRoomForCharge).single();
                 const { data: booking } = await db.from('bookings').select('id').eq('room_id', roomData.id).eq('status', 'Checked In').single();
                 if (booking) { await db.from('folio_charges').insert({ booking_id: booking.id, department: 'Waitress', description: cart.map(i => `${i.qty}x ${i.name}`).join(', '), amount: total }); }
             }
 
-            alert(`✅ Order Charged!\nTotal: ₦${total.toLocaleString()}\nPayment: ${selectedPaymentMethod}${selectedRoomForCharge ? '\nRoom: '+selectedRoomForCharge : ''}`);
+            // --- POPULATE RECEIPT AND PRINT ---
+            document.getElementById('r-date').innerText = new Date().toLocaleString();
+            document.getElementById('r-table').innerText = tableIdentifier;
+            document.getElementById('r-waitress').innerText = myUserName;
+            document.getElementById('r-total').innerText = `₦${total.toLocaleString()}`;
+            document.getElementById('r-method').innerText = selectedPaymentMethod.replace('_', ' ');
             
-            cart = []; selectedRoomForCharge = null; 
-            document.getElementById('selected-room-display').classList.add('hidden');
-            document.getElementById('room-display-name').textContent = '---';
+            let itemsHtml = '';
+            cart.forEach(i => {
+                itemsHtml += `<p class="flex justify-between"><span>${i.qty}x ${i.name}</span> <span>₦${(i.price * i.qty).toLocaleString()}</span></p>`;
+            });
+            document.getElementById('r-items').innerHTML = itemsHtml;
+
+            const receipt = document.getElementById('receipt-area');
+            receipt.classList.remove('hidden');
             
-            renderCart(); closeCart(); switchTab('orders');
-            
-        } catch (err) { alert("Checkout Failed: " + err.message); } finally { btn.disabled = false; btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge`; }
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+            audio.play().catch(e => console.log('Audio block'));
+
+            // Print the receipt
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    receipt.classList.add('hidden');
+                    
+                    // Reset everything after print dialog closes
+                    cart = []; 
+                    selectedRoomForCharge = null; 
+                    document.getElementById('selected-room-display').classList.add('hidden');
+                    document.getElementById('room-display-name').textContent = '---';
+                    
+                    renderCart(); 
+                    closeCart(); 
+                    switchTab('orders');
+                    btn.disabled = false;
+                }, 500);
+            }, 100);
+
+        } catch (err) { 
+            alert("Checkout Failed: " + err.message); 
+            btn.disabled = false; 
+            btn.innerHTML = `<i data-lucide="printer" class="w-6 h-6"></i> Charge & Print`; 
+        }
     }
 
-    // --- LIVE BOARD (COOKING, READY, DELIVERED) ---
+    // --- LIVE BOARD ---
     async function loadLiveOrders(isBackgroundPoll = false) {
         const list = document.getElementById('orders-list');
         
