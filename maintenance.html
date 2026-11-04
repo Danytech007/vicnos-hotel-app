@@ -2,58 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Maintenance</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
+  <style>
+    * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen pb-24 font-sans">
-  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
     <div class="flex items-center gap-3">
-      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
-      <div>
-        <h1 class="font-bold text-gray-800 text-lg leading-tight">Maintenance</h1>
-        <p class="text-xs text-gray-500">Report & Track Issues</p>
-      </div>
+      <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Maintenance</h1><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Work Orders</p></div>
     </div>
+    <div class="bg-red-50 p-2 rounded-full text-red-600"><i data-lucide="wrench" class="w-5 h-5"></i></div>
   </nav>
 
-  <main class="p-4 max-w-2xl mx-auto space-y-5">
+  <main class="p-4 max-w-3xl mx-auto space-y-6 mt-2">
     
-    <!-- Log New Issue -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="wrench" class="w-5 h-5 text-red-600"></i> Report a Problem</h2>
-      <form id="ticket-form" class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Room / Location</label>
-          <select id="room-id" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500">
-            <option value="">-- Select Room or General Area --</option>
-            <!-- Rooms will populate here -->
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Describe the Issue</label>
-          <textarea id="issue-desc" required rows="2" placeholder="e.g. AC is leaking water" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500"></textarea>
-        </div>
-        <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">Submit Ticket</button>
-      </form>
-      <p id="msg" class="mt-2 text-center text-sm font-bold text-green-600"></p>
+    <!-- TABS -->
+    <div class="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-xl">
+      <button onclick="switchTab('lodge')" id="btn-tab-lodge" class="py-2 rounded-lg text-sm font-bold bg-white text-gray-900 shadow-sm transition">Lodge Complaint</button>
+      <button onclick="switchTab('view')" id="btn-tab-view" class="py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 transition">View Tickets</button>
     </div>
 
-    <!-- Open Tickets List -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-orange-500"></i> Open Tickets</h2>
-      <div id="ticket-list" class="space-y-3">
-        <p class="text-center text-gray-400 text-sm">Loading tickets...</p>
+    <!-- LODGE COMPLAINT TAB -->
+    <div id="tab-lodge" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 space-y-4 fade-in">
+      <h2 class="font-bold text-gray-800 border-b pb-2">Report an Issue</h2>
+      
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Select Room</label>
+        <select id="m-room" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl text-gray-800 outline-none font-semibold">
+          <option value="">-- Select Room --</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Issue Description</label>
+        <textarea id="m-desc" rows="3" placeholder="e.g. AC is not cooling in Room 104..." class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl text-gray-800 outline-none focus:border-blue-500"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Priority Level</label>
+        <select id="m-priority" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl text-gray-800 outline-none font-semibold">
+          <option value="Low">Low (Can wait)</option>
+          <option value="Normal" selected>Normal</option>
+          <option value="High">High (Urgent)</option>
+          <option value="Emergency">Emergency (Guest impacted)</option>
+        </select>
+      </div>
+
+      <button onclick="submitTicket()" id="submit-btn" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+        <i data-lucide="alert-circle" class="w-5 h-5"></i> Submit Complaint
+      </button>
+      <p id="m-msg" class="text-center text-sm font-bold text-green-600"></p>
+    </div>
+
+    <!-- VIEW TICKETS TAB -->
+    <div id="tab-view" class="hidden space-y-3 fade-in">
+      <div id="tickets-list" class="space-y-3">
+        <p class="text-center text-gray-500 animate-pulse py-10">Loading tickets...</p>
       </div>
     </div>
 
   </main>
 
   <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
@@ -61,110 +99,122 @@
     lucide.createIcons();
 
     let currentUser = null;
-    let userRole = 'receptionist';
 
     async function init() {
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
-      
-      const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
-      if(profile) userRole = profile.role;
 
       // Load Rooms for dropdown
-      const { data: rooms } = await db.from('rooms').select('id, room_number').order('room_number');
-      const select = document.getElementById('room-id');
-      rooms.forEach(r => {
-        select.innerHTML += `<option value="${r.id}">Room ${r.room_number}</option>`;
-      });
-      select.innerHTML += `<option value="general">General Area (Lobby, Pool, etc)</option>`;
+      const { data: rooms } = await db.from('rooms').select('room_number').order('room_number');
+      const roomSelect = document.getElementById('m-room');
+      if (rooms) {
+        rooms.forEach(r => roomSelect.innerHTML += `<option value="${r.room_number}">Room ${r.room_number}</option>`);
+      }
 
-      loadTickets();
+      switchTab('lodge');
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tab-lodge').classList.add('hidden');
+      document.getElementById('tab-view').classList.add('hidden');
+      
+      document.getElementById('btn-tab-lodge').className = "py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 transition";
+      document.getElementById('btn-tab-view').className = "py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 transition";
+
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`btn-tab-${tab}`).className = "py-2 rounded-lg text-sm font-bold bg-white text-gray-900 shadow-sm transition";
+
+      if (tab === 'view') loadTickets();
+    }
+
+    async function submitTicket() {
+      const roomNum = document.getElementById('m-room').value;
+      const desc = document.getElementById('m-desc').value;
+      const priority = document.getElementById('m-priority').value;
+      const btn = document.getElementById('submit-btn');
+      const msg = document.getElementById('m-msg');
+
+      if (!roomNum || !desc) return alert("Please select a room and describe the issue.");
+
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Submitting...`;
+      btn.disabled = true;
+
+      const { data: roomData } = await db.from('rooms').select('id').eq('room_number', roomNum).single();
+
+      const { error } = await db.from('maintenance_tickets').insert({
+        room_id: roomData.id,
+        reported_by: currentUser.id,
+        issue_description: desc,
+        priority: priority,
+        status: 'Pending'
+      });
+
+      if (error) {
+        alert("Error: " + error.message);
+        btn.innerHTML = `<i data-lucide="alert-circle" class="w-5 h-5"></i> Submit Complaint`;
+        btn.disabled = false;
+        return;
+      }
+
+      msg.textContent = "✅ Complaint lodged successfully!";
+      document.getElementById('m-desc').value = '';
+      btn.innerHTML = `<i data-lucide="alert-circle" class="w-5 h-5"></i> Submit Complaint`;
+      btn.disabled = false;
+      
+      setTimeout(() => { msg.textContent = ''; }, 4000);
     }
 
     async function loadTickets() {
-      const list = document.getElementById('ticket-list');
-      // Fetch open tickets, joining with rooms and profiles to get room numbers and names
+      const list = document.getElementById('tickets-list');
       const { data: tickets, error } = await db.from('maintenance_tickets')
-        .select(`
-          id, issue_description, status, created_at,
-          rooms (room_number),
-          profiles (full_name)
-        `)
-        .neq('status', 'Resolved')
+        .select('*, rooms(room_number), profiles(full_name)')
         .order('created_at', { ascending: false });
 
-      if (error) { list.innerHTML = `<p class="text-red-500">Error loading tickets.</p>`; return; }
-
-      if (tickets.length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-500 py-4">No open tickets. Everything is working! 🎉</p>';
+      if (error || !tickets || tickets.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 py-10">No maintenance tickets found.</p>';
         return;
       }
 
       list.innerHTML = tickets.map(t => {
-        const location = t.rooms ? `Room ${t.rooms.room_number}` : 'General Area';
-        const timeReported = new Date(t.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        let badgeColor = 'bg-gray-100 text-gray-600';
+        if (t.priority === 'High') badgeColor = 'bg-orange-100 text-orange-700';
+        if (t.priority === 'Emergency') badgeColor = 'bg-red-100 text-red-700';
         
-        // Only managers/admins can mark as resolved
-        let resolveBtn = '';
-        if (['admin', 'manager', 'md', 'supervisor'].includes(userRole)) {
-            resolveBtn = `<button onclick="resolveTicket('${t.id}')" class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold mt-2 w-full active:scale-95">Mark as Resolved</button>`;
-        }
+        let statusColor = t.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700';
+        const date = new Date(t.created_at).toLocaleDateString();
 
         return `
-          <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 mb-2">
-            <div class="flex justify-between items-start mb-1">
-              <p class="font-bold text-orange-900 text-sm">${location}</p>
-              <span class="text-[10px] text-orange-600 font-bold bg-orange-200 px-2 py-0.5 rounded">${timeReported}</span>
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 fade-in">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h3 class="font-bold text-gray-900 text-sm">Room ${t.rooms.room_number}</h3>
+                <p class="text-[10px] text-gray-500">Reported by ${t.profiles.full_name} on ${date}</p>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span class="${badgeColor} text-[9px] font-bold px-2 py-1 rounded">${t.priority}</span>
+                <span class="${statusColor} text-[9px] font-bold px-2 py-1 rounded">${t.status}</span>
+              </div>
             </div>
-            <p class="text-sm text-gray-700">${t.issue_description}</p>
-            <p class="text-[10px] text-gray-500 mt-1">Reported by: ${t.profiles ? t.profiles.full_name : 'Staff'}</p>
-            ${resolveBtn}
+            <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100">${t.issue_description}</p>
+            
+            ${t.status !== 'Resolved' ? `
+            <div class="mt-3 flex gap-2">
+              <button onclick="updateTicketStatus('${t.id}', 'Resolved')" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold shadow active:scale-95">Mark Resolved</button>
+            </div>
+            ` : ''}
           </div>
         `;
       }).join('');
     }
 
-    document.getElementById('ticket-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('msg');
-      msg.textContent = "Submitting...";
-      
-      const roomVal = document.getElementById('room-id').value;
-      
-      const { error } = await db.from('maintenance_tickets').insert({
-        room_id: roomVal === 'general' ? null : roomVal,
-        reported_by: currentUser.id,
-        issue_description: document.getElementById('issue-desc').value,
-        status: 'Open'
-      });
-
-      if (error) {
-        msg.textContent = "Error: " + error.message;
-        msg.className = "mt-2 text-center text-sm font-bold text-red-600";
-      } else {
-        msg.textContent = "✅ Ticket submitted!";
-        msg.className = "mt-2 text-center text-sm font-bold text-green-600";
-        document.getElementById('ticket-form').reset();
-        loadTickets();
-        setTimeout(() => msg.textContent = '', 3000);
-      }
-    });
-
-    async function resolveTicket(id) {
-        if(!confirm("Mark this issue as resolved?")) return;
-        await db.from('maintenance_tickets').update({ status: 'Resolved', resolved_at: new Date().toISOString() }).eq('id', id);
-        loadTickets();
+    async function updateTicketStatus(id, status) {
+      if(!confirm(`Mark this ticket as ${status}?`)) return;
+      await db.from('maintenance_tickets').update({ status: status }).eq('id', id);
+      loadTickets();
     }
 
     init();
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
 </body>
 </html>

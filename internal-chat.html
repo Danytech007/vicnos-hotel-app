@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Staff Chat</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #e5ddd5; height: 100vh; display: flex; flex-direction: column; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body>
+
+  <nav class="bg-slate-900 p-4 shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-slate-800 p-2 rounded-xl text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-white text-lg leading-tight">General Staff Chat</h1><p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">All Departments</p></div>
+    </div>
+    <div class="bg-emerald-500/20 p-2 rounded-full text-emerald-400"><i data-lucide="message-square" class="w-5 h-5"></i></div>
+  </nav>
+
+  <main id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 hide-scroll flex flex-col">
+    <p class="text-center text-gray-500 text-sm mt-10">Loading messages...</p>
+  </main>
+
+  <div class="bg-slate-100 p-3 flex gap-2 items-center border-t border-gray-300">
+    <input id="chat-input" type="text" placeholder="Type a message..." class="flex-1 bg-white border border-gray-300 p-3 rounded-full outline-none focus:border-emerald-500 text-gray-800">
+    <button onclick="sendMessage()" id="send-btn" class="bg-emerald-500 p-3 rounded-full text-white shadow-md active:scale-95 transition">
+      <i data-lucide="send" class="w-5 h-5"></i>
+    </button>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let userProfile = null;
+    let lastMessageTime = null;
+
+    async function init() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+
+      const { data: profile } = await db.from('profiles').select('full_name, role').eq('id', user.id).single();
+      userProfile = profile;
+
+      loadMessages();
+      // Poll for new messages every 3 seconds
+      setInterval(loadMessages, 3000);
+    }
+
+    async function loadMessages() {
+      const container = document.getElementById('chat-container');
+      const { data: messages, error } = await db.from('staff_messages')
+        .select('*, profiles(full_name, role)')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error || !messages) return;
+
+      // Only update DOM if there are new messages to prevent flickering
+      if (messages.length > 0) {
+        const latestTime = messages[messages.length - 1].created_at;
+        if (latestTime === lastMessageTime) return;
+        lastMessageTime = latestTime;
+      }
+
+      container.innerHTML = messages.map(m => {
+        const isMe = m.sender_id === currentUser.id;
+        const time = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        return `
+          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} w-full">
+            <div class="max-w-[80%] rounded-2xl p-3 ${isMe ? 'bg-emerald-100 text-gray-900 rounded-tr-sm' : 'bg-white text-gray-800 rounded-tl-sm shadow-sm'}">
+              ${!isMe ? `<p class="text-[10px] font-bold text-blue-600 mb-1">${m.profiles.full_name} (${m.profiles.role})</p>` : ''}
+              <p class="text-sm">${m.message}</p>
+              <p class="text-[9px] text-gray-500 text-right mt-1">${time}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Scroll to bottom
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      input.value = '';
+      const btn = document.getElementById('send-btn');
+      btn.disabled = true;
+
+      await db.from('staff_messages').insert({
+        sender_id: currentUser.id,
+        department: userProfile.role,
+        message: msg
+      });
+
+      btn.disabled = false;
+      loadMessages();
+    }
+
+    document.getElementById('chat-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    init();
+  </script>
+</body>
+</html>

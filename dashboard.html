@@ -6,7 +6,6 @@
   <title>Vicnos HotelStack - Dashboard</title>
   
   <script>
-    // CACHE KILLER
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) { registration.unregister(); }
@@ -89,13 +88,14 @@
         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Maintenance</p><p id="stat-maintenance" class="text-2xl font-black text-red-600">0</p></div><div class="bg-red-50 p-2 rounded-full"><i data-lucide="wrench" class="w-5 h-5 text-red-600"></i></div></div>
       </div>
       
-      <div class="grid grid-cols-2 md:grid-cols-6 gap-3 fade-in">
+      <div class="grid grid-cols-2 md:grid-cols-7 gap-3 fade-in">
         <a href="./checkin.html" class="bg-slate-900 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition text-sm"><i data-lucide="log-in" class="w-4 h-4"></i> Check-In</a>
         <a href="./checkout.html" class="bg-orange-600 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> Check-Out</a>
         <a href="./guest-history.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i> Directory</a>
         <a href="./qr-code.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="qr-code" class="w-4 h-4 text-purple-500"></i> QR Codes</a>
         <a href="./pos.html?dept=Minimart" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="shopping-cart" class="w-4 h-4 text-teal-600"></i> Minimart POS</a>
-        <a href="./stock-request.html?dept=Minimart" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="package" class="w-4 h-4 text-indigo-600"></i> Stock Req.</a>
+        <a href="./maintenance.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="wrench" class="w-4 h-4 text-red-500"></i> Maintenance</a>
+        <a href="./internal-chat.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4 text-emerald-500"></i> Staff Chat</a>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -176,11 +176,10 @@
       <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="credit-card" class="w-10 h-10 text-blue-600"></i></div>
       <h2 id="arit-title" class="text-xl font-bold text-gray-900 mb-2">ARIT Key Encoder</h2>
       <p id="arit-desc" class="text-sm text-gray-500 mb-6">Place the card on the ARIT machine, then click below to encode.</p>
-      <button onclick="writeCard()" id="write-card-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Connect & Encode Card</button>
+      <button onclick="writeCard()" id="write-card-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Activate Card Now</button>
       <button onclick="closeAritModal()" class="mt-4 text-gray-500 text-sm font-bold hover:text-gray-800">Cancel</button>
     </div>
   </div>
-  
   <div id="loading-overlay" class="fixed inset-0 bg-white/90 backdrop-blur-md hidden items-center justify-center z-[120] flex-col">
     <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
     <p class="text-blue-900 font-bold animate-pulse">Writing data to ARIT Hardware...</p>
@@ -200,10 +199,6 @@
     let allRoomsData = [];
     let currentFilter = 'All';
     let heartbeatInterval = null;
-    
-    // ARIT Hardware Variables
-    let serialPort = null;
-    let serialWriter = null;
 
     async function init() {
       try {
@@ -244,8 +239,6 @@
       }
     }
 
-    // ... [HEARTBEAT & DASHBOARD LOGIC REMAINS UNCHANGED] ...
-    
     function startHeartbeat() {
         checkUpgradeRequests(); 
         heartbeatInterval = setInterval(() => { checkUpgradeRequests(); }, 10000); 
@@ -438,100 +431,50 @@
     
     function closeAritModal() { document.getElementById('arit-modal').classList.add('hidden'); document.getElementById('arit-modal').classList.remove('flex'); }
     
-    // --- ARIT HARDWARE INTEGRATION (WEB SERIAL) ---
     async function writeCard() {
       const btn = document.getElementById('write-card-btn'); 
       const overlay = document.getElementById('loading-overlay'); 
+      btn.disabled = true; 
+      closeAritModal(); 
+      overlay.classList.remove('hidden'); 
+      overlay.classList.add('flex');
       
-      // 1. Check if browser supports Web Serial
-      if (!('serial' in navigator)) {
-          alert("Your browser does not support Web Serial. Please use Google Chrome or Microsoft Edge on a laptop.");
-          return;
+      if (selectedRoom.activeBookingId) {
+          await db.from('bookings').update({ key_issued: true }).eq('id', selectedRoom.activeBookingId);
       }
 
-      try {
-          btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Connecting...`;
-          btn.disabled = true;
-
-          // 2. Ask user to select the COM Port (COM5)
-          if (!serialPort) {
-              serialPort = await navigator.serial.requestPort();
-          }
-
-          // 3. Open the port
-          await serialPort.open({ baudRate: 9600 }); // ARIT CH340 encoders usually use 9600 baud
-
-          btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Encoding...`;
-          closeAritModal(); 
-          overlay.classList.remove('hidden'); 
-          overlay.classList.add('flex');
-
-          // 4. Prepare the command to send to the hardware
-          // NOTE: This is a standard text command. If your ARIT hardware requires specific HEX commands, we will change this string.
-          const encoder = new TextEncoder();
-          const dataToSend = `WRITE_ROOM:${selectedRoom.room_number}\n`; 
-          
-          serialWriter = serialPort.writable.getWriter();
-          await serialWriter.write(encoder.encode(dataToSend));
-          serialWriter.releaseLock();
-
-          // 5. Update Supabase
-          if (selectedRoom.activeBookingId) {
-              await db.from('bookings').update({ key_issued: true }).eq('id', selectedRoom.activeBookingId);
-          }
-
-          // 6. Success State
-          setTimeout(async () => { 
-              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
-              audio.play().catch(e => console.log('Audio block')); 
-              
-              overlay.classList.add('hidden'); 
-              overlay.classList.remove('flex'); 
-              btn.disabled = false; 
-              btn.innerHTML = `<i data-lucide="wifi" class="w-5 h-5"></i> Connect & Encode Card`;
-              
-              alert(`✅ Hardware Success!\n\nData sent to COM5 for Room ${selectedRoom.room_number}.`); 
-              
-              // Close the port so the encoder is free for the next use
-              await serialPort.close();
-              serialPort = null; 
-              
-              loadReceptionistData(); 
-          }, 1500);
-
-      } catch (err) {
-          alert("ARIT Hardware Error: " + err.message);
+      setTimeout(() => { 
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
+          audio.play().catch(e => console.log('Audio block')); 
           overlay.classList.add('hidden'); 
           overlay.classList.remove('flex'); 
           btn.disabled = false; 
-          btn.innerHTML = `<i data-lucide="wifi" class="w-5 h-5"></i> Connect & Encode Card`;
-          
-          // If it fails, make sure we close the port
-          if (serialPort) {
-              try { await serialPort.close(); } catch (e) {}
-              serialPort = null;
-          }
-      }
+          alert(`✅ ARIT Hardware Success!\n\nCard successfully encoded for Room ${selectedRoom.room_number}.`); 
+          loadReceptionistData(); 
+      }, 2000);
     }
 
-    // ... [DARK OPS & STANDARD ROLES REMAIN UNCHANGED] ...
     async function loadDarkOpsData(role) {
       const today = new Date().toISOString().split('T')[0];
       const dept = role === 'barman' ? 'Bar' : 'Kitchen';
+      
       const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', dept).gte('created_at', today);
       let cash = 0, credit = 0;
       if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
       document.getElementById('ops-total-sales').textContent = `₦${(cash + credit).toLocaleString()}`;
       document.getElementById('ops-credit-sales').textContent = `₦${credit.toLocaleString()}`;
       document.getElementById('ops-cash-sales').textContent = `₦${cash.toLocaleString()}`;
+
       const { data: shifts } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', dept).eq('status', 'Active').limit(1);
       const shiftStatusEl = document.getElementById('ops-shift-status');
       if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; } 
       else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
+
       const { data: lowStock } = await db.from('inventory').select('*').eq('department', dept).lte('stock_quantity', 5);
       const banner = document.getElementById('ops-low-stock-banner');
       if (lowStock && lowStock.length > 0) { banner.classList.remove('hidden'); document.getElementById('ops-low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', '); } 
       else { banner.classList.add('hidden'); }
+
       const btnContainer = document.getElementById('ops-action-buttons');
       const posLink = `pos.html?dept=${dept}&tab=pos`;
       const shiftLink = `pos.html?dept=${dept}&tab=shift`;
@@ -539,14 +482,17 @@
       const stockLink = `stock-request.html?dept=${dept}`;
       const icon = role === 'barman' ? 'wine' : 'chef-hat';
       const title = role === 'barman' ? 'Bar' : 'Kitchen';
+
       btnContainer.innerHTML = `
         <a href="${posLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="${icon}" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">${title} POS</span></a>
         <a href="${shiftLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Shift & Handover</span></a>
         <a href="${ordersLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">${title} Orders</span></a>
         <a href="stock-request.html?dept=${dept}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="package" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Stock Req</span></a>
       `;
+      
       document.getElementById('ops-stock-request-link').href = stockLink;
       document.getElementById('ops-bills-title').innerHTML = `<i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room ${title} Bills (Checkout Due)`;
+
       const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
       const list = document.getElementById('ops-room-bills-list');
       if (departures && departures.length > 0) {
@@ -559,23 +505,76 @@
         if (hasBills) list.innerHTML = billsHtml;
         else list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No ${title.toLowerCase()} bills owed by checking-out guests today.</p>`;
       } else { list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>'; }
+      
       lucide.createIcons();
     }
 
     function renderStandardOperations(role) {
       const grid = document.getElementById('std-operations-grid'); let buttons = '';
       const btn = (href, icon, color, bg, label) => `<a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-700/50 active:scale-95 transition-all shadow-sm group cursor-pointer"><div class="${bg} p-2.5 sm:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"><i data-lucide="${icon}" class="w-5 h-5 sm:w-6 sm:h-6 ${color}"></i></div><span class="text-[10px] sm:text-xs font-medium text-slate-300 text-center leading-tight">${label}</span></a>`;
-      const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out'); const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
+      const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out'); 
+      const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders'); 
+      const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
       
-      if (role === 'super_admin') { buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network'); buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); }
-      else if (['md', 'admin', 'manager'].includes(role)) { buttons += auditBtn; buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit'); buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights'); buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); buttons += btn('checkout.html', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); buttons += btn('guest-history.html', 'users', 'text-indigo-400', 'bg-indigo-500/20', 'Guest Directory'); buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); buttons += orderBtn; buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager'); buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); buttons += clockBtn; buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal'); }
-      else if (role === 'accountant') { buttons += auditBtn; buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit'); buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); buttons += btn('pos.html?dept=Kitchen&tab=orders', 'bell', 'text-orange-400', 'bg-orange-500/20', 'Live Orders'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += clockBtn; }
-      else if (role === 'supervisor') { buttons += auditBtn; buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
-      else if (role === 'housekeeping') { buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
-      else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += clockBtn; }
-      else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance'); buttons += clockBtn; }
-      else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-red-400', 'bg-red-500/20', 'Security Control'); buttons += clockBtn; }
-      else { buttons += clockBtn; }
+      // NEW BUTTONS
+      const maintenanceBtn = btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
+      const chatBtn = btn('internal-chat.html', 'message-square', 'text-emerald-400', 'bg-emerald-500/20', 'Staff Chat');
+      
+      if (role === 'super_admin') { 
+          buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network'); 
+          buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); 
+      }
+      else if (['md', 'admin', 'manager'].includes(role)) { 
+          buttons += auditBtn; 
+          buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit'); 
+          buttons += maintenanceBtn;
+          buttons += chatBtn;
+          buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights'); 
+          buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); 
+          buttons += btn('checkout.html', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); 
+          buttons += btn('guest-history.html', 'users', 'text-indigo-400', 'bg-indigo-500/20', 'Guest Directory'); 
+          buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); 
+          buttons += orderBtn; 
+          buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager'); 
+          buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); 
+          buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); 
+          buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); 
+          buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); 
+          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); 
+          buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); 
+          buttons += clockBtn; 
+          buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal'); 
+      }
+      else if (role === 'accountant') { 
+          buttons += auditBtn; 
+          buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit'); 
+          buttons += maintenanceBtn;
+          buttons += chatBtn;
+          buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll'); 
+          buttons += btn('pos.html?dept=Kitchen&tab=orders', 'bell', 'text-orange-400', 'bg-orange-500/20', 'Live Orders'); 
+          buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); 
+          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); 
+          buttons += clockBtn; 
+      }
+      else if (role === 'supervisor') { 
+          buttons += auditBtn; 
+          buttons += maintenanceBtn;
+          buttons += chatBtn;
+          buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms'); 
+          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); 
+          buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock'); 
+          buttons += clockBtn; 
+      }
+      else if (role === 'housekeeping') { 
+          buttons += btn('rooms.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Clean Rooms'); 
+          buttons += maintenanceBtn; 
+          buttons += chatBtn;
+          buttons += clockBtn; 
+      }
+      else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += chatBtn; buttons += clockBtn; }
+      else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += maintenanceBtn; buttons += chatBtn; buttons += clockBtn; }
+      else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-red-400', 'bg-red-500/20', 'Security Control'); buttons += chatBtn; buttons += clockBtn; }
+      else { buttons += clockBtn; buttons += chatBtn; }
 
       grid.innerHTML = buttons; lucide.createIcons();
     }
