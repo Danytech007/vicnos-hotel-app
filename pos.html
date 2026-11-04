@@ -156,25 +156,35 @@
     }
 
     async function loadProducts() {
-      // Fetch image_url if it exists in your DB
-      const { data: products } = await db.from('inventory')
-        .select('id, item_name, price, stock_quantity, category, image_url')
-        .eq('department', department)
-        .order('item_name');
+      try {
+        // We explicitly select the columns we need, including the new image_url
+        const { data: products, error } = await db.from('inventory')
+          .select('id, item_name, price, stock_quantity, category, image_url')
+          .eq('department', department)
+          .order('item_name');
+          
+        if (error) {
+            // If it fails, show the error on the screen so we know why
+            document.getElementById('product-grid').innerHTML = `<p class="text-red-400 col-span-full font-bold">Database Error: ${error.message}</p>`;
+            return;
+        }
+
+        allProducts = products || [];
+
+        const categories = ['All', ...new Set(allProducts.map(p => p.category || 'Uncategorized'))];
+        const tabsContainer = document.getElementById('category-tabs');
+        tabsContainer.innerHTML = '';
         
-      allProducts = products || [];
+        categories.forEach(cat => {
+          tabsContainer.innerHTML += `
+            <button onclick="filterCategory('${cat}')" class="cat-btn ${cat === 'All' ? 'bg-yellow-500 text-black' : 'bg-slate-800 text-slate-300'} px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-slate-700 transition">${cat}</button>
+          `;
+        });
 
-      const categories = ['All', ...new Set(allProducts.map(p => p.category || 'Uncategorized'))];
-      const tabsContainer = document.getElementById('category-tabs');
-      tabsContainer.innerHTML = '';
-      
-      categories.forEach(cat => {
-        tabsContainer.innerHTML += `
-          <button onclick="filterCategory('${cat}')" class="cat-btn ${cat === 'All' ? 'bg-yellow-500 text-black' : 'bg-slate-800 text-slate-300'} px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-slate-700 transition">${cat}</button>
-        `;
-      });
-
-      filterCategory('All');
+        filterCategory('All');
+      } catch (err) {
+        document.getElementById('product-grid').innerHTML = `<p class="text-red-400 col-span-full font-bold">Error loading menu: ${err.message}</p>`;
+      }
     }
 
     function filterCategory(category) {
@@ -210,22 +220,35 @@
       }
 
       grid.innerHTML = filteredProducts.map(p => {
-        // Use image if available, otherwise fallback to icon
+        // If image_url exists, show the image. Otherwise, show a sleek gradient and icon.
         const imageHtml = p.image_url 
-          ? `<img src="${p.image_url}" class="w-full h-24 object-cover rounded-t-xl absolute top-0 left-0 opacity-80" onerror="this.style.display='none'">` 
-          : `<div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition"><i data-lucide="${p.category === 'Beer' ? 'beer' : p.category === 'Spirits' ? 'wine' : 'glass-water'}" class="w-12 h-12 text-yellow-400"></i></div>`;
+          ? `<img src="${p.image_url}" class="w-full h-full object-cover absolute top-0 left-0 opacity-90" onerror="this.style.display='none'; document.getElementById('fallback-${p.id}').style.display='flex';">` 
+          : ``;
+
+        const fallbackIcon = `
+          <div id="fallback-${p.id}" class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-800 ${p.image_url ? 'hidden' : 'flex'}">
+            <i data-lucide="${p.category === 'Beer' ? 'beer' : p.category === 'Spirits' ? 'wine' : 'glass-water'}" class="w-16 h-16 text-slate-600"></i>
+          </div>
+        `;
 
         return `
         <div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, ${p.stock_quantity})" class="product-card glass-card rounded-2xl flex flex-col justify-between h-40 relative overflow-hidden group">
-          ${imageHtml}
           
-          <div class="relative z-10 p-3 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent h-full flex flex-col justify-end">
-            <h3 class="font-bold text-white text-sm leading-tight mb-1 line-clamp-2">${p.item_name}</h3>
+          <!-- Image or Fallback Icon -->
+          ${imageHtml}
+          ${fallbackIcon}
+          
+          <!-- Dark Gradient Overlay for Text Readability -->
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
+
+          <!-- Content -->
+          <div class="relative z-10 p-3 h-full flex flex-col justify-end">
+            <h3 class="font-bold text-white text-sm leading-tight mb-1 line-clamp-2 drop-shadow-md">${p.item_name}</h3>
             <div class="flex justify-between items-end w-full">
-              <p class="text-yellow-400 font-black text-lg">₦${Number(p.price).toLocaleString()}</p>
-              <div class="bg-yellow-500/20 p-1 rounded-md mb-1"><i data-lucide="plus" class="w-4 h-4 text-yellow-400"></i></div>
+              <p class="text-yellow-400 font-black text-lg drop-shadow-md">₦${Number(p.price).toLocaleString()}</p>
+              <div class="bg-yellow-500/20 p-1 rounded-md mb-1 backdrop-blur-sm border border-yellow-500/30"><i data-lucide="plus" class="w-4 h-4 text-yellow-400"></i></div>
             </div>
-            <span class="text-[10px] ${p.stock_quantity > 5 ? 'text-slate-400' : 'text-red-400 font-bold'} mt-1">${p.stock_quantity} left</span>
+            <span class="text-[10px] ${p.stock_quantity > 5 ? 'text-slate-300' : 'text-red-400 font-bold'} mt-1 drop-shadow-md">${p.stock_quantity} left</span>
           </div>
         </div>
       `}).join('');
@@ -371,13 +394,11 @@
             price: item.price
           });
 
-          // Deduct stock in DB
           const { data: prod } = await db.from('inventory').select('stock_quantity').eq('id', item.id).single();
           if (prod) {
             await db.from('inventory').update({ stock_quantity: prod.stock_quantity - item.qty }).eq('id', item.id);
           }
           
-          // Deduct stock locally
           const localProduct = allProducts.find(p => p.id === item.id);
           if (localProduct) {
              localProduct.stock_quantity -= item.qty;
