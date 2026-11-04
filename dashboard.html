@@ -6,6 +6,7 @@
   <title>Vicnos HotelStack - Dashboard</title>
   
   <script>
+    // CACHE KILLER
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) { registration.unregister(); }
@@ -42,11 +43,7 @@
     
     .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
     
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
-    }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
   </style>
 </head>
@@ -179,10 +176,11 @@
       <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="credit-card" class="w-10 h-10 text-blue-600"></i></div>
       <h2 id="arit-title" class="text-xl font-bold text-gray-900 mb-2">ARIT Key Encoder</h2>
       <p id="arit-desc" class="text-sm text-gray-500 mb-6">Place the card on the ARIT machine, then click below to encode.</p>
-      <button onclick="writeCard()" id="write-card-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Activate Card Now</button>
+      <button onclick="writeCard()" id="write-card-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Connect & Encode Card</button>
       <button onclick="closeAritModal()" class="mt-4 text-gray-500 text-sm font-bold hover:text-gray-800">Cancel</button>
     </div>
   </div>
+  
   <div id="loading-overlay" class="fixed inset-0 bg-white/90 backdrop-blur-md hidden items-center justify-center z-[120] flex-col">
     <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
     <p class="text-blue-900 font-bold animate-pulse">Writing data to ARIT Hardware...</p>
@@ -202,6 +200,10 @@
     let allRoomsData = [];
     let currentFilter = 'All';
     let heartbeatInterval = null;
+    
+    // ARIT Hardware Variables
+    let serialPort = null;
+    let serialWriter = null;
 
     async function init() {
       try {
@@ -242,42 +244,27 @@
       }
     }
 
+    // ... [HEARTBEAT & DASHBOARD LOGIC REMAINS UNCHANGED] ...
+    
     function startHeartbeat() {
         checkUpgradeRequests(); 
-        heartbeatInterval = setInterval(() => {
-            checkUpgradeRequests();
-        }, 10000); 
+        heartbeatInterval = setInterval(() => { checkUpgradeRequests(); }, 10000); 
     }
 
     async function checkUpgradeRequests() {
-        const { data: pending } = await db.from('guest_orders')
-            .select('*')
-            .eq('department', 'Upgrade Request')
-            .eq('status', 'Pending');
-
-        const { data: autoLogs } = await db.from('guest_orders')
-            .select('*')
-            .eq('department', 'Upgrade Log')
-            .eq('status', 'Completed')
-            .gte('created_at', new Date(Date.now() - 5 * 60000).toISOString());
-
+        const { data: pending } = await db.from('guest_orders').select('*').eq('department', 'Upgrade Request').eq('status', 'Pending');
+        const { data: autoLogs } = await db.from('guest_orders').select('*').eq('department', 'Upgrade Log').eq('status', 'Completed').gte('created_at', new Date(Date.now() - 5 * 60000).toISOString());
         const alertBanner = document.getElementById('live-upgrade-alert');
         const alertText = document.getElementById('live-upgrade-text');
 
         if (pending && pending.length > 0) {
-            alertBanner.classList.remove('hidden');
-            alertBanner.classList.replace('bg-emerald-600', 'bg-red-600');
+            alertBanner.classList.remove('hidden'); alertBanner.classList.replace('bg-emerald-600', 'bg-red-600');
             alertText.textContent = `URGENT: ${pending.length} guest(s) requested a manual upgrade. Click to review.`;
             try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
-        } 
-        else if (autoLogs && autoLogs.length > 0) {
-            alertBanner.classList.remove('hidden');
-            alertBanner.classList.replace('bg-red-600', 'bg-emerald-600');
+        } else if (autoLogs && autoLogs.length > 0) {
+            alertBanner.classList.remove('hidden'); alertBanner.classList.replace('bg-red-600', 'bg-emerald-600');
             alertText.textContent = `NOTICE: ${autoLogs.length} guest(s) upgraded their room via the app. Room status updated automatically.`;
-        } 
-        else {
-            alertBanner.classList.add('hidden');
-        }
+        } else { alertBanner.classList.add('hidden'); }
     }
 
     async function loadReceptionistData() {
@@ -287,10 +274,7 @@
       let stats = { Available: 0, Occupied: 0, Reserved: 0, Dirty: 0, Maintenance: 0 };
       allRoomsData = []; 
 
-      if (!rooms || rooms.length === 0) { 
-          document.getElementById('room-grid').innerHTML = '<p class="text-gray-500 text-sm">No rooms configured.</p>'; 
-          return; 
-      }
+      if (!rooms || rooms.length === 0) { document.getElementById('room-grid').innerHTML = '<p class="text-gray-500 text-sm">No rooms configured.</p>'; return; }
 
       rooms.forEach(room => {
         let displayStatus = room.status;
@@ -315,15 +299,7 @@
 
         if (stats[displayStatus] !== undefined) stats[displayStatus]++;
 
-        allRoomsData.push({
-            id: room.id,
-            room_number: room.room_number,
-            room_type: room.room_type,
-            status: displayStatus,
-            guestName: guestName,
-            isKeyIssued: isKeyIssued,
-            activeBookingId: activeBookingId
-        });
+        allRoomsData.push({ id: room.id, room_number: room.room_number, room_type: room.room_type, status: displayStatus, guestName: guestName, isKeyIssued: isKeyIssued, activeBookingId: activeBookingId });
       });
 
       document.getElementById('stat-available').textContent = stats.Available;
@@ -338,14 +314,8 @@
 
     function filterRooms(status, btnElement) {
         currentFilter = status;
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active', 'bg-slate-900', 'text-white');
-            btn.classList.add('bg-white', 'text-gray-700');
-        });
-        if (btnElement) {
-            btnElement.classList.remove('bg-white', 'text-gray-700');
-            btnElement.classList.add('active', 'bg-slate-900', 'text-white');
-        }
+        document.querySelectorAll('.filter-btn').forEach(btn => { btn.classList.remove('active', 'bg-slate-900', 'text-white'); btn.classList.add('bg-white', 'text-gray-700'); });
+        if (btnElement) { btnElement.classList.remove('bg-white', 'text-gray-700'); btnElement.classList.add('active', 'bg-slate-900', 'text-white'); }
         renderRoomGrid();
     }
 
@@ -353,14 +323,9 @@
         const roomGrid = document.getElementById('room-grid');
         roomGrid.innerHTML = '';
 
-        const filteredRooms = currentFilter === 'All' 
-            ? allRoomsData 
-            : allRoomsData.filter(r => r.status === currentFilter);
+        const filteredRooms = currentFilter === 'All' ? allRoomsData : allRoomsData.filter(r => r.status === currentFilter);
 
-        if (filteredRooms.length === 0) {
-            roomGrid.innerHTML = `<p class="text-gray-500 text-sm py-4">No rooms found for "${currentFilter}".</p>`;
-            return;
-        }
+        if (filteredRooms.length === 0) { roomGrid.innerHTML = `<p class="text-gray-500 text-sm py-4">No rooms found for "${currentFilter}".</p>`; return; }
 
         filteredRooms.forEach(room => {
             let cardColor = 'bg-white border-gray-200', badgeColor = 'bg-gray-100 text-gray-600', iconColor = 'text-gray-400';
@@ -402,55 +367,30 @@
               </div>
             `;
         });
-
         lucide.createIcons();
     }
 
     function openActionModal(encodedRoom) {
         selectedRoom = JSON.parse(encodedRoom);
-        
         document.getElementById('modal-room-num').textContent = selectedRoom.room_number;
         document.getElementById('modal-guest-name').textContent = selectedRoom.guestName || 'No Guest';
-        
         const actionsContainer = document.getElementById('modal-actions-container');
         actionsContainer.innerHTML = '';
 
         if (selectedRoom.isKeyIssued) {
-            actionsContainer.innerHTML += `
-                <button onclick="lockDoor()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
-                    <i data-lucide="lock" class="w-5 h-5"></i> Close Door (Lock)
-                </button>
-                <button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition mt-2">
-                    <i data-lucide="refresh-cw" class="w-5 h-5"></i> Re-encode Key
-                </button>
-            `;
+            actionsContainer.innerHTML += `<button onclick="lockDoor()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="lock" class="w-5 h-5"></i> Close Door (Lock)</button>
+                <button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition mt-2"><i data-lucide="refresh-cw" class="w-5 h-5"></i> Re-encode Key</button>`;
         } 
         else if (selectedRoom.status === 'Occupied') {
-            actionsContainer.innerHTML += `
-                <button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
-                    <i data-lucide="key" class="w-5 h-5"></i> Encode Guest Key (Unlock)
-                </button>
-                <a href="manage-booking.html" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2">
-                    <i data-lucide="arrow-up-right" class="w-5 h-5"></i> Upgrade / Extend Stay
-                </a>
-            `;
+            actionsContainer.innerHTML += `<button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="key" class="w-5 h-5"></i> Encode Guest Key (Unlock)</button>
+                <a href="manage-booking.html" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="arrow-up-right" class="w-5 h-5"></i> Upgrade / Extend Stay</a>`;
         }
         else if (selectedRoom.status === 'Available') {
-            actionsContainer.innerHTML += `
-                <button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
-                    <i data-lucide="key" class="w-5 h-5"></i> Encode Master Key (Unlock)
-                </button>
-                <button onclick="reserveRoom()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2">
-                    <i data-lucide="calendar-check" class="w-5 h-5"></i> Reserve this Room
-                </button>
-            `;
+            actionsContainer.innerHTML += `<button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="key" class="w-5 h-5"></i> Encode Master Key (Unlock)</button>
+                <button onclick="reserveRoom()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="calendar-check" class="w-5 h-5"></i> Reserve this Room</button>`;
         }
         else if (selectedRoom.status === 'Reserved') {
-            actionsContainer.innerHTML += `
-                <button onclick="cancelReservation()" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition">
-                    <i data-lucide="x-circle" class="w-5 h-5"></i> Cancel Reservation
-                </button>
-            `;
+            actionsContainer.innerHTML += `<button onclick="cancelReservation()" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition"><i data-lucide="x-circle" class="w-5 h-5"></i> Cancel Reservation</button>`;
         }
 
         document.getElementById('action-modal').classList.remove('hidden'); 
@@ -458,30 +398,11 @@
         lucide.createIcons();
     }
 
-    function closeActionModal() {
-        document.getElementById('action-modal').classList.add('hidden');
-        document.getElementById('action-modal').classList.remove('flex');
-    }
+    function closeActionModal() { document.getElementById('action-modal').classList.add('hidden'); document.getElementById('action-modal').classList.remove('flex'); }
 
-    async function lockDoor() {
-        if (selectedRoom.activeBookingId) {
-            await db.from('bookings').update({ key_issued: false }).eq('id', selectedRoom.activeBookingId);
-        }
-        closeActionModal();
-        loadReceptionistData();
-    }
-
-    async function reserveRoom() {
-        await db.from('rooms').update({ status: 'Reserved' }).eq('id', selectedRoom.id);
-        closeActionModal();
-        loadReceptionistData();
-    }
-
-    async function cancelReservation() {
-        await db.from('rooms').update({ status: 'Available' }).eq('id', selectedRoom.id);
-        closeActionModal();
-        loadReceptionistData();
-    }
+    async function lockDoor() { if (selectedRoom.activeBookingId) { await db.from('bookings').update({ key_issued: false }).eq('id', selectedRoom.activeBookingId); } closeActionModal(); loadReceptionistData(); }
+    async function reserveRoom() { await db.from('rooms').update({ status: 'Reserved' }).eq('id', selectedRoom.id); closeActionModal(); loadReceptionistData(); }
+    async function cancelReservation() { await db.from('rooms').update({ status: 'Available' }).eq('id', selectedRoom.id); closeActionModal(); loadReceptionistData(); }
 
     async function loadMovements() {
       const today = new Date().toISOString().split('T')[0];
@@ -515,55 +436,102 @@
       document.getElementById('arit-modal').classList.add('flex');
     }
     
-    function closeAritModal() { 
-        document.getElementById('arit-modal').classList.add('hidden'); 
-        document.getElementById('arit-modal').classList.remove('flex'); 
-    }
+    function closeAritModal() { document.getElementById('arit-modal').classList.add('hidden'); document.getElementById('arit-modal').classList.remove('flex'); }
     
+    // --- ARIT HARDWARE INTEGRATION (WEB SERIAL) ---
     async function writeCard() {
       const btn = document.getElementById('write-card-btn'); 
       const overlay = document.getElementById('loading-overlay'); 
-      btn.disabled = true; 
-      closeAritModal(); 
-      overlay.classList.remove('hidden'); 
-      overlay.classList.add('flex');
       
-      if (selectedRoom.activeBookingId) {
-          await db.from('bookings').update({ key_issued: true }).eq('id', selectedRoom.activeBookingId);
+      // 1. Check if browser supports Web Serial
+      if (!('serial' in navigator)) {
+          alert("Your browser does not support Web Serial. Please use Google Chrome or Microsoft Edge on a laptop.");
+          return;
       }
 
-      setTimeout(() => { 
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
-          audio.play().catch(e => console.log('Audio block')); 
+      try {
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Connecting...`;
+          btn.disabled = true;
+
+          // 2. Ask user to select the COM Port (COM5)
+          if (!serialPort) {
+              serialPort = await navigator.serial.requestPort();
+          }
+
+          // 3. Open the port
+          await serialPort.open({ baudRate: 9600 }); // ARIT CH340 encoders usually use 9600 baud
+
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Encoding...`;
+          closeAritModal(); 
+          overlay.classList.remove('hidden'); 
+          overlay.classList.add('flex');
+
+          // 4. Prepare the command to send to the hardware
+          // NOTE: This is a standard text command. If your ARIT hardware requires specific HEX commands, we will change this string.
+          const encoder = new TextEncoder();
+          const dataToSend = `WRITE_ROOM:${selectedRoom.room_number}\n`; 
+          
+          serialWriter = serialPort.writable.getWriter();
+          await serialWriter.write(encoder.encode(dataToSend));
+          serialWriter.releaseLock();
+
+          // 5. Update Supabase
+          if (selectedRoom.activeBookingId) {
+              await db.from('bookings').update({ key_issued: true }).eq('id', selectedRoom.activeBookingId);
+          }
+
+          // 6. Success State
+          setTimeout(async () => { 
+              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
+              audio.play().catch(e => console.log('Audio block')); 
+              
+              overlay.classList.add('hidden'); 
+              overlay.classList.remove('flex'); 
+              btn.disabled = false; 
+              btn.innerHTML = `<i data-lucide="wifi" class="w-5 h-5"></i> Connect & Encode Card`;
+              
+              alert(`✅ Hardware Success!\n\nData sent to COM5 for Room ${selectedRoom.room_number}.`); 
+              
+              // Close the port so the encoder is free for the next use
+              await serialPort.close();
+              serialPort = null; 
+              
+              loadReceptionistData(); 
+          }, 1500);
+
+      } catch (err) {
+          alert("ARIT Hardware Error: " + err.message);
           overlay.classList.add('hidden'); 
           overlay.classList.remove('flex'); 
           btn.disabled = false; 
-          alert(`✅ ARIT Hardware Success!\n\nCard successfully encoded for Room ${selectedRoom.room_number}.`); 
-          loadReceptionistData(); 
-      }, 2000);
+          btn.innerHTML = `<i data-lucide="wifi" class="w-5 h-5"></i> Connect & Encode Card`;
+          
+          // If it fails, make sure we close the port
+          if (serialPort) {
+              try { await serialPort.close(); } catch (e) {}
+              serialPort = null;
+          }
+      }
     }
 
+    // ... [DARK OPS & STANDARD ROLES REMAIN UNCHANGED] ...
     async function loadDarkOpsData(role) {
       const today = new Date().toISOString().split('T')[0];
       const dept = role === 'barman' ? 'Bar' : 'Kitchen';
-      
       const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', dept).gte('created_at', today);
       let cash = 0, credit = 0;
       if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
       document.getElementById('ops-total-sales').textContent = `₦${(cash + credit).toLocaleString()}`;
       document.getElementById('ops-credit-sales').textContent = `₦${credit.toLocaleString()}`;
       document.getElementById('ops-cash-sales').textContent = `₦${cash.toLocaleString()}`;
-
       const { data: shifts } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', dept).eq('status', 'Active').limit(1);
       const shiftStatusEl = document.getElementById('ops-shift-status');
       if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; } 
       else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
-
       const { data: lowStock } = await db.from('inventory').select('*').eq('department', dept).lte('stock_quantity', 5);
       const banner = document.getElementById('ops-low-stock-banner');
       if (lowStock && lowStock.length > 0) { banner.classList.remove('hidden'); document.getElementById('ops-low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', '); } 
       else { banner.classList.add('hidden'); }
-
       const btnContainer = document.getElementById('ops-action-buttons');
       const posLink = `pos.html?dept=${dept}&tab=pos`;
       const shiftLink = `pos.html?dept=${dept}&tab=shift`;
@@ -571,17 +539,14 @@
       const stockLink = `stock-request.html?dept=${dept}`;
       const icon = role === 'barman' ? 'wine' : 'chef-hat';
       const title = role === 'barman' ? 'Bar' : 'Kitchen';
-
       btnContainer.innerHTML = `
         <a href="${posLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="${icon}" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">${title} POS</span></a>
         <a href="${shiftLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Shift & Handover</span></a>
         <a href="${ordersLink}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">${title} Orders</span></a>
         <a href="stock-request.html?dept=${dept}" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="package" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white">Stock Req</span></a>
       `;
-      
       document.getElementById('ops-stock-request-link').href = stockLink;
       document.getElementById('ops-bills-title').innerHTML = `<i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room ${title} Bills (Checkout Due)`;
-
       const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
       const list = document.getElementById('ops-room-bills-list');
       if (departures && departures.length > 0) {
@@ -594,7 +559,6 @@
         if (hasBills) list.innerHTML = billsHtml;
         else list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No ${title.toLowerCase()} bills owed by checking-out guests today.</p>`;
       } else { list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>'; }
-      
       lucide.createIcons();
     }
 
