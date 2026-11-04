@@ -38,9 +38,14 @@
       <a href="dashboard.html" class="bg-slate-800 p-2 rounded-xl text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
       <div><h1 class="font-bold text-white text-lg leading-tight">Kitchen Board</h1><p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Chef's Display</p></div>
     </div>
-    <div class="bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-2">
-      <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-      <span class="text-xs font-bold text-emerald-400">Live Sync</span>
+    <div class="flex gap-2">
+      <button onclick="alertManager()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-red-500/30 transition">
+        <i data-lucide="alert-triangle" class="w-4 h-4"></i> Alert Manager
+      </button>
+      <div class="bg-emerald-500/20 px-3 py-2 rounded-xl border border-emerald-500/30 flex items-center gap-2">
+        <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+        <span class="text-xs font-bold text-emerald-400 hidden sm:block">Live</span>
+      </div>
     </div>
   </nav>
 
@@ -56,7 +61,7 @@
         <p id="stat-preparing" class="text-3xl font-black text-blue-400">0</p>
       </div>
       <div class="glass-card p-4 rounded-xl text-center border-l-4 border-emerald-500">
-        <p class="text-[10px] text-slate-400 uppercase font-bold">Ready to Serve</p>
+        <p class="text-[10px] text-slate-400 uppercase font-bold">Ready</p>
         <p id="stat-ready" class="text-3xl font-black text-emerald-400">0</p>
       </div>
     </div>
@@ -156,6 +161,22 @@
     async function updateStatus(orderId, newStatus) {
       await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
       loadOrders();
+    }
+
+    async function alertManager() {
+        const item = prompt("What ingredient or item is finished?");
+        if (!item) return;
+
+        try {
+            await db.from('maintenance_tickets').insert({
+                issue_description: `KITCHEN ALERT: Chef reports shortage of: ${item}`,
+                priority: 'High',
+                status: 'Pending'
+            });
+            alert("✅ Alert sent to Manager.");
+        } catch (err) {
+            alert("Failed to send alert: " + err.message);
+        }
     }
 
     function playNotificationSound() {

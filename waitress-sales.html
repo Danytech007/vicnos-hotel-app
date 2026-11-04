@@ -14,28 +14,29 @@
   <style>
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; height: 100dvh; }
     .hide-scroll::-webkit-scrollbar { display: none; }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0.6; }
-      100% { opacity: 1; }
-    }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
   </style>
 </head>
-<body class="min-h-screen pb-24 flex flex-col">
+<body class="flex flex-col">
 
-  <nav class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+  <nav class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100 shrink-0">
     <div class="flex items-center gap-3">
       <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
-      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Waitress Portal</h1><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Orders & Shift</p></div>
+      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Waitress Portal</h1><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Orders & Kitchen Stock</p></div>
     </div>
     <div class="bg-indigo-50 p-2 rounded-full text-indigo-600"><i data-lucide="utensils-crossed" class="w-5 h-5"></i></div>
   </nav>
+
+  <!-- LOW STOCK BANNER (KITCHEN ONLY) -->
+  <div id="low-stock-banner" class="hidden bg-red-50 border-b border-red-200 p-3 flex items-start gap-2 shrink-0">
+    <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mt-0.5"></i>
+    <div><p class="text-xs text-red-800 font-bold">Kitchen Low Stock Alert!</p><p id="low-stock-items" class="text-[10px] text-red-600 font-medium">Loading...</p></div>
+  </div>
 
   <!-- LIVE BLINKING ALERT -->
   <div id="live-order-alert" class="hidden fixed top-20 left-4 right-4 z-[60] bg-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between cursor-pointer blink-alert" onclick="switchTab('orders')">
@@ -49,52 +50,50 @@
     <i data-lucide="chevron-right" class="w-8 h-8"></i>
   </div>
 
-  <div class="max-w-4xl mx-auto px-4 mt-4 flex gap-2 overflow-x-auto hide-scroll w-full">
+  <div class="max-w-4xl mx-auto px-4 mt-4 flex gap-2 overflow-x-auto hide-scroll w-full shrink-0">
     <button onclick="switchTab('pos')" id="tab-btn-pos" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md whitespace-nowrap transition">Take Order</button>
     <button onclick="switchTab('orders')" id="tab-btn-orders" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition flex items-center justify-center gap-1">My Orders <span id="order-badge" class="hidden bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span></button>
-    <button onclick="switchTab('shift')" id="tab-btn-shift" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition">Shift</button>
-    <button onclick="switchTab('charges')" id="tab-btn-charges" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition">Room Charges</button>
+    <button onclick="switchTab('shift')" id="tab-btn-shift" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition">Shift & Stock</button>
   </div>
 
-  <main class="p-4 max-w-4xl mx-auto w-full flex-grow">
+  <main class="flex-1 flex flex-col w-full overflow-hidden max-w-4xl mx-auto p-4">
 
     <!-- TAB 1: TAKE ORDER -->
-    <div id="tab-pos" class="space-y-4 fade-in">
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Table No. / Location</label>
-        <input type="text" id="table-input" placeholder="e.g. Table 5 or Poolside 2" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none font-bold text-lg focus:border-indigo-500">
+    <div id="tab-pos" class="flex-1 flex flex-col md:flex-row gap-4 fade-in min-h-0">
+      <div class="flex-1 flex flex-col min-h-0">
+        <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 mb-3 shrink-0 flex items-center gap-2">
+          <i data-lucide="map-pin" class="w-5 h-5 text-indigo-500"></i>
+          <input type="text" id="table-input" placeholder="Table No. / Location (e.g. Table 5)" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-xl outline-none font-bold text-lg focus:border-indigo-500 transition">
+        </div>
+        <div class="flex gap-2 overflow-x-auto hide-scroll pb-2 shrink-0" id="category-tabs"></div>
+        <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
+          <p class="text-gray-500 text-sm animate-pulse col-span-full">Loading menu...</p>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="md:col-span-2 space-y-4">
-          <div class="flex gap-2 overflow-x-auto hide-scroll pb-1" id="category-tabs"></div>
-          <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            <p class="text-gray-500 text-sm animate-pulse col-span-full">Loading menu...</p>
-          </div>
+      <div class="w-full md:w-80 bg-white rounded-t-3xl md:rounded-2xl shadow-[0_-10px_20px_rgba(0,0,0,0.05)] md:shadow-sm border border-gray-200 flex flex-col shrink-0 h-[45vh] md:h-auto relative z-20">
+        <div class="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center rounded-t-3xl md:rounded-t-2xl">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-4 h-4 text-indigo-500"></i> Current Order</h3>
+          <button onclick="clearCart()" class="text-xs text-red-500 font-bold">Clear</button>
         </div>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col h-[60vh]">
-          <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-            <h3 class="font-bold text-gray-800">Current Order</h3>
-            <button onclick="clearCart()" class="text-xs text-red-500 font-bold">Clear</button>
+        <div id="cart-items" class="flex-1 overflow-y-auto p-3 space-y-2 hide-scroll min-h-0">
+          <p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>
+        </div>
+        <div class="p-3 border-t border-gray-100 bg-gray-50 shrink-0 rounded-b-2xl">
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-bold text-gray-600">Total:</span>
+            <span id="cart-total" class="text-2xl font-black text-indigo-600">₦0</span>
           </div>
-          <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-2 hide-scroll">
-            <p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>
-          </div>
-          <div class="p-4 border-t border-gray-100 bg-gray-50">
-            <div class="flex justify-between items-center mb-3">
-              <span class="font-bold text-gray-600">Total:</span>
-              <span id="cart-total" class="text-2xl font-black text-indigo-600">₦0</span>
-            </div>
-            <button onclick="sendOrder()" id="send-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">Send to Kitchen & Bar</button>
-          </div>
+          <button onclick="sendOrder()" id="send-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+            <i data-lucide="send" class="w-5 h-5"></i> Send to Kitchen & Bar
+          </button>
         </div>
       </div>
     </div>
 
     <!-- TAB 2: MY ORDERS -->
-    <div id="tab-orders" class="hidden fade-in">
-      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+    <div id="tab-orders" class="hidden flex-1 overflow-y-auto hide-scroll fade-in">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
         <div class="flex justify-between items-center mb-4">
           <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-indigo-500"></i> Active Orders</h2>
           <button onclick="loadLiveOrders()" class="text-gray-400 hover:text-indigo-600"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
@@ -103,35 +102,60 @@
       </div>
     </div>
 
-    <!-- TAB 3: SHIFT -->
-    <div id="tab-shift" class="hidden space-y-5 fade-in">
+    <!-- TAB 3: SHIFT & KITCHEN STOCK -->
+    <div id="tab-shift" class="hidden flex-1 overflow-y-auto hide-scroll space-y-4 fade-in pb-10">
+        
+        <!-- Active Shift -->
         <div id="active-shift-panel" class="hidden space-y-4">
             <div class="bg-slate-900 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden">
               <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Active Shift Sales</h2>
               <p id="live-total" class="text-4xl font-extrabold text-white">₦0</p>
               <div class="grid grid-cols-2 gap-4 mt-6 border-t border-slate-700 pt-4">
-                <div><p class="text-[10px] text-slate-400 font-bold uppercase">Cash Collected</p><p id="live-cash" class="text-lg font-bold text-emerald-400">₦0</p></div>
+                <div><p class="text-[10px] text-slate-400 font-bold uppercase">Cash to Remit</p><p id="live-cash" class="text-lg font-bold text-emerald-400">₦0</p></div>
                 <div><p class="text-[10px] text-slate-400 font-bold uppercase">Room Credits</p><p id="live-credit" class="text-lg font-bold text-amber-400">₦0</p></div>
               </div>
             </div>
-            <button onclick="endShift()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">End Shift</button>
+            <button onclick="endShift()" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 text-lg">
+              <i data-lucide="door-closed" class="w-5 h-5"></i> End Shift & Count Kitchen
+            </button>
         </div>
-        <div id="start-shift-panel" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-gray-200 text-center">
-            <h2 class="text-xl font-bold text-gray-900 mb-2">Start New Shift</h2>
-            <p class="text-xs text-gray-500 mb-6">Verify stock and begin taking orders.</p>
-            <button onclick="startShift()" id="start-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition">Start Shift</button>
-        </div>
-    </div>
 
-    <!-- TAB 4: ROOM CHARGES -->
-    <div id="tab-charges" class="hidden fade-in">
-      <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-orange-500"></i> Room Charges</h2>
-          <button onclick="loadRoomCharges()" class="text-gray-400 hover:text-indigo-600"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+        <!-- Pending Approval -->
+        <div id="pending-shift-panel" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-gray-200 text-center">
+            <div class="bg-amber-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="hourglass" class="w-8 h-8 text-amber-500"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-900 mb-1">Shift Ended</h2>
+            <p class="text-xs text-gray-500 mb-6">Waiting for Manager approval.</p>
         </div>
-        <div id="charges-list" class="space-y-3"><p class="text-center text-gray-500 text-sm py-4 animate-pulse">Loading...</p></div>
-      </div>
+
+        <!-- Start Shift with Kitchen Stock Verification -->
+        <div id="start-shift-panel" class="hidden bg-white p-5 rounded-3xl shadow-sm border border-gray-200">
+            <div class="text-center mb-6">
+                <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="clipboard-check" class="w-8 h-8 text-indigo-600"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-900 mb-1">Start New Shift</h2>
+                <p class="text-xs text-gray-500">Verify the physical KITCHEN stock before starting.</p>
+            </div>
+
+            <p class="text-xs font-bold text-gray-500 uppercase mb-2">Kitchen Food Stock</p>
+            <div class="overflow-x-auto max-h-[40vh] mb-4 border rounded-xl">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="text-xs uppercase bg-gray-100 text-gray-500 sticky top-0">
+                        <tr>
+                            <th class="px-3 py-2">Item</th>
+                            <th class="px-3 py-2 text-center">Expected</th>
+                            <th class="px-3 py-2 text-center">Physical</th>
+                        </tr>
+                    </thead>
+                    <tbody id="start-shift-table-body"></tbody>
+                </table>
+            </div>
+
+            <button onclick="submitOpeningCount()" id="start-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition">Confirm Count & Start</button>
+        </div>
+
     </div>
 
   </main>
@@ -159,16 +183,15 @@
         myUserId = user.id;
         
         loadMenu();
+        loadLowStock();
         checkShiftStatus();
         loadLiveOrders();
         
-        setInterval(() => {
-            loadLiveOrders(true);
-        }, 10000);
+        setInterval(() => { loadLiveOrders(true); }, 10000);
     }
 
     function switchTab(tab) {
-        ['pos', 'orders', 'shift', 'charges'].forEach(t => {
+        ['pos', 'orders', 'shift'].forEach(t => {
             document.getElementById(`tab-${t}`).classList.add('hidden');
             document.getElementById(`tab-btn-${t}`).className = "flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition";
         });
@@ -180,10 +203,149 @@
             loadLiveOrders();
             document.getElementById('live-order-alert').classList.add('hidden');
         }
-        if (tab === 'charges') loadRoomCharges();
     }
 
-    // --- MENU & CART LOGIC ---
+    // --- SHIFT & KITCHEN STOCK LOGIC ---
+    async function checkShiftStatus() {
+        document.getElementById('start-shift-panel').classList.add('hidden');
+        document.getElementById('active-shift-panel').classList.add('hidden');
+        document.getElementById('pending-shift-panel').classList.add('hidden');
+
+        const { data: myActive } = await db.from('shifts').select('*').eq('user_id', myUserId).eq('department', 'Waitress').eq('status', 'Active').limit(1);
+        if (myActive && myActive.length > 0) {
+            activeShift = myActive[0];
+            document.getElementById('active-shift-panel').classList.remove('hidden');
+            loadLiveSales();
+            return;
+        }
+
+        const { data: myPending } = await db.from('shifts').select('*').eq('user_id', myUserId).eq('department', 'Waitress').eq('status', 'Pending_Approval').limit(1);
+        if (myPending && myPending.length > 0) {
+            document.getElementById('pending-shift-panel').classList.remove('hidden');
+            return;
+        }
+
+        document.getElementById('start-shift-panel').classList.remove('hidden');
+        loadOpeningCount();
+    }
+
+    async function loadOpeningCount() {
+        const tbody = document.getElementById('start-shift-table-body');
+        tbody.innerHTML = '';
+
+        // FETCH ONLY KITCHEN ITEMS
+        const { data: items } = await db.from('inventory').select('*').eq('department', 'Kitchen');
+        
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-500">No Kitchen items found.</td></tr>';
+            return;
+        }
+
+        items.forEach(item => {
+            tbody.innerHTML += `
+                <tr class="border-b border-gray-100">
+                    <td class="px-3 py-3 font-bold text-gray-800 text-xs">${item.item_name}</td>
+                    <td class="px-3 py-3 text-center text-gray-500 font-bold text-xs">${item.stock_quantity}</td>
+                    <td class="px-3 py-3 text-center">
+                        <input type="number" id="open-phys-${item.id}" placeholder="${item.stock_quantity}" class="w-16 bg-gray-50 border border-gray-300 rounded-lg p-1.5 text-center text-gray-800 outline-none focus:border-indigo-500 font-bold text-xs">
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function submitOpeningCount() {
+        const rows = document.querySelectorAll('[id^="open-phys-"]');
+        let counts = [];
+        let hasEmpty = false;
+
+        rows.forEach(input => {
+            if (!input.value) hasEmpty = true;
+            const id = input.id.replace('open-phys-', '');
+            counts.push({ id, physical: parseInt(input.value) || 0 });
+        });
+
+        if (hasEmpty) return alert("Please enter the physical count for ALL kitchen items.");
+
+        const btn = document.getElementById('start-btn');
+        btn.textContent = "Starting..."; btn.disabled = true;
+
+        try {
+            // Update Inventory to match her physical count
+            for (const c of counts) {
+                await db.from('inventory').update({ stock_quantity: c.physical }).eq('id', c.id);
+            }
+
+            // Start Shift
+            await db.from('shifts').insert({ user_id: myUserId, department: 'Waitress', status: 'Active' });
+
+            alert("✅ Shift started!");
+            checkShiftStatus();
+
+        } catch (err) {
+            alert("Error: " + err.message);
+            btn.textContent = "Confirm Count & Start"; btn.disabled = false;
+        }
+    }
+
+    async function loadLiveSales() {
+        if (!activeShift) return;
+        const { data: orders } = await db.from('pos_orders').select('*').eq('department', 'Waitress').eq('created_by', myUserId).gte('created_at', activeShift.start_time);
+        let cash = 0, credit = 0;
+        if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
+        shiftSales = { cash, credit, total: cash + credit };
+        document.getElementById('live-cash').textContent = `₦${cash.toLocaleString()}`;
+        document.getElementById('live-credit').textContent = `₦${credit.toLocaleString()}`;
+        document.getElementById('live-total').textContent = `₦${(cash + credit).toLocaleString()}`;
+    }
+
+    async function endShift() {
+        if (!confirm("End shift and count remaining kitchen stock?")) return;
+        
+        // Before ending, we force them to do the end-of-shift count
+        document.getElementById('start-shift-panel').classList.remove('hidden');
+        document.getElementById('active-shift-panel').classList.add('hidden');
+        
+        // Modify the start panel title for end of shift
+        document.querySelector('#start-shift-panel h2').textContent = "End Shift Handover";
+        document.querySelector('#start-shift-panel p').textContent = "Enter the final physical KITCHEN count before leaving.";
+        document.querySelector('#start-btn').textContent = "Confirm Count & End Shift";
+        
+        // Change the onclick handler temporarily
+        document.getElementById('start-btn').onclick = async () => {
+            const rows = document.querySelectorAll('[id^="open-phys-"]');
+            for (const input of rows) {
+                const id = input.id.replace('open-phys-', '');
+                const physical = parseInt(input.value) || 0;
+                await db.from('inventory').update({ stock_quantity: physical }).eq('id', id);
+            }
+            
+            await db.from('shifts').update({ 
+                status: 'Pending_Approval', 
+                end_time: new Date().toISOString(), 
+                total_cash_sales: shiftSales.cash, 
+                total_credit_sales: shiftSales.credit 
+            }).eq('id', activeShift.id);
+            
+            alert("✅ Shift ended and kitchen stock updated. Please hand over cash.");
+            window.location.reload();
+        };
+
+        loadOpeningCount();
+    }
+
+    // --- LOW STOCK (KITCHEN ONLY) ---
+    async function loadLowStock() {
+        const { data: lowStock } = await db.from('inventory').select('*').eq('department', 'Kitchen').lte('stock_quantity', 5);
+        const banner = document.getElementById('low-stock-banner');
+        if (lowStock && lowStock.length > 0) {
+            banner.classList.remove('hidden');
+            document.getElementById('low-stock-items').textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(', ');
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+
     async function loadMenu() {
         const { data: products } = await db.from('inventory')
             .select('id, item_name, price, stock_quantity, category, department')
@@ -269,7 +431,7 @@
         if (cart.length === 0) return alert("Cart is empty.");
 
         const btn = document.getElementById('send-btn');
-        btn.disabled = true; btn.textContent = "Sending...";
+        btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Sending...`;
 
         let kitchenItems = cart.filter(i => i.dept === 'Kitchen');
         let barItems = cart.filter(i => i.dept === 'Bar');
@@ -277,82 +439,34 @@
         try {
             if (kitchenItems.length > 0) {
                 await db.from('guest_orders').insert({
-                    department: 'Kitchen',
-                    table_number: table,
+                    department: 'Kitchen', table_number: table,
                     items: kitchenItems.map(i => ({ name: i.name, qty: i.qty })),
-                    total_amount: kitchenItems.reduce((sum, i) => sum + (i.price * i.qty), 0),
-                    status: 'Pending'
+                    total_amount: kitchenItems.reduce((sum, i) => sum + (i.price * i.qty), 0), status: 'Pending'
                 });
             }
             if (barItems.length > 0) {
                 await db.from('guest_orders').insert({
-                    department: 'Bar',
-                    table_number: table,
+                    department: 'Bar', table_number: table,
                     items: barItems.map(i => ({ name: i.name, qty: i.qty })),
-                    total_amount: barItems.reduce((sum, i) => sum + (i.price * i.qty), 0),
-                    status: 'Pending'
+                    total_amount: barItems.reduce((sum, i) => sum + (i.price * i.qty), 0), status: 'Pending'
                 });
             }
-            alert("✅ Order sent to Kitchen & Bar!");
+            alert("✅ Order sent!");
             clearCart();
             document.getElementById('table-input').value = '';
             switchTab('orders');
         } catch (err) {
             alert("Failed: " + err.message);
         } finally {
-            btn.disabled = false; btn.textContent = "Send to Kitchen & Bar";
+            btn.disabled = false; btn.innerHTML = `<i data-lucide="send" class="w-5 h-5"></i> Send to Kitchen & Bar`;
+            lucide.createIcons();
         }
     }
 
-    // --- SHIFT LOGIC ---
-    async function checkShiftStatus() {
-        document.getElementById('start-shift-panel').classList.add('hidden');
-        document.getElementById('active-shift-panel').classList.add('hidden');
-
-        const { data: myActive } = await db.from('shifts').select('*').eq('user_id', myUserId).eq('department', 'Waitress').eq('status', 'Active').limit(1);
-        if (myActive && myActive.length > 0) {
-            activeShift = myActive[0];
-            document.getElementById('active-shift-panel').classList.remove('hidden');
-            loadLiveSales();
-            return;
-        }
-        document.getElementById('start-shift-panel').classList.remove('hidden');
-    }
-
-    async function startShift() {
-        await db.from('shifts').insert({ user_id: myUserId, department: 'Waitress', status: 'Active' });
-        alert("Shift started!");
-        checkShiftStatus();
-    }
-
-    async function loadLiveSales() {
-        if (!activeShift) return;
-        const { data: orders } = await db.from('pos_orders').select('*').eq('department', 'Waitress').eq('created_by', myUserId).gte('created_at', activeShift.start_time);
-        let cash = 0, credit = 0;
-        if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
-        shiftSales = { cash, credit, total: cash + credit };
-        document.getElementById('live-cash').textContent = `₦${cash.toLocaleString()}`;
-        document.getElementById('live-credit').textContent = `₦${credit.toLocaleString()}`;
-        document.getElementById('live-total').textContent = `₦${(cash + credit).toLocaleString()}`;
-    }
-
-    async function endShift() {
-        if (!confirm("End shift?")) return;
-        await db.from('shifts').update({ status: 'Pending_Approval', end_time: new Date().toISOString(), total_cash_sales: shiftSales.cash, total_credit_sales: shiftSales.credit }).eq('id', activeShift.id);
-        alert("Shift ended!");
-        checkShiftStatus();
-    }
-
-    // --- LIVE ORDERS (FIXED FILTERING) ---
+    // --- LIVE ORDERS ---
     async function loadLiveOrders(isBackgroundPoll = false) {
         const list = document.getElementById('orders-list');
-        
-        // CRITICAL FIX: Only fetch Kitchen and Bar orders. No more Porter requests!
-        const { data: orders } = await db.from('guest_orders')
-            .select('*')
-            .in('department', ['Kitchen', 'Bar'])
-            .not('status', 'in', '("Delivered","Completed","Cancelled")')
-            .order('created_at', { ascending: true });
+        const { data: orders } = await db.from('guest_orders').select('*').in('department', ['Kitchen', 'Bar']).not('status', 'in', '("Delivered","Completed","Cancelled")').order('created_at', { ascending: true });
 
         if (!orders || orders.length === 0) {
             list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active orders.</p>';
@@ -415,40 +529,6 @@
     async function updateOrderStatus(orderId, newStatus) {
         await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
         loadLiveOrders();
-    }
-
-    async function loadRoomCharges() {
-        const list = document.getElementById('charges-list');
-        const { data: bookings } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('status', 'Checked In');
-        if (!bookings || bookings.length === 0) return list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active guests.</p>';
-
-        const { data: charges } = await db.from('folio_charges').select('*').in('booking_id', bookings.map(b => b.id)).neq('department', 'Room Accommodation');
-        if (!charges || charges.length === 0) return list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending charges.</p>';
-
-        const grouped = {};
-        charges.forEach(c => {
-            const booking = bookings.find(b => b.id === c.booking_id);
-            if(booking) {
-                const room = booking.rooms.room_number;
-                if(!grouped[room]) grouped[room] = { guest: booking.guests.full_name, total: 0, items: [] };
-                grouped[room].total += Number(c.amount);
-                grouped[room].items.push(c);
-            }
-        });
-
-        list.innerHTML = Object.keys(grouped).map(room => {
-            const data = grouped[room];
-            const itemsHtml = data.items.map(i => `<li class="flex justify-between text-xs text-gray-600 border-b border-gray-100 py-1 last:border-0"><span>${i.description}</span><span>₦${Number(i.amount).toLocaleString()}</span></li>`).join('');
-            return `
-                <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <div><p class="font-bold text-gray-900 text-sm">Room ${room} - ${data.guest}</p></div>
-                        <p class="font-black text-orange-600 text-lg">₦${data.total.toLocaleString()}</p>
-                    </div>
-                    <ul class="bg-white rounded-lg p-2 border border-orange-100">${itemsHtml}</ul>
-                </div>
-            `;
-        }).join('');
     }
 
     init();
