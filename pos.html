@@ -23,7 +23,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; overflow: hidden; height: 100vh; }
+    /* Using 100dvh for perfect mobile/tablet height without scrolling the whole page */
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; overflow: hidden; height: 100dvh; }
     .hide-scroll::-webkit-scrollbar { display: none; }
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
     .product-card { transition: all 0.2s ease; cursor: pointer; }
@@ -32,10 +33,10 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="flex flex-col md:flex-row">
+<body class="flex flex-col md:flex-row w-full">
 
   <!-- LEFT SIDE: MENU & SEARCH -->
-  <div class="flex-1 flex flex-col min-h-0 border-b md:border-b-0 md:border-r border-slate-700/50">
+  <div class="flex-1 flex flex-col h-[55vh] md:h-full min-h-0 border-b md:border-b-0 md:border-r border-slate-700/50">
     
     <!-- HEADER -->
     <div class="p-4 md:p-6 bg-slate-900/50 backdrop-blur-md border-b border-slate-700/50 flex justify-between items-center shrink-0">
@@ -56,10 +57,11 @@
 
     <!-- CATEGORY TABS -->
     <div class="px-4 md:px-6 py-3 overflow-x-auto hide-scroll flex gap-2 shrink-0 border-b border-slate-800" id="category-tabs">
-      <button onclick="filterCategory('All')" class="cat-btn bg-yellow-500 text-black px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition">All Drinks</button>
+      <!-- Injected by JS -->
     </div>
 
     <!-- PRODUCT GRID -->
+    <!-- This container has flex-1 and overflow-y-auto to allow internal scrolling -->
     <div class="flex-1 overflow-y-auto hide-scroll p-4 md:p-6 min-h-0">
       <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 pb-20">
         <p class="text-slate-400 text-sm animate-pulse col-span-full">Loading menu...</p>
@@ -68,7 +70,7 @@
   </div>
 
   <!-- RIGHT SIDE: CART & CHECKOUT -->
-  <div class="w-full md:w-[400px] bg-slate-900 flex flex-col min-h-0 shrink-0 relative z-10 shadow-2xl">
+  <div class="w-full md:w-[400px] bg-slate-900 flex flex-col h-[45vh] md:h-full min-h-0 shrink-0 relative z-10 shadow-2xl">
     
     <!-- CART HEADER -->
     <div class="p-4 border-b border-slate-700/50 bg-slate-800/30 flex justify-between items-center shrink-0">
@@ -81,7 +83,7 @@
       <input type="text" id="table-number" placeholder="Table No. or Guest Name (Optional)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white outline-none focus:border-yellow-500 transition">
     </div>
 
-    <!-- CART ITEMS -->
+    <!-- CART ITEMS (Scrollable) -->
     <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3 hide-scroll min-h-0">
       <div class="h-full flex flex-col items-center justify-center text-slate-500">
         <i data-lucide="glass-water" class="w-12 h-12 mb-3 opacity-20"></i>
@@ -157,15 +159,13 @@
 
     async function loadProducts() {
       try {
-        // We explicitly select the columns we need, including the new image_url
         const { data: products, error } = await db.from('inventory')
           .select('id, item_name, price, stock_quantity, category, image_url')
           .eq('department', department)
           .order('item_name');
           
         if (error) {
-            // If it fails, show the error on the screen so we know why
-            document.getElementById('product-grid').innerHTML = `<p class="text-red-400 col-span-full font-bold">Database Error: ${error.message}</p>`;
+            document.getElementById('product-grid').innerHTML = `<p class="text-red-400 col-span-full font-bold p-4 glass-card rounded-xl">Database Error: ${error.message}</p>`;
             return;
         }
 
@@ -177,23 +177,33 @@
         
         categories.forEach(cat => {
           tabsContainer.innerHTML += `
-            <button onclick="filterCategory('${cat}')" class="cat-btn ${cat === 'All' ? 'bg-yellow-500 text-black' : 'bg-slate-800 text-slate-300'} px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-slate-700 transition">${cat}</button>
+            <button onclick="filterCategory('${cat}', this)" class="cat-btn ${cat === 'All' ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-slate-800 text-slate-300 border-slate-700'} px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border transition">${cat}</button>
           `;
         });
 
-        filterCategory('All');
+        // FIXED BUG: Passing 'null' for the button since this is an automated call
+        filterCategory('All', null);
       } catch (err) {
-        document.getElementById('product-grid').innerHTML = `<p class="text-red-400 col-span-full font-bold">Error loading menu: ${err.message}</p>`;
+        document.getElementById('product-grid').innerHTML = `<p class="text-red-400 col-span-full font-bold p-4 glass-card rounded-xl">Error loading menu: ${err.message}</p>`;
       }
     }
 
-    function filterCategory(category) {
+    function filterCategory(category, btnElement) {
       currentCategory = category;
       
+      // Reset all buttons
       document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.className = "cat-btn bg-slate-800 text-slate-300 px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-slate-700 transition";
+        btn.className = "cat-btn bg-slate-800 text-slate-300 border-slate-700 px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border transition";
       });
-      event.target.className = "cat-btn bg-yellow-500 text-black px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-yellow-500 transition";
+      
+      // Highlight the clicked button (if there is one)
+      if (btnElement) {
+        btnElement.className = "cat-btn bg-yellow-500 text-black border-yellow-500 px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border transition";
+      } else {
+        // If it's the initial load, highlight the first button manually
+        const firstBtn = document.querySelector('.cat-btn');
+        if(firstBtn) firstBtn.className = "cat-btn bg-yellow-500 text-black border-yellow-500 px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border transition";
+      }
       
       if (category === 'All') {
         filteredProducts = allProducts;
@@ -220,25 +230,29 @@
       }
 
       grid.innerHTML = filteredProducts.map(p => {
-        // If image_url exists, show the image. Otherwise, show a sleek gradient and icon.
+        // Determine the icon based on category
+        let iconName = 'glass-water';
+        if (p.category === 'Beer') iconName = 'beer';
+        if (p.category === 'Spirits') iconName = 'wine';
+        if (p.category === 'Soft Drinks') iconName = 'cup-soda';
+
         const imageHtml = p.image_url 
           ? `<img src="${p.image_url}" class="w-full h-full object-cover absolute top-0 left-0 opacity-90" onerror="this.style.display='none'; document.getElementById('fallback-${p.id}').style.display='flex';">` 
           : ``;
 
         const fallbackIcon = `
           <div id="fallback-${p.id}" class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-800 ${p.image_url ? 'hidden' : 'flex'}">
-            <i data-lucide="${p.category === 'Beer' ? 'beer' : p.category === 'Spirits' ? 'wine' : 'glass-water'}" class="w-16 h-16 text-slate-600"></i>
+            <i data-lucide="${iconName}" class="w-16 h-16 text-slate-600"></i>
           </div>
         `;
 
         return `
         <div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, ${p.stock_quantity})" class="product-card glass-card rounded-2xl flex flex-col justify-between h-40 relative overflow-hidden group">
           
-          <!-- Image or Fallback Icon -->
           ${imageHtml}
           ${fallbackIcon}
           
-          <!-- Dark Gradient Overlay for Text Readability -->
+          <!-- Dark Gradient Overlay -->
           <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
 
           <!-- Content -->
@@ -428,7 +442,7 @@
         selectedRoomForCharge = null;
         document.getElementById('table-number').value = '';
         renderCart();
-        filterCategory(currentCategory);
+        filterCategory(currentCategory, document.querySelector('.cat-btn')); 
         
       } catch (err) {
         alert("Checkout Error: " + err.message);
