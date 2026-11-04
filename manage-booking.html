@@ -50,9 +50,9 @@
       <div id="requests-list" class="space-y-3"></div>
     </div>
 
-    <!-- MANUAL UPGRADE SECTION -->
+    <!-- MANUAL OPERATIONS SECTION -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-blue-500"></i> Manual Room Upgrade</h2>
+      <h2 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-blue-500"></i> Manual Guest Management</h2>
       
       <div class="space-y-4">
         <div>
@@ -62,36 +62,63 @@
           </select>
         </div>
 
-        <div id="upgrade-options" class="hidden space-y-4 border-t pt-4">
-          <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-            <p class="text-xs text-blue-800 font-bold">Current Room: <span id="current-room-num" class="text-lg">---</span> (<span id="current-room-rate">₦0</span>/night)</p>
-          </div>
+        <div id="operations-container" class="hidden space-y-4 border-t pt-4">
           
-          <div>
-            <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Select New Room</label>
-            <select id="new-room-select" class="w-full bg-white border border-gray-300 p-3 rounded-xl text-gray-800 outline-none font-semibold">
-              <option value="">-- Choose an Available Room --</option>
-            </select>
+          <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 flex justify-between items-center">
+            <div>
+              <p class="text-xs text-blue-800 font-bold">Current Room: <span id="current-room-num" class="text-lg">---</span></p>
+              <p class="text-[10px] text-blue-600">Rate: <span id="current-room-rate">₦0</span>/night</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-blue-800 font-bold">Checkout Date</p>
+              <p id="current-checkout-date" class="text-[10px] text-blue-600">---</p>
+            </div>
           </div>
 
-          <button onclick="processManualUpgrade()" id="upgrade-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/30 active:scale-95 transition flex items-center justify-center gap-2">
-            <i data-lucide="arrow-up-right" class="w-5 h-5"></i> Confirm Upgrade
-          </button>
+          <!-- TABS -->
+          <div class="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-xl">
+            <button onclick="switchOpTab('upgrade')" id="btn-tab-upgrade" class="py-2 rounded-lg text-sm font-bold bg-white text-gray-900 shadow-sm transition">Room Upgrade</button>
+            <button onclick="switchOpTab('extend')" id="btn-tab-extend" class="py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 transition">Extend Stay</button>
+          </div>
+
+          <!-- UPGRADE TAB -->
+          <div id="tab-upgrade" class="space-y-4 fade-in">
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Select New Room</label>
+              <select id="new-room-select" onchange="calculateUpgradeCost()" class="w-full bg-white border border-gray-300 p-3 rounded-xl text-gray-800 outline-none font-semibold">
+                <option value="">-- Choose an Available Room --</option>
+              </select>
+            </div>
+            <div id="upgrade-cost-display" class="hidden bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
+              <p class="text-xs text-emerald-700 font-bold mb-1">New Room Rate</p>
+              <p id="new-room-rate-text" class="text-xl font-black text-emerald-800">₦0</p>
+            </div>
+            <button onclick="processManualUpgrade()" id="upgrade-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/30 active:scale-95 transition flex items-center justify-center gap-2">
+              <i data-lucide="arrow-up-right" class="w-5 h-5"></i> Confirm Upgrade
+            </button>
+          </div>
+
+          <!-- EXTEND TAB -->
+          <div id="tab-extend" class="hidden space-y-4 fade-in">
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">New Checkout Date</label>
+              <input type="date" id="extend-date-input" onchange="calculateExtensionCost()" class="w-full bg-white border border-gray-300 p-3 rounded-xl text-gray-800 outline-none font-semibold">
+            </div>
+            <div id="extend-cost-display" class="hidden bg-amber-50 border border-amber-200 p-3 rounded-xl">
+              <p class="text-xs text-amber-700 font-bold mb-1">Additional Cost</p>
+              <p id="extend-cost-text" class="text-xl font-black text-amber-800">₦0</p>
+              <p class="text-[10px] text-amber-600 mt-1">For <span id="extra-nights-text">0</span> extra nights.</p>
+            </div>
+            <button onclick="processExtension()" id="extend-btn" class="w-full bg-amber-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-amber-500/30 active:scale-95 transition flex items-center justify-center gap-2">
+              <i data-lucide="calendar-plus" class="w-5 h-5"></i> Confirm Extension
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
 
   </main>
-
-  <!-- ARIT Card Writing Modal (For Approvals) -->
-  <div id="arit-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center fade-in">
-      <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="credit-card" class="w-10 h-10 text-blue-600"></i></div>
-      <h2 class="text-xl font-bold text-gray-900 mb-2">Encode New Key</h2>
-      <p class="text-sm text-gray-500 mb-6">Upgrade Approved! Place the blank card on the ARIT machine to unlock <strong>Room <span id="arit-room-num" class="text-gray-900">---</span></strong>.</p>
-      <button onclick="finishUpgradeProcess()" id="write-card-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Activate Key Card</button>
-    </div>
-  </div>
 
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
@@ -105,7 +132,7 @@
     let activeBookings = [];
     let availableRooms = [];
     let currentBooking = null;
-    let activeRequestData = null; // Stores the request being approved
+    let selectedNewRoom = null;
 
     async function loadPage() {
       const { data: bookings } = await db.from('bookings')
@@ -114,7 +141,7 @@
 
       activeBookings = bookings || [];
       const select = document.getElementById('guest-select');
-      select.innerHTML = '<option value="">-- Select Guest to Upgrade --</option>';
+      select.innerHTML = '<option value="">-- Select Guest to Manage --</option>';
       activeBookings.forEach(b => {
         select.innerHTML += `<option value="${b.id}">Room ${b.rooms.room_number} - ${b.guests.full_name}</option>`;
       });
@@ -162,36 +189,15 @@
 
     async function approveRequest(requestId, bookingId, newRoomId, oldRoomId, newRoomNum) {
       try {
-        // 1. Update Booking
         await db.from('bookings').update({ room_id: newRoomId }).eq('id', bookingId);
-        
-        // 2. Old Room -> Dirty
         await db.from('rooms').update({ status: 'Dirty' }).eq('id', oldRoomId);
-        
-        // 3. New Room -> Occupied
         await db.from('rooms').update({ status: 'Occupied' }).eq('id', newRoomId);
-
-        // 4. Mark request as Completed
         await db.from('guest_orders').update({ status: 'Completed' }).eq('id', requestId);
-
-        // 5. Pop the ARIT Modal for the receptionist to encode the physical key
-        activeRequestData = { requestId, bookingId, newRoomId, oldRoomId, newRoomNum };
-        document.getElementById('arit-room-num').textContent = newRoomNum;
-        document.getElementById('arit-modal').classList.remove('hidden');
-        document.getElementById('arit-modal').classList.add('flex');
-
+        alert(`✅ Upgrade Approved! Guest moved to Room ${newRoomNum}.`);
+        window.location.reload();
       } catch (err) {
         alert("Error approving upgrade: " + err.message);
       }
-    }
-
-    async function finishUpgradeProcess() {
-        // This runs after the receptionist "encodes" the key
-        document.getElementById('arit-modal').classList.add('hidden');
-        document.getElementById('arit-modal').classList.remove('flex');
-        
-        alert(`✅ Upgrade Approved & Key Encoded!\n\nThe guest's portal has been updated. They can now enter Room ${activeRequestData.newRoomNum}.`);
-        window.location.reload();
     }
 
     async function rejectRequest(requestId) {
@@ -201,42 +207,79 @@
 
     function loadGuestDetails() {
       const bookingId = document.getElementById('guest-select').value;
-      const optionsDiv = document.getElementById('upgrade-options');
+      const container = document.getElementById('operations-container');
       
       if (!bookingId) {
-        optionsDiv.classList.add('hidden');
+        container.classList.add('hidden');
         currentBooking = null;
         return;
       }
 
       currentBooking = activeBookings.find(b => b.id === bookingId);
+      
       document.getElementById('current-room-num').textContent = currentBooking.rooms.room_number;
       document.getElementById('current-room-rate').textContent = `₦${Number(currentBooking.rooms.price_per_night).toLocaleString()}`;
       
+      const currentOutDate = new Date(currentBooking.expected_check_out).toISOString().split('T')[0];
+      document.getElementById('current-checkout-date').textContent = new Date(currentBooking.expected_check_out).toLocaleDateString();
+      
+      // Set up Upgrade Tab
       const roomSelect = document.getElementById('new-room-select');
-      roomSelect.innerHTML = '<option value="">-- Choose an Available Room --</option>';
+      roomSelect.innerHTML = '<option value="">-- Choose a Better Room --</option>';
       availableRooms.forEach(r => {
-        roomSelect.innerHTML += `<option value="${r.id}">Room ${r.room_number} (${r.room_type}) - ₦${Number(r.price_per_night).toLocaleString()}</option>`;
+        roomSelect.innerHTML += `<option value="${r.id}" data-price="${r.price_per_night}" data-num="${r.room_number}">Room ${r.room_number} (${r.room_type}) - ₦${Number(r.price_per_night).toLocaleString()}</option>`;
       });
 
-      optionsDiv.classList.remove('hidden');
+      // Set up Extend Tab
+      const extendInput = document.getElementById('extend-date-input');
+      extendInput.min = currentOutDate;
+      extendInput.value = currentOutDate;
+      document.getElementById('extend-cost-display').classList.add('hidden');
+
+      container.classList.remove('hidden');
+      switchOpTab('upgrade');
+    }
+
+    function switchOpTab(tab) {
+      document.getElementById('tab-upgrade').classList.add('hidden');
+      document.getElementById('tab-extend').classList.add('hidden');
+      
+      document.getElementById('btn-tab-upgrade').className = "py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 transition";
+      document.getElementById('btn-tab-extend').className = "py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-900 transition";
+
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`btn-tab-${tab}`).className = "py-2 rounded-lg text-sm font-bold bg-white text-gray-900 shadow-sm transition";
+    }
+
+    // --- UPGRADE LOGIC ---
+    function calculateUpgradeCost() {
+      const roomId = document.getElementById('new-room-select').value;
+      const display = document.getElementById('upgrade-cost-display');
+      
+      if (!roomId) {
+        display.classList.add('hidden');
+        selectedNewRoom = null;
+        return;
+      }
+
+      selectedNewRoom = availableRooms.find(r => r.id === roomId);
+      document.getElementById('new-room-rate-text').textContent = `₦${Number(selectedNewRoom.price_per_night).toLocaleString()}`;
+      display.classList.remove('hidden');
     }
 
     async function processManualUpgrade() {
-      const newRoomId = document.getElementById('new-room-select').value;
-      if (!newRoomId) return alert("Please select a new room.");
-      if (!confirm(`Move guest from Room ${currentBooking.rooms.room_number} to the new room?`)) return;
+      if (!selectedNewRoom) return alert("Please select a new room first.");
+      if (!confirm(`Move guest from Room ${currentBooking.rooms.room_number} to Room ${selectedNewRoom.room_number}?`)) return;
 
       const btn = document.getElementById('upgrade-btn');
       btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processing...`;
       btn.disabled = true;
 
       try {
-        await db.from('bookings').update({ room_id: newRoomId }).eq('id', currentBooking.id);
+        await db.from('bookings').update({ room_id: selectedNewRoom.id }).eq('id', currentBooking.id);
         await db.from('rooms').update({ status: 'Dirty' }).eq('id', currentBooking.rooms.id);
-        await db.from('rooms').update({ status: 'Occupied' }).eq('id', newRoomId);
-
-        alert("✅ Room Upgraded Successfully! You can now encode the new key.");
+        await db.from('rooms').update({ status: 'Occupied' }).eq('id', selectedNewRoom.id);
+        alert(`✅ Upgrade Successful!\nGuest moved to Room ${selectedNewRoom.room_number}.`);
         window.location.href = 'dashboard.html';
       } catch (err) {
         alert("Upgrade Failed: " + err.message);
@@ -245,8 +288,55 @@
       }
     }
 
+    // --- EXTEND LOGIC ---
+    function calculateExtensionCost() {
+      const newDateVal = document.getElementById('extend-date-input').value;
+      const display = document.getElementById('extend-cost-display');
+      
+      if (!newDateVal) {
+        display.classList.add('hidden');
+        return;
+      }
+
+      const oldDate = new Date(currentBooking.expected_check_out);
+      const newDate = new Date(newDateVal);
+
+      const diffTime = newDate - oldDate;
+      const extraNights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (extraNights <= 0) {
+        display.classList.add('hidden');
+        return;
+      }
+
+      const extraCost = extraNights * Number(currentBooking.rooms.price_per_night);
+      
+      document.getElementById('extra-nights-text').textContent = extraNights;
+      document.getElementById('extend-cost-text').textContent = `₦${extraCost.toLocaleString()}`;
+      display.classList.remove('hidden');
+    }
+
+    async function processExtension() {
+      const newDateVal = document.getElementById('extend-date-input').value;
+      if (!newDateVal) return alert("Please select a new checkout date.");
+
+      const btn = document.getElementById('extend-btn');
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processing...`;
+      btn.disabled = true;
+
+      try {
+        await db.from('bookings').update({ expected_check_out: newDateVal }).eq('id', currentBooking.id);
+        alert(`✅ Stay Extended successfully to ${new Date(newDateVal).toLocaleDateString()}!`);
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        alert("Extension Failed: " + err.message);
+        btn.innerHTML = `<i data-lucide="calendar-plus" class="w-5 h-5"></i> Confirm Extension`;
+        btn.disabled = false;
+      }
+    }
+
     loadPage();
-    setInterval(loadPendingRequests, 10000); // Check for new requests every 10s
+    setInterval(loadPendingRequests, 10000); 
   </script>
 </body>
 </html>
