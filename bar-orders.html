@@ -2,30 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vicnos - Bar Live Orders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos - Bar Orders</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    * { -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; background-color: #0b1120; color: #f8fafc; -webkit-tap-highlight-color: transparent; user-select: none; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse-border { 0% { border-color: rgba(251, 191, 36, 0.3); } 50% { border-color: rgba(251, 191, 36, 1); box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); } 100% { border-color: rgba(251, 191, 36, 0.3); } }
+    .new-order { animation: pulse-border 2s infinite; }
   </style>
 </head>
-<body class="min-h-screen p-4 pb-24">
+<body class="min-h-screen pb-10">
 
-  <nav class="bg-slate-800 p-4 rounded-2xl shadow-sm flex justify-between items-center mb-6 border border-slate-700">
+  <nav class="bg-slate-900/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50 p-4 flex justify-between items-center">
     <div class="flex items-center gap-3">
-      <a href="dashboard.html" class="bg-slate-700 p-2 rounded-xl text-slate-300 hover:bg-slate-600 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
-      <div><h1 class="font-bold text-white text-lg leading-tight">Bar Orders</h1><p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Live Feed</p></div>
+      <a href="dashboard.html" class="bg-slate-800 p-2 rounded-xl text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-white text-lg leading-tight">Bar Orders</h1><p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Live Drink Queue</p></div>
     </div>
-    <div class="bg-amber-500/20 p-2 rounded-full text-amber-400"><i data-lucide="wine" class="w-5 h-5 animate-pulse"></i></div>
+    <div class="bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-2">
+      <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+      <span class="text-xs font-bold text-emerald-400">Live Sync</span>
+    </div>
   </nav>
 
-  <main class="max-w-2xl mx-auto space-y-4">
-    <div id="orders-list" class="space-y-4"><p class="text-center text-slate-400 text-sm py-10 animate-pulse">Listening for Bar orders...</p></div>
+  <main class="p-4 max-w-7xl mx-auto space-y-6 mt-2">
+    
+    <div class="grid grid-cols-3 gap-3">
+      <div class="glass-card p-4 rounded-xl text-center border-l-4 border-amber-500">
+        <p class="text-[10px] text-slate-400 uppercase font-bold">New Drinks</p>
+        <p id="stat-new" class="text-3xl font-black text-amber-400">0</p>
+      </div>
+      <div class="glass-card p-4 rounded-xl text-center border-l-4 border-blue-500">
+        <p class="text-[10px] text-slate-400 uppercase font-bold">Mixing</p>
+        <p id="stat-preparing" class="text-3xl font-black text-blue-400">0</p>
+      </div>
+      <div class="glass-card p-4 rounded-xl text-center border-l-4 border-emerald-500">
+        <p class="text-[10px] text-slate-400 uppercase font-bold">Ready to Serve</p>
+        <p id="stat-ready" class="text-3xl font-black text-emerald-400">0</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- NEW ORDERS -->
+      <div>
+        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i data-lucide="bell" class="w-4 h-4 text-amber-500"></i> New Requests</h2>
+        <div id="col-new" class="space-y-3"><p class="text-center text-slate-500 py-6 text-sm">No new drink orders.</p></div>
+      </div>
+
+      <!-- PREPARING -->
+      <div>
+        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i data-lucide="wine" class="w-4 h-4 text-blue-500"></i> Mixing / Pouring</h2>
+        <div id="col-preparing" class="space-y-3"><p class="text-center text-slate-500 py-6 text-sm">Nothing being mixed.</p></div>
+      </div>
+
+      <!-- READY -->
+      <div>
+        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i> Ready for Pickup</h2>
+        <div id="col-ready" class="space-y-3"><p class="text-center text-slate-500 py-6 text-sm">No drinks ready.</p></div>
+      </div>
+
+    </div>
   </main>
 
   <script>
@@ -37,66 +93,101 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    async function loadLiveOrders() {
-      const list = document.getElementById('orders-list');
-      const { data: orders, error } = await db.from('guest_orders').select('*').eq('department', 'Bar').not('status', 'in', '("Completed","Delivered","Cancelled")').order('created_at', { ascending: true });
+    let lastOrderCount = 0;
 
-      if (error || !orders) return list.innerHTML = '<p class="text-center text-red-500">Error loading orders.</p>';
+    async function loadOrders() {
+      // Fetch ONLY Bar orders
+      const { data: orders, error } = await db.from('guest_orders')
+        .select('*')
+        .eq('department', 'Bar')
+        .in('status', ['Pending', 'Preparing', 'Ready'])
+        .order('created_at', { ascending: true });
 
-      if (orders.length === 0) {
-        list.innerHTML = `<div class="text-center py-20"><div class="bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="check-circle" class="w-8 h-8 text-emerald-500"></i></div><p class="text-slate-400 font-medium">No active bar orders right now.</p></div>`;
-        lucide.createIcons(); return;
+      if (error) { console.error("Error loading orders:", error); return; }
+
+      if (orders && orders.length > lastOrderCount) {
+        playNotificationSound();
+      }
+      lastOrderCount = orders ? orders.length : 0;
+
+      const colNew = document.getElementById('col-new');
+      const colPreparing = document.getElementById('col-preparing');
+      const colReady = document.getElementById('col-ready');
+
+      let countNew = 0, countPreparing = 0, countReady = 0;
+      colNew.innerHTML = ''; colPreparing.innerHTML = ''; colReady.innerHTML = '';
+
+      if (!orders || orders.length === 0) {
+        colNew.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">No new drink orders.</p>';
+        colPreparing.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">Nothing being mixed.</p>';
+        colReady.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">No drinks ready.</p>';
+        updateStats(0, 0, 0);
+        return;
       }
 
-      list.innerHTML = orders.map(order => {
+      orders.forEach(order => {
         let itemsHtml = '';
         try {
           const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-          itemsHtml = items.map(i => `<li class="flex justify-between text-sm text-slate-300 border-b border-slate-700 py-1 last:border-0"><span class="font-bold text-white">${i.qty}x</span> <span>${i.name}</span></li>`).join('');
-        } catch(e) { itemsHtml = `<li>Error reading items</li>`; }
+          if (Array.isArray(items)) {
+            itemsHtml = items.map(item => `<div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-white font-bold">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join('');
+          } else {
+             itemsHtml = `<p class="text-white">${JSON.stringify(items)}</p>`;
+          }
+        } catch(e) { itemsHtml = `<p class="text-white text-xs break-all">${JSON.stringify(order.items)}</p>`; }
 
-        let statusBadge = `<span class="bg-slate-700 text-slate-300 text-[10px] font-bold px-2 py-1 rounded">${order.status}</span>`;
-        if (order.status === 'Pending') statusBadge = `<span class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-1 rounded animate-pulse">NEW ORDER</span>`;
-        if (order.status === 'Preparing') statusBadge = `<span class="bg-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded">POURING</span>`;
-        if (order.status === 'Ready') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-1 rounded">READY</span>`;
-
-        return `
-          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-lg fade-in">
-            <div class="flex justify-between items-start mb-3">
-              <div><h3 class="text-white font-bold text-xl">Room ${order.room_number}</h3><p class="text-[10px] text-slate-400">${new Date(order.created_at).toLocaleTimeString()}</p></div>
-              ${statusBadge}
-            </div>
-            <ul class="mb-4 bg-slate-900/50 p-3 rounded-xl">${itemsHtml}</ul>
-            <div class="flex justify-between items-center border-t border-slate-700 pt-3">
-              <p class="font-black text-emerald-400">₦${Number(order.total_amount).toLocaleString()}</p>
-              <div class="flex gap-2">
-                ${order.status === 'Pending' || !order.status ? `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm">Start Pouring</button>` : ''}
-                ${order.status === 'Preparing' ? `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm">Mark Ready</button>` : ''}
-                ${order.status === 'Ready' ? `<button onclick="updateOrderStatus('${order.id}', 'Delivered')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm">Delivered to Room</button>` : ''}
+        const orderCard = `
+          <div class="glass-card p-4 rounded-xl ${order.status === 'Pending' ? 'new-order border-2 border-amber-500/50' : 'border border-slate-700'} fade-in">
+            <div class="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
+              <div>
+                <h3 class="font-black text-lg text-white">${order.room_number ? 'Room ' + order.room_number : 'Table ' + (order.table_number || 'N/A')}</h3>
+                <p class="text-[10px] text-slate-400">${new Date(order.created_at).toLocaleTimeString()}</p>
               </div>
+            </div>
+            <div class="space-y-1 mb-4">${itemsHtml}</div>
+            <div class="mt-4">
+              ${order.status === 'Pending' ? `<button onclick="updateStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm transition">Start Mixing</button>` : ''}
+              ${order.status === 'Preparing' ? `<button onclick="updateStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm transition">Drinks are Ready</button>` : ''}
+              ${order.status === 'Ready' ? `<p class="text-center text-xs text-emerald-400 font-bold">Waiting for Waitress...</p>` : ''}
             </div>
           </div>
         `;
-      }).join('');
+
+        if (order.status === 'Pending') { colNew.innerHTML += orderCard; countNew++; }
+        if (order.status === 'Preparing') { colPreparing.innerHTML += orderCard; countPreparing++; }
+        if (order.status === 'Ready') { colReady.innerHTML += orderCard; countReady++; }
+      });
+
+      if (countNew === 0) colNew.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">No new drink orders.</p>';
+      if (countPreparing === 0) colPreparing.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">Nothing being mixed.</p>';
+      if (countReady === 0) colReady.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">No drinks ready.</p>';
+
+      updateStats(countNew, countPreparing, countReady);
     }
 
-    async function updateOrderStatus(orderId, newStatus) {
-      await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
-      loadLiveOrders();
+    function updateStats(n, p, r) {
+      document.getElementById('stat-new').textContent = n;
+      document.getElementById('stat-preparing').textContent = p;
+      document.getElementById('stat-ready').textContent = r;
     }
 
-    db.channel('bar-orders-channel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_orders' }, payload => {
-          if (payload.new.department === 'Bar') {
-              const msg = new SpeechSynthesisUtterance("New bar order from room " + payload.new.room_number);
-              window.speechSynthesis.speak(msg);
-              loadLiveOrders();
-          }
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'guest_orders' }, payload => { loadLiveOrders(); })
-      .subscribe();
+    async function updateStatus(orderId, newStatus) {
+      const { error } = await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+      if (error) { alert("Error updating order: " + error.message); return; }
+      loadOrders();
+    }
 
-    loadLiveOrders();
+    function playNotificationSound() {
+      try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audio.volume = 0.6;
+        audio.play().catch(e => console.log('Audio play blocked by browser'));
+      } catch(err) {}
+    }
+
+    // Auto-refresh every 10 seconds
+    loadOrders();
+    setInterval(loadOrders, 10000);
   </script>
 </body>
 </html>
