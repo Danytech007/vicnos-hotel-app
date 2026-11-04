@@ -56,30 +56,37 @@
     <button onclick="switchTab('shift')" id="tab-btn-shift" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-white text-gray-600 border border-gray-200 shadow-sm whitespace-nowrap transition">Shift & Stock</button>
   </div>
 
-  <main class="flex-1 flex flex-col w-full overflow-hidden max-w-4xl mx-auto p-4">
+  <main class="flex-1 flex flex-col w-full overflow-hidden max-w-4xl mx-auto p-4 pb-0">
 
     <!-- TAB 1: TAKE ORDER -->
-    <div id="tab-pos" class="flex-1 flex flex-col md:flex-row gap-4 fade-in min-h-0">
-      <div class="flex-1 flex flex-col min-h-0">
-        <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 mb-3 shrink-0 flex items-center gap-2">
-          <i data-lucide="map-pin" class="w-5 h-5 text-indigo-500"></i>
-          <input type="text" id="table-input" placeholder="Table No. / Location (e.g. Table 5)" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-xl outline-none font-bold text-lg focus:border-indigo-500 transition">
-        </div>
-        <div class="flex gap-2 overflow-x-auto hide-scroll pb-2 shrink-0" id="category-tabs"></div>
-        <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
-          <p class="text-gray-500 text-sm animate-pulse col-span-full">Loading menu...</p>
-        </div>
+    <div id="tab-pos" class="flex-1 flex flex-col min-h-0 fade-in">
+      
+      <!-- Table Input -->
+      <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 mb-3 shrink-0 flex items-center gap-2">
+        <i data-lucide="map-pin" class="w-5 h-5 text-indigo-500"></i>
+        <input type="text" id="table-input" placeholder="Table No. / Location" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-xl outline-none font-bold text-lg focus:border-indigo-500 transition">
       </div>
 
-      <div class="w-full md:w-80 bg-white rounded-t-3xl md:rounded-2xl shadow-[0_-10px_20px_rgba(0,0,0,0.05)] md:shadow-sm border border-gray-200 flex flex-col shrink-0 h-[45vh] md:h-auto relative z-20">
-        <div class="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center rounded-t-3xl md:rounded-t-2xl">
+      <!-- Category Tabs -->
+      <div class="flex gap-2 overflow-x-auto hide-scroll pb-2 shrink-0" id="category-tabs"></div>
+      
+      <!-- Product Grid (Scrollable) -->
+      <div id="product-grid" class="flex-1 overflow-y-auto hide-scroll grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4 min-h-0">
+        <p class="text-gray-500 text-sm animate-pulse col-span-full">Loading menu...</p>
+      </div>
+
+      <!-- Fixed Bottom Cart -->
+      <div class="w-full bg-white rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.05)] border border-gray-200 flex flex-col shrink-0 h-[40vh] relative z-20 mt-2 -mx-4 px-4 pt-4 pb-4 rounded-b-none md:mx-0 md:px-0 md:pb-0 md:rounded-b-2xl md:h-auto">
+        <div class="flex justify-between items-center mb-2">
           <h3 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-4 h-4 text-indigo-500"></i> Current Order</h3>
           <button onclick="clearCart()" class="text-xs text-red-500 font-bold">Clear</button>
         </div>
-        <div id="cart-items" class="flex-1 overflow-y-auto p-3 space-y-2 hide-scroll min-h-0">
-          <p class="text-center text-gray-400 text-sm mt-10">Add items to order</p>
+        
+        <div id="cart-items" class="flex-1 overflow-y-auto space-y-2 hide-scroll min-h-0 mb-2">
+          <p class="text-center text-gray-400 text-sm mt-4">Add items to order</p>
         </div>
-        <div class="p-3 border-t border-gray-100 bg-gray-50 shrink-0 rounded-b-2xl">
+        
+        <div class="border-t border-gray-100 pt-2 shrink-0">
           <div class="flex justify-between items-center mb-2">
             <span class="font-bold text-gray-600">Total:</span>
             <span id="cart-total" class="text-2xl font-black text-indigo-600">₦0</span>
