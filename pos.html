@@ -31,7 +31,6 @@
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* PRINT STYLES */
     @media print {
       body * { visibility: hidden; }
       #receipt-area, #receipt-area * { visibility: visible; }
@@ -39,10 +38,10 @@
     }
   </style>
 </head>
-<body class="flex flex-col md:flex-row w-full">
+<body class="flex flex-col md:flex-row w-full relative">
 
   <!-- LEFT SIDE: MENU & SEARCH -->
-  <div class="flex-1 flex flex-col h-[55vh] md:h-full min-h-0 border-b md:border-b-0 md:border-r border-slate-700/50">
+  <div class="flex-1 flex flex-col h-full min-h-0 border-r border-slate-700/50">
     
     <!-- HEADER -->
     <div class="p-4 md:p-6 bg-slate-900/50 backdrop-blur-md border-b border-slate-700/50 flex justify-between items-center shrink-0">
@@ -50,12 +49,12 @@
         <a href="dashboard.html" class="bg-slate-800 p-2 rounded-xl text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
         <div>
           <h1 class="font-bold text-white text-xl leading-tight">Vicnos Bar</h1>
-          <p class="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">Outdoor & Lounge</p>
+          <p class="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">Tablet Mode</p>
         </div>
       </div>
       
       <!-- SEARCH BAR -->
-      <div class="relative w-full max-w-xs hidden md:block">
+      <div class="relative w-full max-w-xs">
         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
         <input type="text" id="search-input" oninput="filterProducts()" placeholder="Search drinks..." class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2 pl-10 pr-4 text-white text-sm outline-none focus:border-yellow-500 transition">
       </div>
@@ -67,20 +66,31 @@
     </div>
 
     <!-- PRODUCT GRID -->
-    <div class="flex-1 overflow-y-auto hide-scroll p-4 md:p-6 min-h-0">
-      <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 pb-20">
+    <div class="flex-1 overflow-y-auto hide-scroll p-4 md:p-6 min-h-0 pb-24">
+      <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
         <p class="text-slate-400 text-sm animate-pulse col-span-full">Loading menu...</p>
       </div>
     </div>
   </div>
 
-  <!-- RIGHT SIDE: CART & CHECKOUT -->
-  <div class="w-full md:w-[400px] bg-slate-900 flex flex-col h-[45vh] md:h-full min-h-0 shrink-0 relative z-10 shadow-2xl">
+  <!-- FLOATING CART BUTTON (For Mobile/Tablet) -->
+  <div class="fixed bottom-6 right-6 z-40 md:hidden">
+    <button onclick="toggleCartModal()" class="bg-yellow-500 text-black p-4 rounded-full shadow-2xl flex items-center justify-center gap-2 font-bold text-lg active:scale-95 transition">
+      <i data-lucide="shopping-cart" class="w-6 h-6"></i>
+      <span id="mobile-cart-total">₦0</span>
+    </button>
+  </div>
+
+  <!-- RIGHT SIDE: CART & CHECKOUT (Hidden on mobile, slides up as modal) -->
+  <div id="cart-panel" class="hidden md:flex w-full md:w-[400px] bg-slate-900 flex-col h-full min-h-0 shrink-0 relative z-50 shadow-2xl fixed md:relative inset-0 md:inset-auto fade-in">
     
     <!-- CART HEADER -->
     <div class="p-4 border-b border-slate-700/50 bg-slate-800/30 flex justify-between items-center shrink-0">
       <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-yellow-400"></i> Current Order</h2>
-      <button onclick="clearCart()" class="text-xs text-red-400 font-bold hover:text-red-300 transition">Clear</button>
+      <div class="flex gap-3">
+        <button onclick="clearCart()" class="text-xs text-red-400 font-bold hover:text-red-300 transition">Clear</button>
+        <button onclick="toggleCartModal()" class="md:hidden bg-slate-700 p-1 rounded-md text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
     </div>
 
     <!-- TABLE / GUEST NAME INPUT -->
@@ -97,7 +107,7 @@
     </div>
 
     <!-- TOTALS & PAYMENT -->
-    <div class="p-4 border-t border-slate-700/50 bg-slate-800/80 shrink-0">
+    <div class="p-4 border-t border-slate-700/50 bg-slate-800/80 shrink-0 pb-8 md:pb-4">
       <div class="flex justify-between items-center mb-4">
         <span class="text-slate-400 font-medium">Total:</span>
         <span id="cart-total" class="text-4xl font-black text-white">₦0</span>
@@ -132,7 +142,7 @@
     </div>
   </div>
 
-  <!-- Hidden Receipt Area for Printing -->
+  <!-- Hidden Receipt Area -->
   <div id="receipt-area" class="hidden">
     <div class="text-center mb-4">
       <h1 class="font-bold text-lg uppercase">Vicnos Hotel Bar</h1>
@@ -187,6 +197,18 @@
       loadProducts();
       loadRoomsForCharge();
       setPaymentMethod('Cash');
+    }
+
+    // --- MOBILE CART TOGGLE ---
+    function toggleCartModal() {
+      const cartPanel = document.getElementById('cart-panel');
+      if (cartPanel.classList.contains('hidden')) {
+        cartPanel.classList.remove('hidden');
+        cartPanel.classList.add('flex');
+      } else {
+        cartPanel.classList.add('hidden');
+        cartPanel.classList.remove('flex');
+      }
     }
 
     async function loadProducts() {
@@ -330,6 +352,7 @@
           </div>
         `;
         document.getElementById('cart-total').textContent = '₦0';
+        document.getElementById('mobile-cart-total').textContent = '₦0';
         document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0`;
         lucide.createIcons();
         return;
@@ -354,6 +377,7 @@
       }).join('');
 
       document.getElementById('cart-total').textContent = `₦${total.toLocaleString()}`;
+      document.getElementById('mobile-cart-total').textContent = `₦${total.toLocaleString()}`;
       document.getElementById('checkout-btn').innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦${total.toLocaleString()}`;
       lucide.createIcons();
     }
@@ -458,7 +482,6 @@
           }
         }
 
-        // --- POPULATE RECEIPT AND PRINT ---
         document.getElementById('r-date').innerText = new Date().toLocaleString();
         document.getElementById('r-table').innerText = tableNum + (selectedRoomForCharge ? ` (Room ${selectedRoomForCharge})` : '');
         document.getElementById('r-barman').innerText = userProfile ? userProfile.full_name : 'Staff';
@@ -477,18 +500,17 @@
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
         audio.play().catch(e => console.log('Audio block'));
 
-        // Print the receipt
         setTimeout(() => {
           window.print();
           setTimeout(() => {
             receipt.classList.add('hidden');
-            // Reset for next customer
             cart = [];
             selectedRoomForCharge = null;
             document.getElementById('table-number').value = '';
             renderCart();
             filterCategory(currentCategory, document.querySelector('.cat-btn'));
             btn.disabled = false;
+            toggleCartModal(); // Close mobile cart on success
           }, 500);
         }, 100);
 
