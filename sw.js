@@ -1,17 +1,17 @@
-const CACHE_NAME = 'vicnos-v12'; // Bumped to v12
+const CACHE_NAME = 'vicnos-v13'; // Bumped to v13 to force cache clear
 const ASSETS = [
   'index.html',
   'dashboard.html',
   'checkin.html',
   'checkout.html',
   'guest-history.html',
-  'guest-profile.html',
-  'qr-code.html',
+  'guest-login.html',
   'guest-portal.html',
-  'inside-life.html',
+  'qr-code.html',
   'pos.html',
-  'finance.html',
-  'maintenance.html',
+  'waitress-sales.html',
+  'order-board.html',
+  'bar-orders.html',
   'manifest.json',
   'https://cdn.tailwindcss.com',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
