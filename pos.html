@@ -6,7 +6,6 @@
   <title>Vicnos Hotel - Bar POS</title>
   
   <script>
-    // CACHE KILLER
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) { registration.unregister(); }
@@ -56,9 +55,8 @@
     </div>
 
     <!-- CATEGORY TABS -->
-    <div class="px-4 md:px-6 py-3 overflow-x-auto hide-scroll flex gap-2 shrink-0 border-b border-slate-800">
+    <div class="px-4 md:px-6 py-3 overflow-x-auto hide-scroll flex gap-2 shrink-0 border-b border-slate-800" id="category-tabs">
       <button onclick="filterCategory('All')" class="cat-btn bg-yellow-500 text-black px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition">All Drinks</button>
-      <!-- Categories injected by JS -->
     </div>
 
     <!-- PRODUCT GRID -->
@@ -136,7 +134,6 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    // We will default to 'Bar' for this POS, but if it's Minimart it works too.
     const urlParams = new URLSearchParams(window.location.search);
     const department = urlParams.get('dept') || 'Bar';
     
@@ -146,6 +143,7 @@
     let currentUser = null;
     let selectedPaymentMethod = 'Cash';
     let selectedRoomForCharge = null;
+    let currentCategory = 'All';
 
     async function init() {
       const { data: { user } } = await db.auth.getUser();
@@ -158,14 +156,16 @@
     }
 
     async function loadProducts() {
-      const { data: products } = await db.from('inventory').select('*').eq('department', department).order('item_name');
+      // OPTIMIZATION: Only select the columns we actually need
+      const { data: products } = await db.from('inventory')
+        .select('id, item_name, price, stock_quantity, category')
+        .eq('department', department)
+        .order('item_name');
+        
       allProducts = products || [];
 
-      // Extract unique categories
       const categories = ['All', ...new Set(allProducts.map(p => p.category || 'Uncategorized'))];
       const tabsContainer = document.getElementById('category-tabs');
-      
-      // Keep "All" button, clear others
       tabsContainer.innerHTML = '';
       
       categories.forEach(cat => {
@@ -178,6 +178,8 @@
     }
 
     function filterCategory(category) {
+      currentCategory = category;
+      
       document.querySelectorAll('.cat-btn').forEach(btn => {
         btn.className = "cat-btn bg-slate-800 text-slate-300 px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-sm border border-slate-700 transition";
       });
@@ -194,7 +196,11 @@
 
     function filterProducts() {
       const query = document.getElementById('search-input').value.toLowerCase();
-      filteredProducts = allProducts.filter(p => p.item_name.toLowerCase().includes(query));
+      
+      // Filter from the current category, or all
+      let baseList = currentCategory === 'All' ? allProducts : allProducts.filter(p => (p.category || 'Uncategorized') === currentCategory);
+      
+      filteredProducts = baseList.filter(p => p.item_name.toLowerCase().includes(query));
       renderProducts();
     }
 
@@ -291,13 +297,11 @@
     function setPaymentMethod(method) {
       selectedPaymentMethod = method;
       
-      // Reset all buttons
       ['pay-cash', 'pay-pos', 'pay-transfer', 'pay-room'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2 border border-slate-600";
       });
 
-      // Highlight active
       if (method === 'Cash') document.getElementById('pay-cash').className = "py-3 rounded-xl font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-emerald-400";
       if (method === 'POS') document.getElementById('pay-pos').className = "py-3 rounded-xl font-bold bg-blue-500 text-white shadow-md shadow-blue-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-blue-400";
       if (method === 'Transfer') document.getElementById('pay-transfer').className = "py-3 rounded-xl font-bold bg-purple-500 text-white shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-purple-400";
@@ -347,18 +351,16 @@
       const tableNum = document.getElementById('table-number').value.trim();
 
       try {
-        // 1. Insert into POS Orders
         const { data: order, error: orderErr } = await db.from('pos_orders').insert({
           department: department,
           total_amount: total,
           payment_method: selectedPaymentMethod,
           created_by: currentUser.id,
-          table_number: tableNum || null // Save table/guest name if provided
+          table_number: tableNum || null
         }).select().single();
         
         if (orderErr) throw orderErr;
 
-        // 2. Insert Items & Deduct Inventory
         for (const item of cart) {
           await db.from('pos_order_items').insert({
             pos_order_id: order.id,
@@ -367,14 +369,19 @@
             price: item.price
           });
 
-          // Deduct stock
+          // Deduct stock in DB
           const { data: prod } = await db.from('inventory').select('stock_quantity').eq('id', item.id).single();
           if (prod) {
             await db.from('inventory').update({ stock_quantity: prod.stock_quantity - item.qty }).eq('id', item.id);
           }
+          
+          // OPTIMIZATION: Deduct stock locally so we don't have to reload the whole DB
+          const localProduct = allProducts.find(p => p.id === item.id);
+          if (localProduct) {
+             localProduct.stock_quantity -= item.qty;
+          }
         }
 
-        // 3. If Charged to Room, create Folio Charge
         if (selectedPaymentMethod === 'Charge_to_Room' && selectedRoomForCharge) {
           const { data: roomData } = await db.from('rooms').select('id').eq('room_number', selectedRoomForCharge).single();
           const { data: booking } = await db.from('bookings').select('id').eq('room_id', roomData.id).eq('status', 'Checked In').single();
@@ -389,18 +396,19 @@
           }
         }
 
-        // Success Animation / Sound
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
         audio.play().catch(e => console.log('Audio block'));
 
         alert(`✅ Order Completed!\nTotal: ₦${total.toLocaleString()}\nMethod: ${selectedPaymentMethod}${tableNum ? '\nTable: '+tableNum : ''}`);
         
-        // Reset for next customer
+        // Reset
         cart = [];
         selectedRoomForCharge = null;
         document.getElementById('table-number').value = '';
         renderCart();
-        loadProducts(); // Reload to show updated stock
+        
+        // Re-render grid with updated local stock (INSTANT, no network wait)
+        filterCategory(currentCategory);
         
       } catch (err) {
         alert("Checkout Error: " + err.message);
