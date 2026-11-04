@@ -199,7 +199,6 @@
       setPaymentMethod('Cash');
     }
 
-    // --- MOBILE CART TOGGLE ---
     function toggleCartModal() {
       const cartPanel = document.getElementById('cart-panel');
       if (cartPanel.classList.contains('hidden')) {
@@ -396,15 +395,31 @@
       if (method === 'Charge_to_Room') document.getElementById('pay-room').className = "py-3 rounded-xl font-bold bg-orange-500 text-white shadow-md shadow-orange-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-orange-400";
     }
 
+    // --- FIXED: ROOM LOOKUP LOGIC ---
     async function loadRoomsForCharge() {
-      const { data: rooms } = await db.from('rooms').select('room_number').eq('status', 'Occupied').order('room_number');
+      // 1. Get all rooms
+      const { data: rooms } = await db.from('rooms').select('id, room_number');
+      
+      // 2. Get active bookings
+      const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
+      
+      const occupiedRoomIds = activeBookings ? activeBookings.map(b => b.room_id) : [];
+      
+      // 3. Filter rooms that have an active booking
+      const occupiedRooms = rooms ? rooms.filter(r => occupiedRoomIds.includes(r.id)) : [];
+      
       const select = document.getElementById('room-select');
-      if (rooms && rooms.length > 0) {
-        rooms.forEach(r => {
+      select.innerHTML = '<option value="">-- Select Room --</option>';
+      
+      if (occupiedRooms.length > 0) {
+        // Sort alphabetically by room number
+        occupiedRooms.sort((a, b) => a.room_number.localeCompare(b.room_number));
+        
+        occupiedRooms.forEach(r => {
           select.innerHTML += `<option value="${r.room_number}">Room ${r.room_number}</option>`;
         });
       } else {
-        select.innerHTML = '<option value="">No occupied rooms found.</option>';
+        select.innerHTML = '<option value="">No active guests found.</option>';
       }
     }
 
