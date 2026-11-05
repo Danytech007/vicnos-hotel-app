@@ -64,10 +64,16 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 mb-1">Food Image (JPG/PNG)</label>
-              <input id="item-image" type="file" accept="image/*" class="w-full px-2 py-1.5 bg-gray-50 border rounded-xl outline-none text-xs">
-              <p id="image-hint" class="text-[9px] text-gray-400 mt-1 hidden">Leave empty to keep current image.</p>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Opening Stock (Qty)</label>
+              <input id="item-stock" type="number" placeholder="e.g. 24" class="w-full px-4 py-2 bg-gray-50 border rounded-xl outline-none focus:border-blue-500">
+              <p id="stock-hint" class="text-[9px] text-gray-400 mt-1 hidden">Leave blank to keep current stock.</p>
             </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Food Image (JPG/PNG)</label>
+          <input id="item-image" type="file" accept="image/*" class="w-full px-2 py-1.5 bg-gray-50 border rounded-xl outline-none text-xs">
+          <p id="image-hint" class="text-[9px] text-gray-400 mt-1 hidden">Leave empty to keep current image.</p>
         </div>
 
         <div>
@@ -170,6 +176,7 @@
       document.getElementById('cancel-edit-btn').classList.remove('hidden');
       document.getElementById('item-image').required = false;
       document.getElementById('image-hint').classList.remove('hidden');
+      document.getElementById('stock-hint').classList.remove('hidden');
       
       lucide.createIcons();
       window.scrollTo(0, 0);
@@ -184,6 +191,7 @@
       document.getElementById('cancel-edit-btn').classList.add('hidden');
       document.getElementById('item-image').required = true;
       document.getElementById('image-hint').classList.add('hidden');
+      document.getElementById('stock-hint').classList.add('hidden');
       lucide.createIcons();
     }
 
@@ -193,6 +201,7 @@
       const msg = document.getElementById('message');
       const editId = document.getElementById('edit-item-id').value;
       const file = document.getElementById('item-image').files[0];
+      const stockValue = document.getElementById('item-stock').value;
 
       btn.innerText = "Processing...";
       btn.disabled = true;
@@ -226,14 +235,34 @@
         if (imageUrl) itemData.image_url = imageUrl;
 
         if (editId) {
+          // UPDATE existing item
           const { error: dbError } = await db.from('menu_items').update(itemData).eq('id', editId);
           if (dbError) throw dbError;
+          
+          // If they provided a new stock value during edit, update inventory directly
+          if (stockValue !== '') {
+             await db.from('inventory').update({ stock_quantity: stockValue }).ilike('item_name', itemData.name).eq('department', itemData.category);
+          }
+
           msg.textContent = "✅ Item Updated Successfully!";
         } else {
+          // INSERT new item
           if (!imageUrl) throw new Error("Image is required for new items.");
           itemData.image_url = imageUrl;
+          
+          // 1. Insert to Menu (Guest sees it)
           const { error: dbError } = await db.from('menu_items').insert(itemData);
           if (dbError) throw dbError;
+          
+          // 2. The SQL Trigger we just created will auto-copy to Inventory with 0 stock.
+          // Now we update that new inventory row with the actual Opening Stock the manager typed.
+          if (stockValue !== '') {
+             // Wait 500ms for the trigger to complete
+             setTimeout(async () => {
+                 await db.from('inventory').update({ stock_quantity: stockValue }).ilike('item_name', itemData.name).eq('department', itemData.category);
+             }, 500);
+          }
+          
           msg.textContent = "✅ Item Added Successfully!";
         }
 
