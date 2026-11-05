@@ -298,12 +298,11 @@
         if (roomError || !roomData) throw new Error("Could not find room details.");
         const actualRoomId = roomData.id;
 
-        // FIX: Strictly map categories to Department names
+        // Split the cart by exact category to ensure Kitchen, Bar, Minimart are routed correctly
         const groupedCart = cart.reduce((acc, item) => {
-            let dept = 'Kitchen'; // Default
-            const cat = (item.category || '').toLowerCase();
-            if (cat.includes('bar') || cat.includes('drink')) dept = 'Bar';
-            else if (cat.includes('mini') || cat.includes('mart')) dept = 'Minimart';
+            let dept = 'Kitchen'; 
+            if (item.category === 'Bar') dept = 'Bar';
+            else if (item.category === 'Minimart') dept = 'Minimart';
             
             if (!acc[dept]) acc[dept] = [];
             acc[dept].push(item);
@@ -317,7 +316,7 @@
               room_id: actualRoomId,
               booking_id: guestSession.booking_id, 
               room_number: guestSession.room_number,
-              department: department, // Now strictly 'Kitchen', 'Bar', or 'Minimart'
+              department: department, 
               items: items,
               total_amount: deptTotal,
               status: 'Pending',
