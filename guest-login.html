@@ -190,38 +190,35 @@
       const errText = errMsg.querySelector('p');
       
       try {
-        // 1. Check if room exists (using .maybeSingle to prevent crashes)
-        const { data: roomData, error: roomErr } = await db.from('rooms').select('id').eq('room_number', roomNum).maybeSingle();
-        
-        if (roomErr) {
-            throw new Error(`Database Error: ${roomErr.message}`);
-        }
-        if (!roomData) {
-            throw new Error(`Room ${roomNum} does not exist in the system.`);
-        }
-
-        // 2. Check if there is an active checked-in booking
-        const { data: booking, error: bookErr } = await db.from('bookings')
-          .select('id, check_in_date, expected_check_out, guests(full_name)')
-          .eq('room_id', roomData.id)
+        // DIRECT LOOKUP: Find the booking where the room number matches AND status is Checked In
+        // This bypasses the 'rooms' table entirely to prevent ID mismatches
+        const { data: bookingData, error: bookErr } = await db.from('bookings')
+          .select(`
+            id, 
+            check_in_date, 
+            expected_check_out, 
+            guests(full_name),
+            rooms!inner(room_number)
+          `)
+          .eq('rooms.room_number', roomNum)
           .eq('status', 'Checked In')
-          .limit(1)
           .maybeSingle();
 
         if (bookErr) {
-            throw new Error(`Booking Error: ${bookErr.message}`);
+            throw new Error(`Database Error: ${bookErr.message}`);
         }
-        if (!booking) {
+        
+        if (!bookingData) {
             throw new Error(`Room ${roomNum} is not currently checked in.`);
         }
 
-        // 3. Success
+        // Success
         const sessionData = {
-          booking_id: booking.id,
+          booking_id: bookingData.id,
           room_number: roomNum,
-          guest_name: booking.guests.full_name,
-          check_in: booking.check_in_date,
-          check_out: booking.expected_check_out
+          guest_name: bookingData.guests.full_name,
+          check_in: bookingData.check_in_date,
+          check_out: bookingData.expected_check_out
         };
         
         localStorage.setItem('vicnos_guest_session', JSON.stringify(sessionData));
