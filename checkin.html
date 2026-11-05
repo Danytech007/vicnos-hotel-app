@@ -180,6 +180,7 @@
 
       const guestName = document.getElementById('guest-name').value;
 
+      // STEP 1: Try to save the guest
       const { data: guest, error: guestErr } = await db.from('guests').insert({
         full_name: guestName, phone: document.getElementById('guest-phone').value,
         dob: document.getElementById('guest-dob').value || null, sex: document.getElementById('guest-sex').value,
@@ -188,21 +189,32 @@
         id_type: document.getElementById('guest-id').value
       }).select().single();
 
-      if (guestErr) { msg.textContent = guestErr.message; msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; btn.disabled = false; return; }
+      // CRITICAL FIX: If the guest save fails, STOP. Do not create a ghost booking.
+      if (guestErr) { 
+          msg.textContent = "Guest Save Error: " + guestErr.message; 
+          msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; 
+          btn.disabled = false; 
+          return; 
+      }
 
-      // SAVE THE NAME TO additional_guest_name AS A BACKUP!
+      // STEP 2: Save the booking with the name backed up
       const { error: bookErr } = await db.from('bookings').insert({
         room_id: selectedRoomId, guest_id: guest.id,
         check_in_date: new Date().toISOString(),
         expected_check_out: document.getElementById('checkout-date').value,
         status: 'Checked In', created_by: currentUser.id,
         payment_method: document.getElementById('payment-method').value,
-        additional_guest_name: guestName, // <--- Back up the name here
+        additional_guest_name: guestName, // Backup the name
         additional_guest_relation: document.getElementById('add-relation').value,
         agreed_to_rules: document.getElementById('agree-rules').checked
       });
 
-      if (bookErr) { msg.textContent = bookErr.message; msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; btn.disabled = false; return; }
+      if (bookErr) { 
+          msg.textContent = "Booking Error: " + bookErr.message; 
+          msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; 
+          btn.disabled = false; 
+          return; 
+      }
 
       await db.from('rooms').update({ status: 'Occupied' }).eq('id', selectedRoomId);
 
