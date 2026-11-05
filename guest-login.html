@@ -53,7 +53,7 @@
     <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100">
       
       <div id="error-msg" class="hidden bg-red-50 border border-red-200 p-3 rounded-xl mb-4 text-center">
-        <p class="text-red-700 text-sm font-bold"></p>
+        <p class="text-red-700 text-xs font-bold break-words"></p>
       </div>
 
       <button onclick="startScanner()" id="scan-btn" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 mb-6">
@@ -190,35 +190,43 @@
       const errText = errMsg.querySelector('p');
       
       try {
-        // DIRECT LOOKUP: Find the booking where the room number matches AND status is Checked In
-        // This bypasses the 'rooms' table entirely to prevent ID mismatches
-        const { data: bookingData, error: bookErr } = await db.from('bookings')
-          .select(`
-            id, 
-            check_in_date, 
-            expected_check_out, 
-            guests(full_name),
-            rooms!inner(room_number)
-          `)
-          .eq('rooms.room_number', roomNum)
+        // STEP 1: Find the room ID exactly
+        const { data: roomData, error: roomErr } = await db.from('rooms').select('id').eq('room_number', roomNum).maybeSingle();
+        
+        if (roomErr) {
+            throw new Error(`DB Error: ${roomErr.message}`);
+        }
+        
+        if (!roomData) {
+            // If room not found, fetch ALL rooms to show Daniel exactly what is in the DB
+            const { data: allRooms } = await db.from('rooms').select('room_number').limit(20);
+            const list = allRooms ? allRooms.map(r => `'${r.room_number}'`).join(', ') : 'Empty Table';
+            throw new Error(`Room '${roomNum}' not found. DB has: ${list}`);
+        }
+
+        // STEP 2: Find the booking for this specific room ID
+        const { data: booking, error: bookErr } = await db.from('bookings')
+          .select('id, check_in_date, expected_check_out, guests(full_name)')
+          .eq('room_id', roomData.id)
           .eq('status', 'Checked In')
+          .limit(1)
           .maybeSingle();
 
         if (bookErr) {
-            throw new Error(`Database Error: ${bookErr.message}`);
+            throw new Error(`Booking Error: ${bookErr.message}`);
         }
         
-        if (!bookingData) {
-            throw new Error(`Room ${roomNum} is not currently checked in.`);
+        if (!booking) {
+            throw new Error(`Room '${roomNum}' exists but has no active guest checked in.`);
         }
 
-        // Success
+        // STEP 3: Success
         const sessionData = {
-          booking_id: bookingData.id,
+          booking_id: booking.id,
           room_number: roomNum,
-          guest_name: bookingData.guests.full_name,
-          check_in: bookingData.check_in_date,
-          check_out: bookingData.expected_check_out
+          guest_name: booking.guests.full_name,
+          check_in: booking.check_in_date,
+          check_out: booking.expected_check_out
         };
         
         localStorage.setItem('vicnos_guest_session', JSON.stringify(sessionData));
