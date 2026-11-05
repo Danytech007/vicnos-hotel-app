@@ -196,9 +196,9 @@
         if (roomErr) throw new Error(`DB Error: ${roomErr.message}`);
         if (!roomData) throw new Error(`Room '${roomNum}' not found.`);
 
-        // STEP 2: Find the booking (case-insensitive)
+        // STEP 2: Find the booking
         const { data: booking, error: bookErr } = await db.from('bookings')
-          .select('id, check_in_date, expected_check_out, status, guest_id, guests(full_name)')
+          .select('id, check_in_date, expected_check_out, status, guest_id, additional_guest_name, guests(full_name)')
           .eq('room_id', roomData.id)
           .ilike('status', '%checked in%') 
           .limit(1)
@@ -207,19 +207,15 @@
         if (bookErr) throw new Error(`Booking Error: ${bookErr.message}`);
         if (!booking) throw new Error(`Room '${roomNum}' exists but no active guest is checked in.`);
 
-        // AUTO-REPAIR
-        if (booking.status !== 'Checked In') {
-            await db.from('bookings').update({ status: 'Checked In' }).eq('id', booking.id);
-        }
-
-        // DEEP LOOKUP: If the inner join returned null, fetch the guest directly using guest_id
+        // THE ULTIMATE FALLBACK CHAIN
         let finalGuestName = 'Valued Guest';
         
         if (booking.guests && booking.guests.full_name) {
             finalGuestName = booking.guests.full_name;
+        } else if (booking.additional_guest_name && booking.additional_guest_name.trim() !== '') {
+            finalGuestName = booking.additional_guest_name;
         } else if (booking.guest_id) {
-            // Fallback query directly to the guests table
-            const { data: guestRecord } = await db.from('guests').select('full_name').eq('id', booking.guest_id).single();
+            const { data: guestRecord } = await db.from('guests').select('full_name').eq('id', booking.guest_id).maybeSingle();
             if (guestRecord && guestRecord.full_name) {
                 finalGuestName = guestRecord.full_name;
             }
