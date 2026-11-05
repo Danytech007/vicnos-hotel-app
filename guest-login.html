@@ -198,32 +198,38 @@
 
         // STEP 2: Find the booking (case-insensitive)
         const { data: booking, error: bookErr } = await db.from('bookings')
-          .select('id, check_in_date, expected_check_out, status, guests(full_name)')
+          .select('id, check_in_date, expected_check_out, status, guest_id, guests(full_name)')
           .eq('room_id', roomData.id)
           .ilike('status', '%checked in%') 
           .limit(1)
           .maybeSingle();
 
         if (bookErr) throw new Error(`Booking Error: ${bookErr.message}`);
-        
         if (!booking) throw new Error(`Room '${roomNum}' exists but no active guest is checked in.`);
 
-        // AUTO-REPAIR: If the database had 'checked in ' or 'Checked-In', fix it to exactly 'Checked In'
+        // AUTO-REPAIR
         if (booking.status !== 'Checked In') {
             await db.from('bookings').update({ status: 'Checked In' }).eq('id', booking.id);
         }
 
-        // FALLBACK: If the guest relationship is null, don't crash. Just use a generic name.
-        let guestName = 'Valued Guest';
+        // DEEP LOOKUP: If the inner join returned null, fetch the guest directly using guest_id
+        let finalGuestName = 'Valued Guest';
+        
         if (booking.guests && booking.guests.full_name) {
-            guestName = booking.guests.full_name;
+            finalGuestName = booking.guests.full_name;
+        } else if (booking.guest_id) {
+            // Fallback query directly to the guests table
+            const { data: guestRecord } = await db.from('guests').select('full_name').eq('id', booking.guest_id).single();
+            if (guestRecord && guestRecord.full_name) {
+                finalGuestName = guestRecord.full_name;
+            }
         }
 
         // STEP 3: Success
         const sessionData = {
           booking_id: booking.id,
           room_number: roomNum,
-          guest_name: guestName,
+          guest_name: finalGuestName,
           check_in: booking.check_in_date,
           check_out: booking.expected_check_out
         };
