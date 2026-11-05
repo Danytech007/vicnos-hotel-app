@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos Hotel - Guest Login</title>
   
-  <!-- FORCE CLEAR CACHE ON EVERY LOAD -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -35,14 +34,12 @@
 </head>
 <body class="items-center justify-center p-4">
 
-  <!-- Loading Screen -->
   <div id="loading-screen" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-[200]">
     <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
     <p class="text-gray-500 font-bold animate-pulse">Verifying your room...</p>
     <p id="loading-text" class="text-xs text-gray-400 mt-2"></p>
   </div>
 
-  <!-- MAIN LOGIN UI -->
   <div id="login-container" class="hidden w-full max-w-sm fade-in">
     
     <div class="text-center mb-8">
@@ -55,7 +52,6 @@
 
     <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100">
       
-      <!-- ERROR MESSAGE DISPLAY -->
       <div id="error-msg" class="hidden bg-red-50 border border-red-200 p-3 rounded-xl mb-4 text-center">
         <p class="text-red-700 text-sm font-bold"></p>
       </div>
@@ -87,7 +83,6 @@
     </div>
   </div>
 
-  <!-- QR Scanner Modal -->
   <div id="scanner-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden items-center justify-center z-[250] p-4 flex-col">
     <div class="w-full max-w-sm">
       <div class="flex justify-between items-center mb-4">
@@ -100,7 +95,6 @@
   </div>
 
   <script>
-    // Register service worker after the clear
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
@@ -114,8 +108,6 @@
     async function init() {
         const urlParams = new URLSearchParams(window.location.search);
         let urlRoom = urlParams.get('room');
-        
-        // TRIM THE ROOM NUMBER just in case the scanner adds a space
         if (urlRoom) urlRoom = urlRoom.trim();
 
         const loadingText = document.getElementById('loading-text');
@@ -133,9 +125,7 @@
                     if (booking && booking.status === 'Checked In') {
                         window.location.replace(`guest-portal.html?room=${savedGuest.room_number}`);
                         return;
-                    } else {
-                        localStorage.removeItem('vicnos_guest_session');
-                    }
+                    } else { localStorage.removeItem('vicnos_guest_session'); }
                 } catch (e) { localStorage.removeItem('vicnos_guest_session'); }
             }
             document.getElementById('loading-screen').classList.add('hidden');
@@ -164,22 +154,12 @@
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
           let roomNum = null;
-
-          if (decodedText.includes("VICNOS-ROOM-")) {
-            roomNum = decodedText.replace("VICNOS-ROOM-", "").trim();
-          } 
+          if (decodedText.includes("VICNOS-ROOM-")) { roomNum = decodedText.replace("VICNOS-ROOM-", "").trim(); } 
           else if (decodedText.includes("room=")) {
-            try {
-              const url = new URL(decodedText);
-              roomNum = url.searchParams.get('room').trim();
-            } catch (e) {
-              const parts = decodedText.split('room=');
-              if (parts.length > 1) roomNum = parts[1].split('&')[0].trim();
-            }
+            try { const url = new URL(decodedText); roomNum = url.searchParams.get('room').trim(); } 
+            catch (e) { const parts = decodedText.split('room='); if (parts.length > 1) roomNum = parts[1].split('&')[0].trim(); }
           }
-          else if (!isNaN(decodedText)) {
-            roomNum = decodedText.trim();
-          }
+          else if (!isNaN(decodedText)) { roomNum = decodedText.trim(); }
 
           if (roomNum) {
             closeScanner();
@@ -187,9 +167,7 @@
             document.getElementById('login-container').classList.add('hidden');
             document.getElementById('loading-screen').classList.remove('hidden');
             processLogin(roomNum);
-          } else {
-            alert("Invalid QR Code.");
-          }
+          } else { alert("Invalid QR Code."); }
         },
         (errorMessage) => { }
       ).catch((err) => alert("Camera error: " + err));
@@ -212,14 +190,14 @@
       const errText = errMsg.querySelector('p');
       
       try {
-        // 1. Check if room exists
-        const { data: roomData, error: roomErr } = await db.from('rooms').select('id').eq('room_number', roomNum).single();
+        // 1. Check if room exists (using .maybeSingle to prevent crashes)
+        const { data: roomData, error: roomErr } = await db.from('rooms').select('id').eq('room_number', roomNum).maybeSingle();
         
-        if (roomErr || !roomData) {
-            // If it fails here, let's also fetch all rooms to see what's actually in the DB
-            const { data: allRooms } = await db.from('rooms').select('room_number');
-            const available = allRooms.map(r => r.room_number).join(', ');
-            throw new Error(`Room ${roomNum} not found. Database has: [${available}]`);
+        if (roomErr) {
+            throw new Error(`Database Error: ${roomErr.message}`);
+        }
+        if (!roomData) {
+            throw new Error(`Room ${roomNum} does not exist in the system.`);
         }
 
         // 2. Check if there is an active checked-in booking
@@ -230,8 +208,11 @@
           .limit(1)
           .maybeSingle();
 
-        if (bookErr || !booking) {
-            throw new Error(`Room ${roomNum} exists, but no guest is currently checked in.`);
+        if (bookErr) {
+            throw new Error(`Booking Error: ${bookErr.message}`);
+        }
+        if (!booking) {
+            throw new Error(`Room ${roomNum} is not currently checked in.`);
         }
 
         // 3. Success
@@ -249,7 +230,6 @@
       } catch (err) {
         document.getElementById('loading-screen').classList.add('hidden');
         document.getElementById('login-container').classList.remove('hidden');
-        
         errMsg.classList.remove('hidden');
         errText.textContent = err.message;
       }
