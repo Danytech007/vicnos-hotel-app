@@ -193,8 +193,9 @@
         const { data: roomData } = await db.from('rooms').select('id').eq('room_number', roomNum).maybeSingle();
         if (!roomData) throw new Error(`Room ${roomNum} not found.`);
 
+        // Fetch everything from the booking
         const { data: booking, error: bookErr } = await db.from('bookings')
-          .select('id, check_in_date, expected_check_out, guest_id, additional_guest_name')
+          .select('*')
           .eq('room_id', roomData.id)
           .eq('status', 'Checked In') 
           .maybeSingle();
@@ -203,23 +204,16 @@
         if (!booking) throw new Error(`Room ${roomNum} is not checked in.`);
 
         let finalName = "Valued Guest";
-        
-        // 1. Try to find the guest by ID
-        if (booking.guest_id) {
+
+        // PRIORITY 1: Use the backup name typed on the check-in form
+        if (booking.additional_guest_name && booking.additional_guest_name.trim() !== '') {
+            finalName = booking.additional_guest_name;
+        } 
+        // PRIORITY 2: Look up by guest_id
+        else if (booking.guest_id) {
             const { data: guest } = await db.from('guests').select('full_name').eq('id', booking.guest_id).maybeSingle();
             if (guest && guest.full_name) {
                 finalName = guest.full_name;
-            }
-        }
-
-        // 2. If ID failed, but we have a name typed on the booking, search the guests table for that name
-        if (finalName === "Valued Guest" && booking.additional_guest_name) {
-            const { data: guestByName } = await db.from('guests').select('full_name').ilike('full_name', booking.additional_guest_name.trim()).maybeSingle();
-            if (guestByName && guestByName.full_name) {
-                finalName = guestByName.full_name;
-            } else {
-                // If we can't find them in the DB, just use the name they typed
-                finalName = booking.additional_guest_name;
             }
         }
 
