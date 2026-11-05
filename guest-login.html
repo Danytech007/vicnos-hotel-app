@@ -21,15 +21,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
   
   <style>
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
     body { font-family: 'Inter', sans-serif; background-color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
     h1, h2, h3 { font-family: 'Playfair Display', serif; }
-    .fade-in { animation: fadeIn 0.5s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="items-center justify-center p-4">
@@ -37,203 +34,82 @@
   <div id="loading-screen" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-[200]">
     <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
     <p class="text-gray-500 font-bold animate-pulse">Verifying your room...</p>
-    <p id="loading-text" class="text-xs text-gray-400 mt-2"></p>
   </div>
 
-  <div id="login-container" class="hidden w-full max-w-sm fade-in">
-    
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-600 text-white rounded-3xl shadow-xl shadow-blue-500/30 mb-4 transform -rotate-6">
-        <i data-lucide="hotel" class="w-10 h-10"></i>
-      </div>
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome to Vicnos</h1>
-      <p class="text-sm text-gray-500 font-medium">Access your room service, bill, and local marketplace.</p>
-    </div>
-
-    <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100">
-      
-      <div id="error-msg" class="hidden bg-red-50 border border-red-200 p-3 rounded-xl mb-4 text-center">
-        <p class="text-red-700 text-xs font-bold break-words"></p>
-      </div>
-
-      <button onclick="startScanner()" id="scan-btn" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2 mb-6">
-        <i data-lucide="scan-line" class="w-5 h-5"></i> Scan Room QR Code
-      </button>
-
-      <div class="flex items-center gap-3 mb-6">
-        <div class="h-px bg-gray-200 flex-1"></div>
-        <span class="text-xs text-gray-400 font-bold uppercase">Or Enter Manually</span>
-        <div class="h-px bg-gray-200 flex-1"></div>
-      </div>
-
-      <form id="manual-form" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Room Number</label>
-          <input id="room-input" type="text" required placeholder="e.g. 106" class="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-center text-2xl font-black text-gray-800 outline-none focus:border-blue-500 focus:bg-white transition tracking-widest">
-        </div>
-        <button type="submit" id="submit-btn" class="w-full bg-blue-100 text-blue-700 py-4 rounded-xl font-bold active:scale-95 transition">
-          Access My Portal
-        </button>
-      </form>
-    </div>
-
-    <div class="mt-8 text-center">
-      <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
-      <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
-    </div>
-  </div>
-
-  <div id="scanner-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden items-center justify-center z-[250] p-4 flex-col">
-    <div class="w-full max-w-sm">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-white font-bold text-lg">Scan Room QR</h2>
-        <button onclick="closeScanner()" class="bg-white/20 p-2 rounded-full text-white hover:bg-white/30"><i data-lucide="x" class="w-6 h-6"></i></button>
-      </div>
-      <div id="reader" class="w-full rounded-2xl overflow-hidden border-2 border-blue-500 bg-black"></div>
-      <p class="text-center text-white/70 text-sm mt-4">Point your camera at the QR code on your desk or TV.</p>
-    </div>
+  <div id="error-msg" class="fixed inset-0 bg-red-900 text-white p-6 flex flex-col items-center justify-center z-[300] hidden overflow-y-auto">
+    <h1 class="text-2xl font-bold mb-4 text-center">DEBUG DATA DUMP</h1>
+    <p class="text-sm mb-4 text-center">Copy this text and send it to Daniel:</p>
+    <pre id="debug-text" class="bg-black/50 p-4 rounded-xl text-xs w-full max-w-2xl whitespace-pre-wrap"></pre>
+    <button onclick="window.location.reload()" class="mt-6 bg-white text-red-900 px-6 py-2 rounded-full font-bold">Retry</button>
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
-
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    lucide.createIcons();
-
-    let qrScanner = null;
 
     async function init() {
         const urlParams = new URLSearchParams(window.location.search);
         let urlRoom = urlParams.get('room');
-        if (urlRoom) urlRoom = urlRoom.trim();
-
-        const loadingText = document.getElementById('loading-text');
-
-        if (urlRoom) {
-            loadingText.textContent = `Room ${urlRoom} detected. Verifying...`;
-            localStorage.removeItem('vicnos_guest_session');
-            await processLogin(urlRoom);
-        } else {
-            let savedGuest = localStorage.getItem('vicnos_guest_session');
-            if (savedGuest) {
-                try {
-                    savedGuest = JSON.parse(savedGuest);
-                    const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
-                    if (booking && booking.status === 'Checked In') {
-                        window.location.replace(`guest-portal.html?room=${savedGuest.room_number}`);
-                        return;
-                    } else { localStorage.removeItem('vicnos_guest_session'); }
-                } catch (e) { localStorage.removeItem('vicnos_guest_session'); }
-            }
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('login-container').classList.remove('hidden');
-        }
-    }
-
-    document.getElementById('manual-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      let roomNum = document.getElementById('room-input').value.trim();
-      if (roomNum) {
-          document.getElementById('login-container').classList.add('hidden');
-          document.getElementById('loading-screen').classList.remove('hidden');
-          await processLogin(roomNum);
-      }
-    });
-
-    function startScanner() {
-      document.getElementById('scanner-modal').classList.remove('hidden');
-      document.getElementById('scanner-modal').classList.add('flex');
-      
-      qrScanner = new Html5Qrcode("reader");
-      
-      qrScanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          let roomNum = null;
-          if (decodedText.includes("VICNOS-ROOM-")) { roomNum = decodedText.replace("VICNOS-ROOM-", "").trim(); } 
-          else if (decodedText.includes("room=")) {
-            try { const url = new URL(decodedText); roomNum = url.searchParams.get('room').trim(); } 
-            catch (e) { const parts = decodedText.split('room='); if (parts.length > 1) roomNum = parts[1].split('&')[0].trim(); }
-          }
-          else if (!isNaN(decodedText)) { roomNum = decodedText.trim(); }
-
-          if (roomNum) {
-            closeScanner();
-            localStorage.removeItem('vicnos_guest_session');
-            document.getElementById('login-container').classList.add('hidden');
-            document.getElementById('loading-screen').classList.remove('hidden');
-            processLogin(roomNum);
-          } else { alert("Invalid QR Code."); }
-        },
-        (errorMessage) => { }
-      ).catch((err) => alert("Camera error: " + err));
-    }
-
-    function closeScanner() {
-      if (qrScanner) {
-        qrScanner.stop().then(() => {
-          document.getElementById('scanner-modal').classList.add('hidden');
-          document.getElementById('scanner-modal').classList.remove('flex');
-        }).catch(e => console.log(e));
-      } else {
-        document.getElementById('scanner-modal').classList.add('hidden');
-        document.getElementById('scanner-modal').classList.remove('flex');
-      }
-    }
-
-    async function processLogin(roomNum) {
-      const errMsg = document.getElementById('error-msg');
-      const errText = errMsg.querySelector('p');
-      
-      try {
-        const { data: roomData } = await db.from('rooms').select('id').eq('room_number', roomNum).maybeSingle();
-        if (!roomData) throw new Error(`Room ${roomNum} not found.`);
-
-        // Fetch everything from the booking
-        const { data: booking, error: bookErr } = await db.from('bookings')
-          .select('*')
-          .eq('room_id', roomData.id)
-          .eq('status', 'Checked In') 
-          .maybeSingle();
-
-        if (bookErr) throw new Error(`DB Error: ${bookErr.message}`);
-        if (!booking) throw new Error(`Room ${roomNum} is not checked in.`);
-
-        let finalName = "Valued Guest";
-
-        // PRIORITY 1: Use the backup name typed on the check-in form
-        if (booking.additional_guest_name && booking.additional_guest_name.trim() !== '') {
-            finalName = booking.additional_guest_name;
-        } 
-        // PRIORITY 2: Look up by guest_id
-        else if (booking.guest_id) {
-            const { data: guest } = await db.from('guests').select('full_name').eq('id', booking.guest_id).maybeSingle();
-            if (guest && guest.full_name) {
-                finalName = guest.full_name;
-            }
-        }
-
-        const sessionData = {
-          booking_id: booking.id,
-          room_number: roomNum,
-          guest_name: finalName,
-          check_in: booking.check_in_date,
-          check_out: booking.expected_check_out
-        };
         
-        localStorage.setItem('vicnos_guest_session', JSON.stringify(sessionData));
-        window.location.replace(`guest-portal.html?room=${roomNum}`);
+        if (!urlRoom) {
+            document.getElementById('loading-screen').innerHTML = '<p class="text-red-500 font-bold">No room number in URL. Please scan the QR code again.</p>';
+            return;
+        }
 
-      } catch (err) {
-        document.getElementById('loading-screen').classList.add('hidden');
-        document.getElementById('login-container').classList.remove('hidden');
-        errMsg.classList.remove('hidden');
-        errText.textContent = err.message;
-      }
+        urlRoom = urlRoom.trim();
+        
+        try {
+            // 1. Get Room ID
+            const { data: roomData, error: roomErr } = await db.from('rooms').select('*').eq('room_number', urlRoom).maybeSingle();
+            if (roomErr) throw new Error(`ROOM ERROR: ${roomErr.message}`);
+            if (!roomData) throw new Error(`ROOM NOT FOUND: No room matches '${urlRoom}' in the database.`);
+
+            // 2. Get Booking
+            const { data: booking, error: bookErr } = await db.from('bookings')
+              .select('*')
+              .eq('room_id', roomData.id)
+              .eq('status', 'Checked In')
+              .maybeSingle();
+
+            if (bookErr) throw new Error(`BOOKING ERROR: ${bookErr.message}`);
+            if (!booking) throw new Error(`NOT CHECKED IN: Room ${urlRoom} exists, but no booking has status 'Checked In'.`);
+
+            // 3. Get Guest
+            let guestData = null;
+            if (booking.guest_id) {
+                const { data: g, error: gErr } = await db.from('guests').select('*').eq('id', booking.guest_id).maybeSingle();
+                if (!gErr) guestData = g;
+            }
+
+            // 4. SHOW THE DUMP
+            const dump = `
+ROOM NUMBER: ${urlRoom}
+ROOM ID: ${roomData.id}
+
+--- BOOKING DATA ---
+ID: ${booking.id}
+Guest ID in Booking: ${booking.guest_id}
+additional_guest_name: ${booking.additional_guest_name}
+Status: ${booking.status}
+
+--- GUEST DATA (Found by Guest ID) ---
+${guestData ? `Full Name: ${guestData.full_name}` : 'GUEST ID DOES NOT EXIST IN GUESTS TABLE'}
+
+--- HOW TO FIX ---
+If 'Full Name' is blank or says ID does not exist, it means the check-in form failed to save the guest properly.
+`;
+
+            document.getElementById('debug-text').textContent = dump;
+            document.getElementById('error-msg').classList.remove('hidden');
+            document.getElementById('loading-screen').classList.add('hidden');
+
+        } catch (err) {
+            document.getElementById('debug-text').textContent = err.message;
+            document.getElementById('error-msg').classList.remove('hidden');
+            document.getElementById('loading-screen').classList.add('hidden');
+        }
     }
 
     init();
