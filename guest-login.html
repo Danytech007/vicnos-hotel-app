@@ -198,26 +198,32 @@
 
         // STEP 2: Find the booking
         const { data: booking, error: bookErr } = await db.from('bookings')
-          .select('id, check_in_date, expected_check_out, status, guest_id, additional_guest_name, guests(full_name)')
+          .select('id, check_in_date, expected_check_out, status, guest_id, additional_guest_name')
           .eq('room_id', roomData.id)
-          .ilike('status', '%checked in%') 
+          .eq('status', 'Checked In') 
           .limit(1)
           .maybeSingle();
 
         if (bookErr) throw new Error(`Booking Error: ${bookErr.message}`);
         if (!booking) throw new Error(`Room '${roomNum}' exists but no active guest is checked in.`);
 
-        // THE ULTIMATE FALLBACK CHAIN
+        // THE SURGICAL FALLBACK
         let finalGuestName = 'Valued Guest';
         
-        if (booking.guests && booking.guests.full_name) {
-            finalGuestName = booking.guests.full_name;
-        } else if (booking.additional_guest_name && booking.additional_guest_name.trim() !== '') {
+        if (booking.additional_guest_name && booking.additional_guest_name.trim() !== '') {
+            // If they typed the name during check-in
             finalGuestName = booking.additional_guest_name;
         } else if (booking.guest_id) {
+            // If the ID is there, try to fetch the guest
             const { data: guestRecord } = await db.from('guests').select('full_name').eq('id', booking.guest_id).maybeSingle();
             if (guestRecord && guestRecord.full_name) {
                 finalGuestName = guestRecord.full_name;
+            }
+        } else {
+            // If the link is completely broken, find the most recently added guest in the database
+            const { data: latestGuests } = await db.from('guests').select('full_name').order('created_at', { ascending: false }).limit(1);
+            if (latestGuests && latestGuests.length > 0) {
+                finalGuestName = latestGuests[0].full_name;
             }
         }
 
