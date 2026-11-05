@@ -117,6 +117,17 @@
             localStorage.removeItem('vicnos_guest_session');
             await processLogin(urlRoom);
         } else {
+            let savedGuest = localStorage.getItem('vicnos_guest_session');
+            if (savedGuest) {
+                try {
+                    savedGuest = JSON.parse(savedGuest);
+                    const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
+                    if (booking && booking.status === 'Checked In') {
+                        window.location.replace(`guest-portal.html?room=${savedGuest.room_number}`);
+                        return;
+                    } else { localStorage.removeItem('vicnos_guest_session'); }
+                } catch (e) { localStorage.removeItem('vicnos_guest_session'); }
+            }
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('login-container').classList.remove('hidden');
         }
@@ -168,6 +179,9 @@
           document.getElementById('scanner-modal').classList.add('hidden');
           document.getElementById('scanner-modal').classList.remove('flex');
         }).catch(e => console.log(e));
+      } else {
+        document.getElementById('scanner-modal').classList.add('hidden');
+        document.getElementById('scanner-modal').classList.remove('flex');
       }
     }
 
@@ -176,13 +190,11 @@
       const errText = errMsg.querySelector('p');
       
       try {
-        // 1. Get Room ID
         const { data: roomData } = await db.from('rooms').select('id').eq('room_number', roomNum).maybeSingle();
         if (!roomData) throw new Error(`Room ${roomNum} not found.`);
 
-        // 2. Get Booking (Fetch EVERYTHING to see what is there)
         const { data: booking, error: bookErr } = await db.from('bookings')
-          .select('*') // Fetch every column
+          .select('id, check_in_date, expected_check_out, guest_id, additional_guest_name')
           .eq('room_id', roomData.id)
           .eq('status', 'Checked In') 
           .maybeSingle();
@@ -190,28 +202,27 @@
         if (bookErr) throw new Error(`DB Error: ${bookErr.message}`);
         if (!booking) throw new Error(`Room ${roomNum} is not checked in.`);
 
-        // 3. THE DEBUG DUMP
-        // If guest_id is missing, let's literally print the booking data to the screen
-        if (!booking.guest_id && !booking.additional_guest_name) {
-            throw new Error(`DEBUG DATA: Room exists. Booking found. BUT: guest_id is null AND additional_guest_name is empty.`);
-        }
-
-        // 4. Fetch Guest explicitly
         let finalName = "Valued Guest";
         
+        // 1. Try to find the guest by ID
         if (booking.guest_id) {
-            const { data: guest, error: guestErr } = await db.from('guests').select('full_name').eq('id', booking.guest_id).maybeSingle();
-            if (guestErr) throw new Error(`Guest Lookup Error: ${guestErr.message}`);
-            if (guest) {
+            const { data: guest } = await db.from('guests').select('full_name').eq('id', booking.guest_id).maybeSingle();
+            if (guest && guest.full_name) {
                 finalName = guest.full_name;
-            } else {
-                throw new Error(`Booking has guest_id [${booking.guest_id}], but that ID does not exist in the guests table.`);
             }
-        } else if (booking.additional_guest_name) {
-            finalName = booking.additional_guest_name;
         }
 
-        // 5. Success
+        // 2. If ID failed, but we have a name typed on the booking, search the guests table for that name
+        if (finalName === "Valued Guest" && booking.additional_guest_name) {
+            const { data: guestByName } = await db.from('guests').select('full_name').ilike('full_name', booking.additional_guest_name.trim()).maybeSingle();
+            if (guestByName && guestByName.full_name) {
+                finalName = guestByName.full_name;
+            } else {
+                // If we can't find them in the DB, just use the name they typed
+                finalName = booking.additional_guest_name;
+            }
+        }
+
         const sessionData = {
           booking_id: booking.id,
           room_number: roomNum,
