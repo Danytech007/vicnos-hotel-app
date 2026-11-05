@@ -196,28 +196,34 @@
         if (roomErr) throw new Error(`DB Error: ${roomErr.message}`);
         if (!roomData) throw new Error(`Room '${roomNum}' not found.`);
 
-        // STEP 2: Find the booking (using ilike to catch any casing or spaces)
+        // STEP 2: Find the booking (case-insensitive)
         const { data: booking, error: bookErr } = await db.from('bookings')
           .select('id, check_in_date, expected_check_out, status, guests(full_name)')
           .eq('room_id', roomData.id)
-          .ilike('status', '%checked in%') // <--- CASE INSENSITIVE MATCH
+          .ilike('status', '%checked in%') 
           .limit(1)
           .maybeSingle();
 
         if (bookErr) throw new Error(`Booking Error: ${bookErr.message}`);
         
-        if (!booking) {
-            // If not found, let's fetch ALL bookings for this room to see what their status actually is
-            const { data: allBookings } = await db.from('bookings').select('status').eq('room_id', roomData.id);
-            const statuses = allBookings ? allBookings.map(b => `'${b.status}'`).join(', ') : 'None';
-            throw new Error(`Room '${roomNum}' exists but no 'Checked In' status found. Actual statuses: ${statuses}`);
+        if (!booking) throw new Error(`Room '${roomNum}' exists but no active guest is checked in.`);
+
+        // AUTO-REPAIR: If the database had 'checked in ' or 'Checked-In', fix it to exactly 'Checked In'
+        if (booking.status !== 'Checked In') {
+            await db.from('bookings').update({ status: 'Checked In' }).eq('id', booking.id);
+        }
+
+        // FALLBACK: If the guest relationship is null, don't crash. Just use a generic name.
+        let guestName = 'Valued Guest';
+        if (booking.guests && booking.guests.full_name) {
+            guestName = booking.guests.full_name;
         }
 
         // STEP 3: Success
         const sessionData = {
           booking_id: booking.id,
           room_number: roomNum,
-          guest_name: booking.guests.full_name,
+          guest_name: guestName,
           check_in: booking.check_in_date,
           check_out: booking.expected_check_out
         };
