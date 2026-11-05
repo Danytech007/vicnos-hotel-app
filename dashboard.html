@@ -68,8 +68,8 @@
         <div class="flex items-center gap-3">
             <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
             <div>
-                <h3 class="font-bold text-sm">URGENT: Guest Upgrade Request!</h3>
-                <p id="live-upgrade-text" class="text-red-100 text-xs mt-1 font-medium">A guest is waiting for an upgrade...</p>
+                <h3 class="font-bold text-sm">URGENT: Guest Request!</h3>
+                <p id="live-upgrade-text" class="text-red-100 text-xs mt-1 font-medium">A guest is waiting...</p>
             </div>
         </div>
         <i data-lucide="chevron-right" class="w-6 h-6"></i>
@@ -258,15 +258,29 @@
         heartbeatInterval = setInterval(() => { checkUpgradeRequests(); }, 10000); 
     }
 
+    // --- UPDATED: Heartbeat now catches Upgrade Requests AND Housekeeping Requests ---
     async function checkUpgradeRequests() {
-        const { data: pending } = await db.from('guest_orders').select('*').eq('department', 'Upgrade Request').eq('status', 'Pending');
+        // 1. Fetch Pending Upgrade Requests
+        const { data: pendingUpgrades } = await db.from('guest_orders').select('*').eq('department', 'Upgrade Request').eq('status', 'Pending');
+        
+        // 2. Fetch Pending Housekeeping Requests
+        const { data: pendingHousekeeping } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending');
+
+        // 3. Fetch Auto Logs (Completed upgrades in last 5 mins)
         const { data: autoLogs } = await db.from('guest_orders').select('*').eq('department', 'Upgrade Log').eq('status', 'Completed').gte('created_at', new Date(Date.now() - 5 * 60000).toISOString());
+        
         const alertBanner = document.getElementById('live-upgrade-alert');
         const alertText = document.getElementById('live-upgrade-text');
 
-        if (pending && pending.length > 0) {
+        if ((pendingUpgrades && pendingUpgrades.length > 0) || (pendingHousekeeping && pendingHousekeeping.length > 0)) {
             alertBanner.classList.remove('hidden'); alertBanner.classList.replace('bg-emerald-600', 'bg-red-600');
-            alertText.textContent = `URGENT: ${pending.length} guest(s) requested a manual upgrade. Click to review.`;
+            
+            let msg = "URGENT: ";
+            if (pendingUpgrades?.length > 0) msg += `${pendingUpgrades.length} Upgrade Req(s) `;
+            if (pendingHousekeeping?.length > 0) msg += `${pendingHousekeeping.length} Housekeeping Req(s) `;
+            
+            alertText.textContent = msg + "waiting. Click to review.";
+            
             try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
         } else if (autoLogs && autoLogs.length > 0) {
             alertBanner.classList.remove('hidden'); alertBanner.classList.replace('bg-red-600', 'bg-emerald-600');

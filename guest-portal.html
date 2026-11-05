@@ -23,7 +23,7 @@
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   </style>
 </head>
-<body class="pb-24"> <!-- Extra padding for bottom dock -->
+<body class="pb-24"> 
 
   <div id="checkout-lockout" class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-6 text-center fade-in">
     <div class="bg-white/10 p-6 rounded-full mb-6">
@@ -75,28 +75,15 @@
         </div>
       </div>
 
-      <!-- SPONSORED AD -->
-      <div id="ad-banner-container" class="px-4 mt-5 hidden">
-        <a id="ad-link" href="#" target="_blank" class="block relative rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform">
-          <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
-            <div class="bg-black/20 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between relative overflow-hidden">
-              <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg z-20">SPONSORED</div>
-              <div class="flex items-center gap-3 z-10 w-[85%]">
-                <img id="ad-image" src="" class="w-12 h-12 rounded-full object-cover border-2 border-white/30 hidden">
-                <div id="ad-icon-container" class="bg-white/20 p-2.5 rounded-full border border-white/30 shadow-inner">
-                  <i data-lucide="sparkles" class="w-6 h-6 text-yellow-300 animate-pulse"></i>
-                </div>
-                <div class="flex-1">
-                  <p id="ad-title" class="text-white text-sm font-extrabold uppercase tracking-wide line-clamp-1">Ad Title</p>
-                  <p id="ad-desc" class="text-indigo-100 text-[11px] font-medium mt-0.5 line-clamp-2">Ad Description</p>
-                </div>
-              </div>
-              <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg flex-shrink-0">
-                <i data-lucide="chevron-right" class="w-5 h-5"></i>
-              </div>
-            </div>
-          </div>
-        </a>
+      <!-- ACTIVE REQUESTS (LIVE) -->
+      <div id="active-requests-container" class="px-4 mt-4 hidden">
+        <div class="flex justify-between items-end mb-2">
+          <h2 class="text-sm font-bold text-gray-800">Active Requests</h2>
+          <a id="link-track-requests" class="text-[10px] font-bold text-blue-600">Track All</a>
+        </div>
+        <div id="active-requests-list" class="flex gap-2 overflow-x-auto hide-scroll pb-2">
+          <!-- Injected by JS -->
+        </div>
       </div>
 
       <!-- LATEST MEALS -->
@@ -110,8 +97,32 @@
         </div>
       </div>
 
+      <!-- SPONSORED AD (Moved down below core services) -->
+      <div id="ad-banner-container" class="px-4 mt-2 hidden">
+        <a id="ad-link" href="#" target="_blank" class="block relative rounded-3xl overflow-hidden shadow-xl active:scale-95 transition-transform">
+          <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-1">
+            <div class="bg-black/20 backdrop-blur-sm rounded-2xl p-5 flex items-center justify-between relative overflow-hidden">
+              <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg z-20">FEATURED PARTNER</div>
+              <div class="flex items-center gap-4 z-10 w-[85%]">
+                <img id="ad-image" src="" class="w-14 h-14 rounded-full object-cover border-2 border-white/30 hidden flex-shrink-0">
+                <div id="ad-icon-container" class="bg-white/20 p-3 rounded-full border border-white/30 shadow-inner flex-shrink-0">
+                  <i data-lucide="sparkles" class="w-6 h-6 text-yellow-300 animate-pulse"></i>
+                </div>
+                <div>
+                  <p id="ad-title" class="text-white text-sm font-extrabold uppercase tracking-wide">Partner</p>
+                  <p id="ad-desc" class="text-indigo-100 text-[11px] font-medium mt-1">Discover more</p>
+                </div>
+              </div>
+              <div class="z-10 bg-white text-indigo-700 p-2 rounded-full shadow-lg flex-shrink-0">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+
       <!-- DYNAMIC HOTEL HIGHLIGHTS -->
-      <div class="mt-2 pl-4" id="highlights-section" style="display: none;">
+      <div class="mt-6 pl-4" id="highlights-section" style="display: none;">
         <div class="flex justify-between items-center pr-4 mb-3">
           <h2 class="text-lg font-bold text-gray-800">Hotel Highlights</h2>
         </div>
@@ -138,18 +149,13 @@
             <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Track<br>Order</span>
           </a>
 
-          <a href="guest-profile.html" id="link-bill" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-            <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shadow-sm border border-emerald-100">
-              <i data-lucide="receipt" class="w-6 h-6 text-emerald-600"></i>
-            </div>
-            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">My<br>Bill</span>
-          </a>
+          <!-- Removed My Bill from grid (Handled in nav) -->
 
           <a href="inside-life.html" id="link-local-hub" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
             <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shadow-sm border border-blue-100">
               <i data-lucide="compass" class="w-6 h-6 text-blue-600"></i>
             </div>
-            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Inside<br>Life</span>
+            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Market<br>Place</span>
           </a>
 
           <a href="guest-blog.html" id="link-blog" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
@@ -159,7 +165,7 @@
             <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Latest<br>News</span>
           </a>
 
-          <a href="#" onclick="requestHousekeeping()" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+          <a href="#" onclick="openHousekeepingModal()" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
             <div class="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shadow-sm border border-teal-100">
               <i data-lucide="sparkles" class="w-6 h-6 text-teal-600"></i>
             </div>
@@ -180,14 +186,7 @@
             <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">WiFi<br>Connect</span>
           </a>
 
-          <a href="#" onclick="alert('WhatsApp Chat coming next!')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
-            <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center shadow-sm border border-green-100">
-              <i data-lucide="message-circle" class="w-6 h-6 text-green-600"></i>
-            </div>
-            <span class="text-[10px] font-semibold text-gray-600 text-center leading-tight">Front<br>Desk</span>
-          </a>
-
-          <a href="#" onclick="alert('Silent Panic Button activated! Security is on the way.')" class="flex flex-col items-center gap-2 active:scale-95 transition-transform col-span-1">
+          <a href="#" onclick="openEmergencyModal()" class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
             <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center shadow-sm border border-red-100">
               <i data-lucide="shield-alert" class="w-6 h-6 text-red-600"></i>
             </div>
@@ -218,7 +217,7 @@
         </a>
         <a href="inside-life.html" id="nav-inside-life" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
           <i data-lucide="compass" class="w-5 h-5"></i>
-          <span class="text-[10px] font-medium mt-1">Inside Life</span>
+          <span class="text-[10px] font-medium mt-1">Marketplace</span>
         </a>
         <a href="guest-profile.html" id="nav-bill" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
           <i data-lucide="receipt" class="w-5 h-5"></i>
@@ -227,6 +226,55 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- HOUSEKEEPING MODAL -->
+  <div id="housekeeping-modal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm hidden flex-col justify-end">
+    <div class="bg-white w-full max-w-md mx-auto rounded-t-3xl p-6 pb-safe h-auto flex flex-col fade-in">
+      <div class="flex justify-between items-center border-b pb-4 mb-4">
+        <h2 class="text-xl font-bold text-gray-800">Request Housekeeping</h2>
+        <button onclick="closeHousekeepingModal()" class="bg-gray-100 p-2 rounded-full active:scale-95"><i data-lucide="x" class="w-5 h-5 text-gray-600"></i></button>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">What do you need delivered to your room?</p>
+      
+      <div class="space-y-3">
+        <button onclick="submitHousekeeping('Fresh Towels')" class="w-full bg-teal-50 border border-teal-100 p-4 rounded-xl flex items-center gap-4 active:scale-95 transition">
+          <div class="bg-teal-200 p-2 rounded-lg text-teal-800"><i data-lucide="layers" class="w-5 h-5"></i></div>
+          <span class="font-bold text-teal-900">Fresh Towels</span>
+        </button>
+        <button onclick="submitHousekeeping('Toiletries & Tissue')" class="w-full bg-teal-50 border border-teal-100 p-4 rounded-xl flex items-center gap-4 active:scale-95 transition">
+          <div class="bg-teal-200 p-2 rounded-lg text-teal-800"><i data-lucide="box" class="w-5 h-5"></i></div>
+          <span class="font-bold text-teal-900">Toiletries & Tissue</span>
+        </button>
+        <button onclick="submitHousekeeping('Room Cleaning')" class="w-full bg-teal-50 border border-teal-100 p-4 rounded-xl flex items-center gap-4 active:scale-95 transition">
+          <div class="bg-teal-200 p-2 rounded-lg text-teal-800"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
+          <span class="font-bold text-teal-900">Room Cleaning</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMERGENCY MODAL -->
+  <div id="emergency-modal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm hidden flex-col justify-end">
+    <div class="bg-white w-full max-w-md mx-auto rounded-t-3xl p-6 pb-safe h-auto flex flex-col fade-in">
+      <div class="flex justify-between items-center border-b pb-4 mb-4">
+        <h2 class="text-xl font-bold text-red-600">Emergency Assistance</h2>
+        <button onclick="closeEmergencyModal()" class="bg-gray-100 p-2 rounded-full active:scale-95"><i data-lucide="x" class="w-5 h-5 text-gray-600"></i></button>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">Please select the nature of your emergency so we can send the right team immediately.</p>
+      
+      <div class="space-y-3">
+        <button onclick="submitEmergency('Medical')" class="w-full bg-red-600 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-red-500/30 active:scale-95 transition">
+          <i data-lucide="heart-pulse" class="w-5 h-5"></i> Medical Emergency
+        </button>
+        <button onclick="submitEmergency('Security')" class="w-full bg-slate-900 text-white p-4 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition">
+          <i data-lucide="shield" class="w-5 h-5"></i> Security Threat
+        </button>
+        <button onclick="closeEmergencyModal()" class="w-full bg-gray-100 text-gray-600 p-4 rounded-xl font-bold active:scale-95 transition">
+          Cancel
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -280,6 +328,7 @@
         document.getElementById('main-app').classList.remove('hidden');
         document.getElementById('main-app').classList.add('flex');
         renderGuestUI(guestSession);
+        loadActiveRequests();
     }
 
     function showLockout() {
@@ -297,16 +346,14 @@
         if(guest.check_out) document.getElementById('check-out-date').textContent = new Date(guest.check_out).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
         const r = guest.room_number;
-        // Dynamic Links for Grid
         document.getElementById('link-local-hub').href = `inside-life.html?room=${r}`;
         document.getElementById('link-room-service').href = `room-service.html?room=${r}`;
         document.getElementById('link-food-menu').href = `room-service.html?room=${r}`;
-        document.getElementById('link-bill').href = `guest-profile.html?room=${r}`;
         document.getElementById('link-blog').href = `guest-blog.html?room=${r}`;
         document.getElementById('link-upgrade').href = `upgrade-room.html?room=${r}`;
         document.getElementById('link-track-grid').href = `track-order.html?room=${r}`;
+        document.getElementById('link-track-requests').href = `track-order.html?room=${r}`;
         
-        // Dynamic Links for Bottom Dock
         document.getElementById('nav-home').href = `guest-portal.html?room=${r}`;
         document.getElementById('nav-food').href = `room-service.html?room=${r}`;
         document.getElementById('nav-inside-life').href = `inside-life.html?room=${r}`;
@@ -315,6 +362,42 @@
         loadAd();
         loadLatestMeals();
         loadHighlights();
+    }
+
+    async function loadActiveRequests() {
+        const { data: requests } = await db.from('guest_orders')
+            .select('*')
+            .eq('room_number', guestSession.room_number)
+            .in('status', ['Pending', 'Preparing', 'Ready'])
+            .order('created_at', { ascending: false });
+
+        const container = document.getElementById('active-requests-container');
+        const list = document.getElementById('active-requests-list');
+
+        if (requests && requests.length > 0) {
+            container.classList.remove('hidden');
+            list.innerHTML = requests.slice(0, 3).map(req => {
+                let icon = 'clock';
+                if (req.department === 'Housekeeping') icon = 'sparkles';
+                if (req.department === 'Kitchen') icon = 'utensils';
+                if (req.department === 'Bar') icon = 'wine';
+                if (req.department === 'Porter Request') icon = 'luggage';
+
+                return `
+                    <a href="track-order.html?room=${guestSession.room_number}" class="min-w-[130px] bg-white border border-blue-100 rounded-xl p-3 shadow-sm flex flex-col gap-1 fade-in active:scale-95 transition">
+                        <div class="flex justify-between items-center">
+                            <i data-lucide="${icon}" class="w-4 h-4 text-blue-600"></i>
+                            <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+                        </div>
+                        <p class="font-bold text-gray-800 text-xs mt-1">${req.department}</p>
+                        <p class="text-[10px] text-blue-600 font-bold">${req.status}</p>
+                    </a>
+                `;
+            }).join('');
+        } else {
+            container.classList.add('hidden');
+        }
+        lucide.createIcons();
     }
 
     async function loadAd() {
@@ -327,7 +410,6 @@
         document.getElementById('ad-title').textContent = ad.title;
         document.getElementById('ad-desc').textContent = ad.description;
         document.getElementById('ad-link').href = ad.ad_link || '#';
-        
         if (ad.image_url) {
             document.getElementById('ad-image').src = ad.image_url;
             document.getElementById('ad-image').classList.remove('hidden');
@@ -366,7 +448,6 @@
     async function loadHighlights() {
       const list = document.getElementById('highlights-list');
       const section = document.getElementById('highlights-section');
-      
       const { data: highlights } = await db.from('hotel_highlights').select('*').eq('is_active', true).order('created_at', { ascending: false });
 
       if (!highlights || highlights.length === 0) {
@@ -387,7 +468,52 @@
       `).join('');
     }
 
-    function requestHousekeeping() { alert("Housekeeping request sent! Someone will be at your door shortly."); }
+    // --- HOUSEKEEPING LOGIC ---
+    function openHousekeepingModal() {
+        document.getElementById('housekeeping-modal').classList.remove('hidden');
+        document.getElementById('housekeeping-modal').classList.add('flex');
+    }
+    function closeHousekeepingModal() {
+        document.getElementById('housekeeping-modal').classList.add('hidden');
+        document.getElementById('housekeeping-modal').classList.remove('flex');
+    }
+
+    async function submitHousekeeping(requestType) {
+        closeHousekeepingModal();
+        const { error } = await db.from('guest_orders').insert({
+            booking_id: guestSession.booking_id,
+            room_number: guestSession.room_number,
+            department: 'Housekeeping',
+            items: [{ name: requestType, qty: 1, price: 0 }],
+            total_amount: 0,
+            status: 'Pending'
+        });
+        if(error) alert("Error: " + error.message);
+        else {
+            alert("Request sent! Housekeeping is on the way.");
+            loadActiveRequests();
+        }
+    }
+
+    // --- EMERGENCY LOGIC ---
+    function openEmergencyModal() {
+        document.getElementById('emergency-modal').classList.remove('hidden');
+        document.getElementById('emergency-modal').classList.add('flex');
+    }
+    function closeEmergencyModal() {
+        document.getElementById('emergency-modal').classList.add('hidden');
+        document.getElementById('emergency-modal').classList.remove('flex');
+    }
+
+    async function submitEmergency(type) {
+        closeEmergencyModal();
+        await db.from('panic_alerts').insert({
+            room_number: guestSession.room_number,
+            alert_type: type,
+            status: 'Active'
+        });
+        alert("Emergency alert sent! Security is on the way.");
+    }
 
     authenticateGuest();
   </script>

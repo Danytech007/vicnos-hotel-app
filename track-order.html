@@ -21,7 +21,6 @@
 </head>
 <body class="p-4 flex flex-col items-center pb-24">
 
-  <!-- CHECKOUT LOCKOUT SCREEN (Hidden by default) -->
   <div id="checkout-lockout" class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-6 text-center fade-in">
     <div class="bg-white/10 p-6 rounded-full mb-6">
       <i data-lucide="door-closed" class="w-16 h-16 text-blue-400"></i>
@@ -32,10 +31,8 @@
     <p class="text-xs text-slate-500 font-bold tracking-widest mt-10">POWERED BY DEKY</p>
   </div>
 
-  <!-- MAIN APP (Hidden until auth verifies) -->
   <div id="main-app" class="hidden w-full flex-col items-center">
 
-    <!-- Header -->
     <nav class="w-full max-w-md bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between mb-6 sticky top-4 z-50">
       <div class="flex items-center gap-3">
         <button id="back-btn" class="bg-gray-50 p-2 rounded-full active:scale-95 transition hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-700"></i></button>
@@ -50,26 +47,23 @@
     </nav>
 
     <main class="w-full max-w-md space-y-6" id="orders-container">
-      <!-- Loading State -->
       <div id="loading-state" class="text-center py-20">
         <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p class="text-gray-500 text-sm font-medium">Checking for active orders...</p>
       </div>
 
-      <!-- Empty State (Hidden by default) -->
       <div id="empty-state" class="hidden text-center py-20 fade-in">
         <div class="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
           <i data-lucide="utensils-crossed" class="w-10 h-10 text-gray-400"></i>
         </div>
         <h2 class="text-xl font-bold text-gray-800 mb-2">No active orders</h2>
-        <p class="text-gray-500 text-sm mb-8 px-4">You don't have any food, drinks, or minimart orders in progress right now.</p>
+        <p class="text-gray-500 text-sm mb-8 px-4">You don't have any food, drinks, or requests in progress right now.</p>
         <a id="order-now-btn" class="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
           <i data-lucide="plus-circle" class="w-5 h-5"></i> Order Now
         </a>
       </div>
     </main>
 
-    <!-- Footer -->
     <footer class="mt-auto pt-10 pb-6 text-center w-full max-w-md">
       <p class="text-[10px] text-gray-400 tracking-wider">Vicnos HotelStack &copy; 2026</p>
       <p class="text-xs font-bold text-gray-500 tracking-widest mt-1">POWERED BY DEKY</p>
@@ -91,7 +85,6 @@
     let guestSession = null;
     let ordersChannel = null;
 
-    // --- SECURE AUTHENTICATION ---
     async function authenticateGuest() {
         let savedGuest = localStorage.getItem('vicnos_guest_session');
         const urlParams = new URLSearchParams(window.location.search);
@@ -118,11 +111,9 @@
         } else {
             savedGuest = JSON.parse(savedGuest);
             
-            // Verify status with DB
             const { data: booking } = await db.from('bookings').select('status').eq('id', savedGuest.booking_id).single();
             if (!booking || booking.status !== 'Checked In') return showLockout();
 
-            // Prevent URL hacking
             if (urlRoom && urlRoom !== savedGuest.room_number) {
                 window.history.replaceState(null, '', `?room=${savedGuest.room_number}`);
             }
@@ -130,16 +121,13 @@
 
         guestSession = savedGuest;
         
-        // Load UI
         document.getElementById('main-app').classList.remove('hidden');
         document.getElementById('main-app').classList.add('flex');
         document.getElementById('nav-room-num').textContent = guestSession.room_number;
         
-        // Set Dynamic Links
         document.getElementById('back-btn').onclick = () => window.location.href = `guest-portal.html?room=${guestSession.room_number}`;
         document.getElementById('order-now-btn').href = `room-service.html?room=${guestSession.room_number}`;
 
-        // Start fetching & listening
         loadActiveOrders();
         setupRealtime();
     }
@@ -150,21 +138,18 @@
         document.getElementById('checkout-lockout').classList.remove('hidden');
     }
 
-    // --- REAL-TIME ORDERS ---
     async function loadActiveOrders() {
         if (!guestSession) return;
 
-        // Fetch all active orders for this secure room
         const { data: orders, error } = await db.from('guest_orders')
             .select('*')
             .eq('room_number', guestSession.room_number)
-            .not('status', 'in', '("Delivered","Completed","Cancelled")')
+            .not('status', 'in', '("Delivered","Completed","Cancelled","Rejected")')
             .order('created_at', { ascending: false });
 
         document.getElementById('loading-state').classList.add('hidden');
         const container = document.getElementById('orders-container');
         
-        // Clear previous dynamic cards (keep loading/empty states)
         document.querySelectorAll('.order-card').forEach(el => el.remove());
 
         if (error || !orders || orders.length === 0) {
@@ -182,6 +167,8 @@
     }
 
     function generateOrderCard(order) {
+        const isServiceRequest = order.department.includes('Request') || order.department.includes('Log') || order.department === 'Housekeeping';
+
         const statusMap = {
             'Pending': 0,
             'Preparing': 1,
@@ -193,35 +180,68 @@
         const currentStep = statusMap[order.status] !== undefined ? statusMap[order.status] : 0;
 
         let itemsHtml = '';
-        try {
-            const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-            itemsHtml = items.map(i => `
-                <div class="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
-                    <div class="flex items-center gap-2">
-                        <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded">${i.qty}x</span>
-                        <span class="text-gray-800 font-medium text-sm">${i.name}</span>
-                    </div>
-                    <span class="text-gray-500 text-xs">₦${Number(i.price || 0).toLocaleString()}</span>
+        if (isServiceRequest) {
+            itemsHtml = `
+                <div class="bg-blue-50 rounded-2xl p-4 mt-2 text-center">
+                    <p class="text-xs text-blue-800 font-bold mb-1">
+                        <i data-lucide="info" class="w-4 h-4 inline mr-1"></i> 
+                        ${order.department === 'Porter Request' ? 'A porter is on the way to assist you.' : 
+                          order.department === 'Housekeeping' ? 'Housekeeping has been notified.' :
+                          'The front desk is reviewing your request.'}
+                    </p>
                 </div>
-            `).join('');
-        } catch(e) { itemsHtml = '<p class="text-red-500 text-xs">Error loading items</p>'; }
+            `;
+        } else {
+            try {
+                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                itemsHtml = `
+                    <div class="bg-gray-50 rounded-2xl p-4 mt-2">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3 h-3"></i> Order Details</p>
+                        <div class="space-y-1">
+                            ${items.map(i => `
+                                <div class="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="bg-gray-200 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded">${i.qty}x</span>
+                                        <span class="text-gray-800 font-medium text-sm">${i.name}</span>
+                                    </div>
+                                    <span class="text-gray-500 text-xs">₦${Number(i.price || 0).toLocaleString()}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch(e) { itemsHtml = '<p class="text-red-500 text-xs">Error loading items</p>'; }
+        }
 
         let deptColor = 'bg-gray-100 text-gray-700';
         let deptIcon = 'utensils';
         if (order.department === 'Kitchen') { deptColor = 'bg-orange-100 text-orange-700'; deptIcon = 'chef-hat'; }
         if (order.department === 'Bar') { deptColor = 'bg-purple-100 text-purple-700'; deptIcon = 'wine'; }
         if (order.department === 'Minimart') { deptColor = 'bg-green-100 text-green-700'; deptIcon = 'shopping-bag'; }
+        if (order.department === 'Housekeeping') { deptColor = 'bg-teal-100 text-teal-700'; deptIcon = 'sparkles'; }
+        if (order.department === 'Porter Request') { deptColor = 'bg-blue-100 text-blue-700'; deptIcon = 'luggage'; }
 
         const timeStr = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const activeStatusText = order.status === 'Ready' ? 'Ready for Delivery' : order.status;
-
         const stepClass = (index) => index <= currentStep ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 text-gray-400 border-gray-200';
         const lineClass = (index) => index < currentStep ? 'bg-blue-600' : 'bg-gray-200';
 
+        let timelineHtml = '';
+        if (!isServiceRequest) {
+            timelineHtml = `
+                <div class="relative flex justify-between mb-8 px-2 mt-6">
+                    <div class="absolute top-4 left-4 right-4 h-1 bg-gray-100 -z-10 rounded-full"></div>
+                    <div class="absolute top-4 left-4 h-1 ${lineClass(1)} -z-10 rounded-full transition-all duration-500" style="width: ${currentStep === 0 ? '0%' : currentStep === 1 ? '33%' : currentStep === 2 ? '66%' : '100%'}"></div>
+                    <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(0)}"><i data-lucide="receipt" class="w-3.5 h-3.5"></i></div><span class="text-[10px] font-bold ${currentStep >= 0 ? 'text-gray-800' : 'text-gray-400'}">Received</span></div>
+                    <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(1)}"><i data-lucide="cooking-pot" class="w-3.5 h-3.5"></i></div><span class="text-[10px] font-bold ${currentStep >= 1 ? 'text-gray-800' : 'text-gray-400'}">Preparing</span></div>
+                    <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(2)}"><i data-lucide="bell-ring" class="w-3.5 h-3.5"></i></div><span class="text-[10px] font-bold ${currentStep >= 2 ? 'text-gray-800' : 'text-gray-400'}">Ready</span></div>
+                    <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(3)}"><i data-lucide="check" class="w-3.5 h-3.5"></i></div><span class="text-[10px] font-bold ${currentStep >= 3 ? 'text-gray-800' : 'text-gray-400'}">Delivered</span></div>
+                </div>
+            `;
+        }
+
         return `
             <div class="order-card bg-white rounded-3xl p-5 shadow-xl shadow-gray-200/50 border border-gray-100 fade-in relative overflow-hidden">
-                
-                <!-- Top Bar -->
                 <div class="flex justify-between items-start mb-6 pb-4 border-b border-gray-100">
                     <div>
                         <span class="${deptColor} text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider flex items-center gap-1 w-max mb-2">
@@ -229,65 +249,21 @@
                         </span>
                         <p class="text-[10px] text-gray-400 font-medium">Ordered at ${timeStr}</p>
                     </div>
+                    ${!isServiceRequest ? `
                     <div class="text-right">
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total</p>
                         <p class="text-lg font-black text-gray-900">₦${Number(order.total_amount || 0).toLocaleString()}</p>
-                    </div>
+                    </div>` : ''}
                 </div>
-
-                <!-- Status Banner -->
-                <div class="text-center mb-8">
+                <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900 mb-1">${activeStatusText}</h2>
                     <p class="text-blue-600 text-sm font-semibold flex items-center justify-center gap-1">
                         <i data-lucide="clock" class="w-4 h-4"></i> 
                         ${order.estimated_minutes ? `~${order.estimated_minutes} mins remaining` : 'Processing...'}
                     </p>
                 </div>
-
-                <!-- Timeline (Horizontal) -->
-                <div class="relative flex justify-between mb-8 px-2">
-                    <div class="absolute top-4 left-4 right-4 h-1 bg-gray-100 -z-10 rounded-full"></div>
-                    <div class="absolute top-4 left-4 h-1 ${lineClass(1)} -z-10 rounded-full transition-all duration-500" style="width: ${currentStep === 0 ? '0%' : currentStep === 1 ? '33%' : currentStep === 2 ? '66%' : '100%'}"></div>
-
-                    <!-- Step 1 -->
-                    <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(0)}">
-                            <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <span class="text-[10px] font-bold ${currentStep >= 0 ? 'text-gray-800' : 'text-gray-400'}">Received</span>
-                    </div>
-
-                    <!-- Step 2 -->
-                    <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(1)}">
-                            <i data-lucide="cooking-pot" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <span class="text-[10px] font-bold ${currentStep >= 1 ? 'text-gray-800' : 'text-gray-400'}">Preparing</span>
-                    </div>
-
-                    <!-- Step 3 -->
-                    <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(2)}">
-                            <i data-lucide="bell-ring" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <span class="text-[10px] font-bold ${currentStep >= 2 ? 'text-gray-800' : 'text-gray-400'}">Ready</span>
-                    </div>
-
-                    <!-- Step 4 -->
-                    <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${stepClass(3)}">
-                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <span class="text-[10px] font-bold ${currentStep >= 3 ? 'text-gray-800' : 'text-gray-400'}">Delivered</span>
-                    </div>
-                </div>
-
-                <!-- Items List -->
-                <div class="bg-gray-50 rounded-2xl p-4">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3 h-3"></i> Order Details</p>
-                    <div class="space-y-1">${itemsHtml}</div>
-                </div>
-
+                ${timelineHtml}
+                ${itemsHtml}
             </div>
         `;
     }
@@ -309,7 +285,6 @@
             .subscribe();
     }
 
-    // Initialize
     authenticateGuest();
   </script>
 </body>
