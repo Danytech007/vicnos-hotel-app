@@ -50,17 +50,7 @@
     .alert-banner { animation: blink-banner 0.8s infinite !important; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
-
-  <!-- GLOBAL NEW ORDER BANNER (Sits at the top of the page, hidden by default) -->
-  <div id="global-order-banner" class="alert-banner" style="display: none; background-color: #dc2626; color: white; text-align: center; padding: 16px; border-bottom: 4px solid #fff;">
-    <div style="display: flex; justify-content: center; align-items: center; gap: 12px; font-weight: 900; font-size: 24px; letter-spacing: 2px;">
-      <span style="font-size: 32px;">🚨</span>
-      <span id="global-order-text">NEW ORDER RECEIVED!</span>
-      <span style="font-size: 32px;">🚨</span>
-    </div>
-    <p style="font-size: 14px; margin-top: 4px; font-weight: 700; color: #fecaca;">Check the queue below immediately</p>
-  </div>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col relative">
 
   <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center transition-all duration-300">
     <div class="flex items-center gap-3">
@@ -75,12 +65,12 @@
 
   <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4">
     
-    <!-- ================= RECEPTIONIST VIEW ================= -->
+    <!-- RECEPTIONIST VIEW -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
       <!-- Receptionist UI -->
     </div>
 
-    <!-- ================= DARK MODE VIEW (F&B STAFF) ================= -->
+    <!-- DARK MODE VIEW (F&B STAFF) -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
       
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
@@ -114,6 +104,16 @@
     </div>
 
   </main>
+
+  <!-- MOVED TO BOTTOM: GLOBAL NEW ORDER BANNER -->
+  <div id="global-order-banner" class="alert-banner" style="display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; width: 100vw !important; z-index: 2147483647 !important; background-color: #dc2626; color: white; text-align: center; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-bottom: 4px solid #fff;">
+    <div style="display: flex; justify-content: center; align-items: center; gap: 12px; font-weight: 900; font-size: 24px; letter-spacing: 2px;">
+      <span style="font-size: 32px;">🚨</span>
+      <span id="global-order-text">NEW ORDER RECEIVED!</span>
+      <span style="font-size: 32px;">🚨</span>
+    </div>
+    <p style="font-size: 14px; margin-top: 4px; font-weight: 700; color: #fecaca;">Check the queue below immediately</p>
+  </div>
 
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
@@ -181,13 +181,13 @@
             .in('department', queryDept)
             .eq('status', 'Pending');
 
-        if (error) console.error("Banner check error:", error);
+        if (error) console.error(error);
 
         const banner = document.getElementById('global-order-banner');
         const bannerText = document.getElementById('global-order-text');
 
         if (newOrders && newOrders.length > 0) {
-            banner.style.display = 'block'; // FORCE SHOW
+            banner.style.display = 'block'; // SHOW
             
             const latest = newOrders[0];
             const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
@@ -201,7 +201,7 @@
             }
 
         } else {
-            banner.style.display = 'none'; // FORCE HIDE
+            banner.style.display = 'none'; // HIDE
             if (alertSoundInterval) {
                 clearInterval(alertSoundInterval);
                 alertSoundInterval = null;
