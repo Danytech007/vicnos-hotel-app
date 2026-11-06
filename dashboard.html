@@ -49,8 +49,8 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- MASSIVE RED BLINKER BANNER (Fixed to top) -->
-  <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white p-4 text-center alert-banner shadow-2xl border-b-4 border-red-800">
+  <!-- MASSIVE RED BLINKER BANNER (Fixed to top of the viewport) -->
+  <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white p-4 text-center alert-banner shadow-2xl border-b-4 border-red-800">
     <div class="flex items-center justify-center gap-3 font-bold text-xl tracking-wide">
       <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
       <span id="global-order-text">NEW ORDER RECEIVED!</span>
@@ -59,6 +59,7 @@
     <p class="text-sm text-red-100 mt-1 font-medium">Please check the queue below</p>
   </div>
 
+  <!-- Navbar (Pushes down dynamically) -->
   <nav id="main-nav" class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center transition-all duration-300">
     <div class="flex items-center gap-3">
       <div class="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
@@ -187,7 +188,6 @@
         
         const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
         
-        // Fetch ONLY Pending orders
         const { data: newOrders } = await db.from('guest_orders')
             .select('id, room_number, table_number')
             .in('department', queryDept)
@@ -228,7 +228,6 @@
         
         const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
         
-        // ONLY FETCH PENDING ORDERS. 
         const { data: orders } = await db.from('guest_orders')
             .select('*')
             .in('department', queryDept)
