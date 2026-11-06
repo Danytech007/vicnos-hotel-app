@@ -15,10 +15,8 @@
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     
-    /* FIXED SCROLLING: Removed overflow hidden from body */
     body { font-family: 'Outfit', sans-serif; background-color: #0b1120; color: #f8fafc; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
     
-    /* FIXED SCROLLING: The main container handles the scroll */
     .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     
     .hide-scroll::-webkit-scrollbar { display: none; }
@@ -73,19 +71,39 @@
     <div class="bg-indigo-500/20 p-2 rounded-full text-indigo-400"><i data-lucide="utensils-crossed" class="w-5 h-5"></i></div>
   </nav>
 
-  <!-- CATEGORIES -->
-  <div class="max-w-6xl mx-auto w-full px-4 pt-3 shrink-0">
-    <div class="flex gap-2 overflow-x-auto hide-scroll pb-2" id="category-tabs"></div>
+  <!-- TABS (Take Order / Live Board) -->
+  <div class="max-w-6xl mx-auto w-full px-4 pt-3 shrink-0 flex gap-2">
+    <button onclick="switchTab('pos')" id="tab-btn-pos" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-yellow-500 text-black shadow-md whitespace-nowrap transition">Take Order</button>
+    <button onclick="switchTab('board')" id="tab-btn-board" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-slate-800 text-slate-300 border border-slate-700 shadow-sm whitespace-nowrap transition">Live Board</button>
   </div>
 
-  <!-- PRODUCT GRID (SCROLLABLE) -->
-  <main class="scroll-area max-w-6xl mx-auto w-full p-4 pb-24">
-    <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-      <p class="text-slate-400 text-sm animate-pulse col-span-full">Loading menu...</p>
+  <!-- TAB 1: TAKE ORDER -->
+  <div id="tab-pos" class="flex-1 flex flex-col min-h-0 fade-in w-full max-w-6xl mx-auto">
+    <div class="px-4 pt-3 shrink-0">
+      <div class="flex gap-2 overflow-x-auto hide-scroll pb-2" id="category-tabs"></div>
     </div>
-  </main>
-  
-  <div class="fixed bottom-6 right-6 z-[50]">
+    <main class="scroll-area w-full p-4 pb-24">
+      <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <p class="text-slate-400 text-sm animate-pulse col-span-full">Loading menu...</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- TAB 2: LIVE BOARD -->
+  <div id="tab-board" class="hidden flex-1 overflow-y-auto hide-scroll fade-in w-full max-w-6xl mx-auto p-4 pb-24">
+    <div class="glass-card p-5 rounded-2xl mb-4 border border-slate-700/50">
+      <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
+        <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-yellow-400"></i> Live Orders</h2>
+        <button onclick="loadLiveBoard()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg"><i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Refresh</button>
+      </div>
+      <div id="orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <p class="text-center text-slate-500 text-sm py-4 animate-pulse col-span-full">Loading orders...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING CART BUTTON -->
+  <div id="floating-cart-btn" class="fixed bottom-6 right-6 z-[50]">
     <button onclick="openCart()" class="bg-yellow-500 text-black p-4 rounded-full shadow-2xl flex items-center justify-center gap-2 font-bold text-lg active:scale-95 transition">
       <i data-lucide="shopping-cart" class="w-6 h-6"></i>
       <span id="mobile-cart-total">₦0</span>
@@ -202,6 +220,8 @@
     let selectedPaymentMethod = 'Cash';
     let selectedRoomForCharge = null;
     let selectedStaffForCredit = null;
+    
+    let lastOrderCount = 0;
 
     async function init() {
         const { data: { user } } = await db.auth.getUser();
@@ -211,9 +231,39 @@
         const { data: profile } = await db.from('profiles').select('full_name').eq('id', user.id).single();
         if (profile) myUserName = profile.full_name;
         
+        // Check URL for tab parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'board') {
+            switchTab('board');
+        }
+
         loadMenu();
         loadRoomsForCharge();
         loadStaffForCredit();
+        
+        // Start polling for live board
+        setInterval(() => {
+            if (!document.getElementById('tab-board').classList.contains('hidden')) {
+                loadLiveBoard(true);
+            }
+        }, 10000);
+    }
+
+    function switchTab(tab) {
+        ['pos', 'board'].forEach(t => {
+            document.getElementById(`tab-${t}`).classList.add('hidden');
+            document.getElementById(`tab-btn-${t}`).className = "flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-slate-800 text-slate-300 border border-slate-700 shadow-sm whitespace-nowrap transition";
+        });
+
+        document.getElementById(`tab-${tab}`).classList.remove('hidden');
+        document.getElementById(`tab-btn-${tab}`).className = "flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-yellow-500 text-black shadow-md whitespace-nowrap transition";
+
+        if (tab === 'board') {
+            loadLiveBoard();
+            document.getElementById('floating-cart-btn').classList.add('hidden');
+        } else {
+            document.getElementById('floating-cart-btn').classList.remove('hidden');
+        }
     }
 
     function openCart() { document.getElementById('cart-panel').classList.add('active'); }
@@ -307,7 +357,6 @@
     }
 
     async function loadMenu() {
-        // --- FETCHING ALL ITEMS DIRECTLY FROM MANAGER MENU ---
         const { data: products } = await db.from('menu_items').select('id, name, price, category').eq('is_available', true).order('name');
         
         allProducts = (products || []).map(p => ({
@@ -344,7 +393,7 @@
 
     function renderProducts(products) {
         const grid = document.getElementById('product-grid');
-        if (products.length === 0) { grid.innerHTML = '<p class="text-slate-500 col-span-full">No items found.</p>'; return; }
+        if (products.length === 0) { grid.innerHTML = '<p class="text-slate-500 col-span-full text-center py-6">No items found.</p>'; return; }
         
         grid.innerHTML = products.map(p => `
         <div onclick="addToCart('${p.id}', '${p.item_name.replace(/'/g, "\\'")}', ${p.price}, '${p.department}')" class="product-card glass-card rounded-2xl flex flex-col justify-between h-40 relative overflow-hidden group">
@@ -471,6 +520,7 @@
                     renderCart(); 
                     closeCart(); 
                     btn.disabled = false;
+                    switchTab('board'); // Go to Live Board after checkout
                 }, 500);
             }, 100);
 
@@ -479,6 +529,63 @@
             btn.disabled = false; 
             btn.innerHTML = `<i data-lucide="printer" class="w-6 h-6"></i> Charge & Print`; 
         }
+    }
+
+    // --- LIVE BOARD ---
+    async function loadLiveBoard(isBackgroundPoll = false) {
+        const list = document.getElementById('orders-list');
+        
+        const { data: orders } = await db.from('guest_orders')
+            .select('*')
+            .in('department', ['Kitchen', 'Bar'])
+            .in('status', ['Pending', 'Preparing', 'Ready'])
+            .order('created_at', { ascending: true });
+
+        if (!orders || orders.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-500 text-sm py-6 col-span-full">No active orders right now.</p>';
+            return;
+        }
+
+        if (isBackgroundPoll && orders.length > lastOrderCount) {
+            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(e){}
+        }
+        lastOrderCount = orders.length;
+
+        list.innerHTML = orders.map(order => {
+            let itemsHtml = '';
+            try {
+                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                itemsHtml = items.map(i => `<li class="flex justify-between text-xs text-slate-300 border-b border-slate-700/50 py-1 last:border-0"><span>${i.qty || i.quantity || 1}x ${i.name || i.item_name}</span></li>`).join('');
+            } catch(e) {}
+
+            let statusBadge = `<span class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-1 rounded">PENDING</span>`;
+            if (order.status === 'Preparing') statusBadge = `<span class="bg-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded">PREPARING</span>`;
+            if (order.status === 'Ready') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-1 rounded">READY</span>`;
+
+            const isReady = order.status === 'Ready';
+            const clickAction = isReady ? `onclick="updateOrderStatus('${order.id}', 'Delivered')"` : '';
+            const cursorClass = isReady ? 'cursor-pointer hover:border-emerald-500 active:scale-95 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)] bg-emerald-500/5' : 'border-slate-700 bg-slate-800/50';
+
+            return `
+                <div ${clickAction} class="border rounded-xl p-4 shadow-sm transition ${cursorClass} fade-in relative">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-600 uppercase bg-slate-800 text-slate-300">${order.department}</span>
+                            <h3 class="text-white font-bold text-lg mt-1">${order.table_number || order.room_number}</h3>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    <ul class="mb-3">${itemsHtml}</ul>
+                    ${isReady ? `<p class="text-right text-xs text-emerald-400 font-bold animate-pulse">Tap to Mark Served</p>` : ''}
+                </div>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+        await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+        loadLiveBoard();
     }
 
     init();
