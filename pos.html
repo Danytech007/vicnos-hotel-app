@@ -436,7 +436,14 @@
     }
 
     async function loadStaffForCredit() {
-      const { data: profiles } = await db.from('profiles').select('id, full_name, role').eq('is_active', true).order('full_name');
+      // EXCLUDE DEKY Super Admins and Vendors so they don't appear as hotel staff
+      const allowedHotelRoles = ['md', 'admin', 'manager', 'accountant', 'supervisor', 'housekeeping', 'store_keeper', 'laundry', 'security', 'receptionist', 'barman', 'bar', 'chef', 'kitchen', 'waitress'];
+
+      const { data: profiles } = await db.from('profiles')
+        .select('id, full_name, role')
+        .eq('is_active', true)
+        .in('role', allowedHotelRoles) 
+        .order('full_name');
       
       const select = document.getElementById('staff-select');
       select.innerHTML = '<option value="">-- Select Staff --</option>';
