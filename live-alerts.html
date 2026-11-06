@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vicnos - Live Alerts</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Absolute full screen red alert */
+    body { 
+        margin: 0; 
+        padding: 0; 
+        height: 100vh; 
+        background-color: #dc2626; 
+        color: white; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center; 
+        align-items: center; 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        text-align: center;
+        animation: flash 1s infinite;
+        overflow: hidden;
+    }
+
+    @keyframes flash {
+        0% { background-color: #dc2626; }
+        50% { background-color: #7f1d1d; }
+        100% { background-color: #dc2626; }
+    }
+
+    .icon { font-size: 80px; margin-bottom: 20px; animation: bounce 1s infinite; }
+    .title { font-size: 48px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 2px; text-transform: uppercase; }
+    .subtitle { font-size: 24px; font-weight: bold; opacity: 0.9; }
+    .count { font-size: 100px; font-weight: 900; margin: 20px 0; background: rgba(0,0,0,0.2); padding: 20px 60px; border-radius: 20px; border: 4px solid white; }
+
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+    /* Hide the alert by default */
+    #alert-container { display: none; }
+
+    /* The calm state when no orders are pending */
+    #calm-container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #0b1120; color: white; font-family: sans-serif; }
+    #calm-container h1 { font-size: 32px; color: #10b981; margin-bottom: 10px; }
+    #calm-container p { font-size: 18px; color: #64748b; }
+  </style>
+</head>
+<body>
+
+  <!-- The Red Alert Screen -->
+  <div id="alert-container">
+    <div class="icon">🚨</div>
+    <h1 class="title">New Order Received</h1>
+    <div class="count" id="order-count">0</div>
+    <p class="subtitle" id="order-location">Latest: Room --</p>
+  </div>
+
+  <!-- The Calm Screen -->
+  <div id="calm-container">
+    <h1>All Caught Up!</h1>
+    <p>No pending orders right now. Waiting for guests...</p>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let audioInterval = null;
+    let isAlerting = false;
+
+    // Check if we should watch the Bar or the Kitchen based on the URL
+    // e.g. live-alerts.html?dept=Bar
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetDept = urlParams.get('dept') || 'Bar'; 
+
+    async function checkOrders() {
+      const { data: orders } = await db.from('guest_orders')
+        .select('id, room_number, table_number, department')
+        .in('department', targetDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [targetDept])
+        .eq('status', 'Pending')
+        .order('created_at', { ascending: false });
+
+      const alertContainer = document.getElementById('alert-container');
+      const calmContainer = document.getElementById('calm-container');
+      const orderCount = document.getElementById('order-count');
+      const orderLocation = document.getElementById('order-location');
+
+      if (orders && orders.length > 0) {
+        alertContainer.style.display = 'flex';
+        calmContainer.style.display = 'none';
+        
+        orderCount.textContent = orders.length;
+        const latest = orders[0];
+        orderLocation.textContent = `Latest: ${latest.room_number ? 'Room ' + latest.room_number : 'Table ' + latest.table_number}`;
+
+        // Start sound loop if not already playing
+        if (!isAlerting) {
+            playSound();
+            audioInterval = setInterval(playSound, 3000);
+            isAlerting = true;
+        }
+      } else {
+        alertContainer.style.display = 'none';
+        calmContainer.style.display = 'flex';
+
+        // Stop sound if no more orders
+        if (isAlerting) {
+            clearInterval(audioInterval);
+            audioInterval = null;
+            isAlerting = false;
+        }
+      }
+    }
+
+    function playSound() {
+        try {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(e => {}); // Ignore browser autoplay blocks
+        } catch(e) {}
+    }
+
+    // Listen via Realtime WebSockets for instant updates
+    db.channel('live-alerts-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_orders' }, payload => {
+          checkOrders();
+      })
+      .subscribe();
+
+    // Initial check on load
+    checkOrders();
+
+  </script>
+</body>
+</html>
