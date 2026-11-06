@@ -125,8 +125,8 @@
 
     let currentUser = null;
     let currentRole = null;
-    let dept = 'Bar'; // The department for the shift record
-    let inventoryDept = ['Bar']; // The department to pull stock from
+    let dept = 'Bar'; 
+    let inventoryDept = ['Bar']; 
     let activeShift = null;
     let inventoryItems = [];
     
@@ -149,8 +149,8 @@
           inventoryDept = ['Minimart'];
       }
       else if (currentRole === 'waitress') {
-          dept = 'Waitress'; // The shift is logged under the Waitress
-          inventoryDept = ['Kitchen', 'Food']; // But she counts Kitchen/Food stock
+          dept = 'Waitress'; 
+          inventoryDept = ['Kitchen', 'Food']; 
       }
       else {
           dept = 'Bar';
