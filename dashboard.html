@@ -23,31 +23,33 @@
   <script src="https://unpkg.com/lucide@latest"></script> 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    
     * { touch-action: manipulation; }
-    
     body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; transition: background 0.3s ease; }
     .hide-scroll::-webkit-scrollbar { display: none; }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    
     body.dark-theme { background-color: #0b1120; background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b1120 80%); color: #f8fafc; }
     body.dark-theme nav { background-color: rgba(30, 41, 59, 0.8) !important; border-color: #334155 !important; }
     body.dark-theme nav h1, body.dark-theme nav p { color: white !important; }
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
-    
     .room-card { transition: all 0.1s ease-in-out; cursor: pointer; position: relative; z-index: 10; }
     .room-card:active { transform: scale(0.95); }
-    
     .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
-    
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
-    .blink-red { border: 2px solid #ef4444 !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important; }
+    .blink-banner { animation: blink 0.8s infinite; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- GLOBAL NEW ORDER BANNER -->
+  <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white p-3 text-center cursor-pointer blink-banner shadow-lg" onclick="window.location.href='bar-orders.html'">
+    <div class="flex items-center justify-center gap-2 font-bold text-sm">
+      <i data-lucide="bell-ring" class="w-5 h-5 animate-bounce"></i>
+      <span id="global-order-text">NEW ORDER RECEIVED!</span>
+    </div>
+  </div>
 
   <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center">
     <div class="flex items-center gap-3">
@@ -60,7 +62,7 @@
     </div>
   </nav>
 
-  <main id="main-content" class="flex-grow w-full mx-auto pb-12">
+  <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4">
     
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
@@ -76,11 +78,6 @@
         <i data-lucide="chevron-right" class="w-6 h-6"></i>
       </div>
 
-      <div id="recep-low-stock-banner" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-sm fade-in flex items-start gap-3">
-        <div class="bg-red-100 p-2 rounded-full text-red-600 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
-        <div><h3 class="text-red-800 font-bold text-sm">Minimart Low Stock Alert!</h3><p id="recep-low-stock-items" class="text-red-700 text-xs mt-1 font-medium">Loading items...</p></div>
-      </div>
-      
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4 fade-in">
         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Available</p><p id="stat-available" class="text-2xl font-black text-emerald-600">0</p></div><div class="bg-emerald-50 p-2 rounded-full"><i data-lucide="door-open" class="w-5 h-5 text-emerald-600"></i></div></div>
         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Occupied</p><p id="stat-occupied" class="text-2xl font-black text-blue-600">0</p></div><div class="bg-blue-50 p-2 rounded-full"><i data-lucide="users" class="w-5 h-5 text-blue-600"></i></div></div>
@@ -225,7 +222,7 @@
           document.getElementById('duty-title').textContent = 'Receptionist on Duty';
           loadReceptionistData();
           startHeartbeat();
-          orderCheckInterval = setInterval(checkNewOrders, 10000);
+          orderCheckInterval = setInterval(checkNewOrders, 5000); 
         } 
         else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
           document.body.classList.add('dark-theme');
@@ -241,7 +238,7 @@
           document.getElementById('duty-title').textContent = title;
           loadDarkOpsData(currentRole);
           
-          orderCheckInterval = setInterval(checkNewOrders, 10000);
+          orderCheckInterval = setInterval(checkNewOrders, 5000);
         }
         else {
           document.getElementById('standard-view').classList.remove('hidden');
@@ -262,41 +259,42 @@
 
     async function checkNewOrders() {
         if (!currentRole) return;
-        const dept = (currentRole === 'barman' || currentRole === 'bar') ? 'Bar' : (currentRole === 'waitress' ? 'Waitress' : (currentRole === 'receptionist' ? 'Minimart' : 'Kitchen'));
+        let dept = '';
+        if (currentRole === 'barman' || currentRole === 'bar') dept = 'Bar';
+        else if (currentRole === 'waitress') dept = 'Waitress';
+        else if (currentRole === 'receptionist') dept = 'Minimart';
+        else dept = 'Kitchen';
         
         const { data: newOrders } = await db.from('guest_orders')
-            .select('id')
+            .select('id, room_number, table_number')
             .eq('department', dept)
-            .eq('status', 'Pending')
-            .gte('created_at', lastCheckTime);
+            .eq('status', 'Pending');
 
-        if (currentRole === 'waitress') {
-             const { data: kitchenOrders } = await db.from('guest_orders').select('id').eq('department', 'Kitchen').eq('status', 'Pending').gte('created_at', lastCheckTime);
-             const { data: barOrders } = await db.from('guest_orders').select('id').eq('department', 'Bar').eq('status', 'Pending').gte('created_at', lastCheckTime);
-             
-             const btn = document.getElementById('orders-alert-btn');
-             if (btn) {
-                 if ((kitchenOrders && kitchenOrders.length > 0) || (barOrders && barOrders.length > 0)) {
-                     btn.classList.add('blink-red');
-                     try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
-                 } else {
-                     btn.classList.remove('blink-red');
-                 }
-             }
-        } else {
-            const btn = document.getElementById('orders-alert-btn') || document.getElementById('recep-orders-btn');
-            const dot = document.getElementById('recep-dot');
+        const banner = document.getElementById('global-order-banner');
+        const bannerText = document.getElementById('global-order-text');
+
+        if (newOrders && newOrders.length > 0) {
+            banner.classList.remove('hidden');
             
-            if (newOrders && newOrders.length > 0) {
-                if (btn) btn.classList.add('blink-red');
-                if (dot) dot.classList.remove('hidden');
+            const latest = newOrders[0];
+            const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
+            bannerText.textContent = `${newOrders.length} NEW ORDER(S) WAITING! Latest: ${loc}`;
+            
+            const now = new Date().toISOString();
+            const { count } = await db.from('guest_orders').select('*', { count: 'exact', head: true }).eq('department', dept).eq('status', 'Pending').gte('created_at', lastCheckTime);
+            if (count > 0) {
                 try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
-            } else {
-                if (btn) btn.classList.remove('blink-red');
-                if (dot) dot.classList.add('hidden');
             }
+            lastCheckTime = now;
+
+            if (dept === 'Bar') banner.setAttribute('onclick', "window.location.href='bar-orders.html'");
+            if (dept === 'Kitchen') banner.setAttribute('onclick', "window.location.href='order-board.html'");
+            if (dept === 'Minimart') banner.setAttribute('onclick', "window.location.href='pos.html?dept=Minimart'");
+            if (dept === 'Waitress') banner.setAttribute('onclick', "window.location.href='waitress-sales.html'");
+
+        } else {
+            banner.classList.add('hidden');
         }
-        lastCheckTime = new Date().toISOString();
     }
 
     async function checkUpgradeRequests() {
@@ -313,7 +311,7 @@
             let messages = [];
             if (pendingHousekeeping && pendingHousekeeping.length > 0) {
                 const rooms = pendingHousekeeping.map(req => `Room ${req.room_number}`).join(', ');
-                messages.push(`Housekeeping needed: ${rooms}`);
+                messages.push(`Housekeeping: ${rooms}`);
                 alertBanner.setAttribute('onclick', "window.location.href='housekeeping-requests.html'");
             }
             if (pendingUpgrades && pendingUpgrades.length > 0) {
@@ -331,6 +329,9 @@
         } else { alertBanner.classList.add('hidden'); }
     }
 
+    // ... (The rest of your room loading, ARIT, and dark ops functions remain completely unchanged)
+    // Since this is a full file, the boilerplate is here. 
+    
     async function loadReceptionistData() {
       const { data: rooms } = await db.from('rooms').select('*').order('room_number');
       const { data: bookings } = await db.from('bookings').select('*, guests(full_name)').eq('status', 'Checked In');
@@ -554,14 +555,14 @@
           buttonsHtml = `
             <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="utensils-crossed" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Take Order</span></a>
             <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a>
-            <a href="waitress-sales.html" id="orders-alert-btn" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">My Orders</span></a>
+            <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">My Orders</span></a>
             <a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>
           `;
       } else {
           buttonsHtml = `
             <a href="pos.html?dept=Bar" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="wine" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar POS</span></a>
             <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a>
-            <a href="bar-orders.html" id="orders-alert-btn" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar Orders</span></a>
+            <a href="bar-orders.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar Orders</span></a>
             <a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>
           `;
       }
