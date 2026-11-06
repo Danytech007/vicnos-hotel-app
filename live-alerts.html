@@ -191,22 +191,16 @@
     // ==========================================
     function speakAlert() {
       if (!('speechSynthesis' in window)) return;
-      
-      // Cancel any queued speech so it doesn't overlap
       window.speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance("New orders. Check the system.");
-      
-      // Try to find a deep male voice
       const voices = window.speechSynthesis.getVoices();
       const maleVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David') || v.name.includes('Google UK English Male'));
       
-      if (maleVoice) {
-        utterance.voice = maleVoice;
-      }
+      if (maleVoice) utterance.voice = maleVoice;
       
-      utterance.pitch = 0.6; // Deep voice (0 is lowest, 2 is highest)
-      utterance.rate = 0.9;  // Slightly slower for authority
+      utterance.pitch = 0.6; // Deep voice
+      utterance.rate = 0.9;  
       utterance.volume = 1.0;
       
       window.speechSynthesis.speak(utterance);
@@ -215,7 +209,7 @@
     function startVoice() {
       if (voiceInterval) return;
       speakAlert();
-      voiceInterval = setInterval(speakAlert, 5000); // Repeat every 5 seconds until silenced
+      voiceInterval = setInterval(speakAlert, 5000); // Repeat every 5 seconds
     }
 
     function stopVoice() {
@@ -229,10 +223,12 @@
     async function checkAlerts() {
       if (!isIframeMode && !isMonitoring) return;
 
-      // We query ALL pending orders
+      // FILTERED QUERY: We ONLY care about actual Food/Drink orders.
+      // We explicitly exclude 'Shift Handover' and 'Porter Request' so the alarm doesn't go off for them.
       const { data: pendingOrders, error } = await db.from('guest_orders')
-        .select('id')
-        .eq('status', 'Pending');
+        .select('id, department')
+        .eq('status', 'Pending')
+        .in('department', ['Bar', 'Kitchen', 'Food']); 
 
       if (error) {
         console.error("Alert Query Error:", error);
@@ -252,7 +248,6 @@
           banner.classList.remove('hidden');
           bannerText.textContent = `${newCount} NEW ORDER${newCount > 1 ? 'S' : ''} WAITING! TAP TO VIEW`;
           
-          // Iframe mode can attempt to speak (Chrome usually allows TTS inside iframes if parent page has been interacted with)
           if (newCount > currentPendingCount) {
             speakAlert();
           }
