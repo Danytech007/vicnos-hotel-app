@@ -135,6 +135,16 @@
           }
         } catch(e) { itemsHtml = `<p class="text-white text-xs break-all">${JSON.stringify(order.items)}</p>`; }
 
+        // Show payment method if it's an outside order
+        let paymentHtml = '';
+        if (order.payment_method && order.payment_method !== 'N/A') {
+            paymentHtml = `
+            <div class="mt-2 mb-3 bg-slate-900/50 p-2 rounded-lg border border-slate-600 flex justify-between items-center">
+                <span class="text-xs text-slate-400">Payment:</span>
+                <span class="text-xs font-bold text-amber-400 uppercase">${order.payment_method.replace('_', ' ')}</span>
+            </div>`;
+        }
+
         const orderCard = `
           <div class="glass-card p-4 rounded-xl ${order.status === 'Pending' ? 'new-order border-2 border-amber-500/50' : 'border border-slate-700'} fade-in">
             <div class="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
@@ -143,11 +153,12 @@
                 <p class="text-[10px] text-slate-400">${new Date(order.created_at).toLocaleTimeString()}</p>
               </div>
             </div>
-            <div class="space-y-1 mb-4">${itemsHtml}</div>
+            <div class="space-y-1 mb-2">${itemsHtml}</div>
+            ${paymentHtml}
             <div class="mt-4">
-              ${order.status === 'Pending' ? `<button onclick="updateStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm transition">Start Preparing</button>` : ''}
-              ${order.status === 'Preparing' ? `<button onclick="updateStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm transition">Drinks are Ready</button>` : ''}
-              ${order.status === 'Ready' ? `<p class="text-center text-xs text-emerald-400 font-bold">Waiting for Waitress...</p>` : ''}
+              ${order.status === 'Pending' ? `<button onclick="updateStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm transition">${order.payment_method && order.payment_method !== 'N/A' ? 'Confirm Payment & Start Preparing' : 'Start Preparing'}</button>` : ''}
+              ${order.status === 'Preparing' ? `<button onclick="updateStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm transition">Mark as Ready (Notify Guest)</button>` : ''}
+              ${order.status === 'Ready' ? `<p class="text-center text-xs text-emerald-400 font-bold">Ready to serve</p>` : ''}
             </div>
           </div>
         `;
@@ -185,7 +196,7 @@
     }
 
     loadOrders();
-    setInterval(loadOrders, 10000);
+    setInterval(loadOrders, 5000);
   </script>
 </body>
 </html>
