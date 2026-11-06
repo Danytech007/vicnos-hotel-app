@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos Hotel - Housekeeping Requests</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f8fafc; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </a>
+      <div>
+        <h1 class="font-bold text-gray-800 text-lg leading-tight">Housekeeping</h1>
+        <p class="text-xs text-gray-500">Live Guest Requests</p>
+      </div>
+    </div>
+    <div class="bg-teal-50 text-teal-600 px-3 py-1 rounded-lg flex items-center gap-2 text-sm font-bold">
+        <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span> Live
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-2xl mx-auto space-y-4">
+    
+    <div id="requests-container" class="space-y-4">
+        <div class="text-center py-10">
+            <i data-lucide="loader-2" class="w-8 h-8 animate-spin text-teal-600 mx-auto mb-3"></i>
+            <p class="text-gray-500 text-sm font-bold">Scanning for requests...</p>
+        </div>
+    </div>
+
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err)));
+    }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function loadRequests() {
+        const container = document.getElementById('requests-container');
+        
+        // Fetch pending housekeeping requests
+        const { data: requests, error } = await db.from('guest_orders')
+            .select('*')
+            .eq('department', 'Housekeeping')
+            .eq('status', 'Pending')
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            container.innerHTML = `<p class="text-red-500 text-center font-bold">Error loading requests.</p>`;
+            return;
+        }
+
+        if (!requests || requests.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm fade-in">
+                    <div class="bg-teal-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="sparkles" class="w-10 h-10 text-teal-500"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-gray-800">All caught up!</h2>
+                    <p class="text-sm text-gray-500 mt-1">There are no pending housekeeping requests right now.</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
+        container.innerHTML = requests.map(req => {
+            const time = new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            // Safely extract the request name
+            let reqName = "Housekeeping Request";
+            if (req.items && req.items.length > 0) {
+                reqName = req.items[0].name; 
+            }
+
+            // Pick icon based on request
+            let icon = 'sparkles';
+            if (reqName.includes('Towel')) icon = 'layers';
+            if (reqName.includes('Toiletries') || reqName.includes('Tissue')) icon = 'box';
+
+            return `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between fade-in">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-teal-100 p-3 rounded-xl text-teal-700">
+                            <i data-lucide="${icon}" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-gray-900 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Room ${req.room_number}</span>
+                                <span class="text-[10px] text-gray-400 font-bold">${time}</span>
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-sm">${reqName}</h3>
+                        </div>
+                    </div>
+                    
+                    <button onclick="completeRequest('${req.id}', this)" class="bg-teal-50 text-teal-600 hover:bg-teal-100 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1">
+                        <i data-lucide="check" class="w-4 h-4"></i> Done
+                    </button>
+                </div>
+            `;
+        }).join('');
+        
+        lucide.createIcons();
+    }
+
+    async function completeRequest(id, btnElement) {
+        btnElement.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>`;
+        btnElement.disabled = true;
+
+        const { error } = await db.from('guest_orders').update({ status: 'Completed' }).eq('id', id);
+        
+        if (error) {
+            alert("Error completing request: " + error.message);
+            btnElement.innerHTML = "Done";
+            btnElement.disabled = false;
+        } else {
+            // Remove the card from the screen instantly
+            btnElement.closest('.bg-white').remove();
+            // If no requests left, reload to show the empty state
+            if (document.querySelectorAll('.bg-white').length === 0) loadRequests();
+        }
+    }
+
+    // Initial load
+    loadRequests();
+    
+    // Auto-refresh every 15 seconds to catch new requests
+    setInterval(loadRequests, 15000);
+  </script>
+</body>
+</html>
