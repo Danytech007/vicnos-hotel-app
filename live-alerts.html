@@ -19,7 +19,12 @@
       color: #f8fafc; 
       -webkit-tap-highlight-color: transparent; 
       user-select: none; 
-      overflow: hidden; /* Prevents scrolling */
+      overflow: hidden; 
+    }
+
+    /* Makes the page transparent when loaded inside the dashboard iframe */
+    body.iframe-mode {
+      background-color: transparent !important;
     }
     
     .glass-card { 
@@ -28,7 +33,7 @@
       border: 1px solid rgba(255, 255, 255, 0.08); 
     }
     
-    /* The massive full-screen flash */
+    /* The massive full-screen flash (Standalone Mode) */
     @keyframes flash-red {
       0% { background-color: #dc2626; box-shadow: inset 0 0 0 0 rgba(220, 38, 38, 0); }
       50% { background-color: #7f1d1d; box-shadow: inset 0 0 150px 20px rgba(220, 38, 38, 0.8); }
@@ -37,6 +42,17 @@
     
     .blink-active { 
       animation: flash-red 1s infinite; 
+    }
+
+    /* The top banner flash (Iframe Mode) */
+    @keyframes banner-flash {
+      0% { background-color: #dc2626; color: #ffffff; }
+      50% { background-color: #991b1b; color: #fca5a5; }
+      100% { background-color: #dc2626; color: #ffffff; }
+    }
+
+    .banner-blink {
+      animation: banner-flash 0.8s infinite;
     }
     
     @keyframes pulse-ring {
@@ -52,60 +68,77 @@
 </head>
 <body class="min-h-screen flex flex-col justify-center items-center transition-colors duration-300 relative">
 
-  <!-- SOUND UNLOCK OVERLAY (Browsers block audio until user interaction) -->
-  <div id="sound-unlock-overlay" class="absolute inset-0 z-[200] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-    <i data-lucide="volume-x" class="w-16 h-16 text-slate-400 mb-4"></i>
-    <h2 class="text-2xl font-bold text-white mb-2">Monitor Standing By</h2>
-    <p class="text-slate-400 mb-8 max-w-md text-sm">Browsers block sound until you interact with the page. Click below to enable audio alerts and start the monitor.</p>
-    <button onclick="enableMonitor()" class="bg-amber-500 hover:bg-amber-400 text-black font-black py-4 px-8 rounded-xl text-lg transition shadow-[0_0_20px_rgba(251,191,36,0.4)] flex items-center gap-2">
-      <i data-lucide="power" class="w-6 h-6"></i> START LIVE MONITOR
-    </button>
+  <!-- ========================================== -->
+  <!-- IFRAME MODE (For Dashboard)                -->
+  <!-- ========================================== -->
+  <div id="iframe-banner" class="hidden w-full h-full cursor-pointer flex items-center justify-center p-2 banner-blink shadow-2xl border-b-4 border-red-900" onclick="jumpToBoard()">
+      <div class="flex items-center justify-center gap-3 font-black text-lg md:text-2xl tracking-wider drop-shadow-md">
+        <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
+        <span id="iframe-banner-text">NEW ORDER WAITING!</span>
+        <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
+      </div>
   </div>
 
-  <!-- STANDY STATE (Hidden by default, shown when no pending orders) -->
-  <div id="standby-screen" class="hidden text-center">
-    <div class="bg-slate-800/50 p-8 rounded-full mb-6 inline-block ring-pulse border border-slate-700">
-      <i data-lucide="shield-check" class="w-20 h-20 text-emerald-500"></i>
-    </div>
-    <h1 class="text-4xl font-black text-white mb-2">ALL CLEAR</h1>
-    <p class="text-slate-400 text-lg">Monitoring for new orders...</p>
-    <p class="text-slate-500 text-sm mt-8">Leaving this window open is safe.</p>
-  </div>
+  <!-- ========================================== -->
+  <!-- STANDALONE MODE (For Second Window)        -->
+  <!-- ========================================== -->
+  <div id="standalone-container" class="w-full h-full flex flex-col relative">
 
-  <!-- ALERT SCREEN (Hidden by default, shown when pending orders exist) -->
-  <div id="alert-screen" class="hidden w-full h-full flex flex-col items-center justify-center p-6">
-    <div class="animate-bounce mb-4">
-      <i data-lucide="bell-ring" class="w-24 h-24 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]"></i>
-    </div>
-    
-    <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter mb-2 drop-shadow-lg text-center leading-none">
-      NEW ORDER!
-    </h1>
-    
-    <div class="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 mb-10 shadow-2xl flex items-center gap-3">
-      <span class="text-white font-bold text-xl uppercase tracking-widest" id="alert-count">1 PENDING</span>
+    <!-- SOUND UNLOCK OVERLAY -->
+    <div id="sound-unlock-overlay" class="absolute inset-0 z-[200] bg-[#0b1120] flex flex-col items-center justify-center p-6 text-center">
+      <i data-lucide="volume-x" class="w-16 h-16 text-slate-400 mb-4"></i>
+      <h2 class="text-2xl font-bold text-white mb-2">Monitor Standing By</h2>
+      <p class="text-slate-400 mb-8 max-w-md text-sm">Browsers block sound until you interact with the page. Click below to enable audio alerts and start the monitor.</p>
+      <button onclick="enableStandaloneMonitor()" class="bg-amber-500 hover:bg-amber-400 text-black font-black py-4 px-8 rounded-xl text-lg transition shadow-[0_0_20px_rgba(251,191,36,0.4)] flex items-center gap-2">
+        <i data-lucide="power" class="w-6 h-6"></i> START LIVE MONITOR
+      </button>
     </div>
 
-    <!-- Quick Action Links to open the actual board -->
-    <div class="flex flex-wrap justify-center gap-4">
-      <a href="dashboard.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
-        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
-      </a>
-      <a href="order-board.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
-        <i data-lucide="chef-hat" class="w-4 h-4"></i> Kitchen Board
-      </a>
-      <a href="bar-orders.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
-        <i data-lucide="wine" class="w-4 h-4"></i> Bar Board
-      </a>
+    <!-- STANDBY SCREEN -->
+    <div id="standby-screen" class="hidden w-full h-full flex flex-col items-center justify-center text-center">
+      <div class="bg-slate-800/50 p-8 rounded-full mb-6 inline-block ring-pulse border border-slate-700">
+        <i data-lucide="shield-check" class="w-20 h-20 text-emerald-500"></i>
+      </div>
+      <h1 class="text-4xl font-black text-white mb-2">ALL CLEAR</h1>
+      <p class="text-slate-400 text-lg">Monitoring for new orders...</p>
+      <p class="text-slate-500 text-sm mt-8">Leaving this window open is safe.</p>
     </div>
 
-    <button onclick="acknowledgeAlerts()" class="mt-12 bg-white text-red-600 hover:bg-red-50 font-black py-4 px-12 rounded-full text-xl transition shadow-2xl flex items-center gap-2 transform hover:scale-105 active:scale-95">
-      <i data-lucide="check" class="w-6 h-6"></i> SILENCE ALARM
-    </button>
-  </div>
+    <!-- ALERT SCREEN -->
+    <div id="alert-screen" class="hidden w-full h-full flex flex-col items-center justify-center p-6">
+      <div class="animate-bounce mb-4">
+        <i data-lucide="bell-ring" class="w-24 h-24 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]"></i>
+      </div>
+      
+      <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter mb-2 drop-shadow-lg text-center leading-none">
+        NEW ORDER!
+      </h1>
+      
+      <div class="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 mb-10 shadow-2xl flex items-center gap-3">
+        <span class="text-white font-bold text-xl uppercase tracking-widest" id="alert-count">1 PENDING</span>
+      </div>
 
-  <div class="absolute bottom-4 w-full text-center">
-    <p class="text-xs text-slate-500 font-medium tracking-wider uppercase">Powered by DEKY</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="dashboard.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+        </a>
+        <a href="order-board.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
+          <i data-lucide="chef-hat" class="w-4 h-4"></i> Kitchen Board
+        </a>
+        <a href="bar-orders.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
+          <i data-lucide="wine" class="w-4 h-4"></i> Bar Board
+        </a>
+      </div>
+
+      <button onclick="acknowledgeAlerts()" class="mt-12 bg-white text-red-600 hover:bg-red-50 font-black py-4 px-12 rounded-full text-xl transition shadow-2xl flex items-center gap-2 transform hover:scale-105 active:scale-95">
+        <i data-lucide="check" class="w-6 h-6"></i> SILENCE ALARM
+      </button>
+    </div>
+
+    <div class="absolute bottom-4 w-full text-center">
+      <p class="text-xs text-slate-500 font-medium tracking-wider uppercase">Powered by DEKY</p>
+    </div>
+
   </div>
 
   <script>
@@ -121,28 +154,44 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
+    // Determine Mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const isIframeMode = urlParams.get('mode') === 'banner';
+
     let isMonitoring = false;
     let soundInterval = null;
     let currentPendingCount = 0;
     let isAcknowledged = false;
 
-    // 1. Start Monitor & Unlock Audio
-    function enableMonitor() {
-      document.getElementById('sound-unlock-overlay').classList.add('hidden');
+    // Initialize UI based on mode
+    if (isIframeMode) {
+      document.body.classList.add('iframe-mode');
+      document.getElementById('standalone-container').style.display = 'none';
+    } else {
+      // Standalone mode requires user to click start to unlock audio
+      document.getElementById('sound-unlock-overlay').style.display = 'flex';
+    }
+
+    function enableStandaloneMonitor() {
+      document.getElementById('sound-unlock-overlay').style.display = 'none';
       isMonitoring = true;
       
-      // Play a silent sound to unlock audio context on iOS/Chrome
+      // Unlock audio
       try {
         const unlockAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         unlockAudio.volume = 0;
         unlockAudio.play().catch(e => console.log(e));
       } catch(err){}
 
-      checkAlerts(); // Initial check
-      setInterval(checkAlerts, 5000); // Poll every 5 seconds
+      checkAlerts(); 
+      setInterval(checkAlerts, 5000); 
     }
 
-    // 2. Acknowledge & Silence
+    function jumpToBoard() {
+      // If clicked from the iframe, send them to the dashboard (or relevant board)
+      window.top.location.href = 'dashboard.html';
+    }
+
     function acknowledgeAlerts() {
       isAcknowledged = true;
       stopSound();
@@ -151,11 +200,10 @@
       document.getElementById('standby-screen').classList.remove('hidden');
     }
 
-    // 3. Sound Logic
     function startSound() {
-      if (soundInterval) return;
+      if (soundInterval || isIframeMode) return; // Iframe mode stays silent
       playNotificationSound();
-      soundInterval = setInterval(playNotificationSound, 4000); // Loop every 4s until silenced
+      soundInterval = setInterval(playNotificationSound, 4000); 
     }
 
     function stopSound() {
@@ -173,9 +221,8 @@
       } catch(err) {}
     }
 
-    // 4. Main Logic (Poll Supabase)
     async function checkAlerts() {
-      if (!isMonitoring) return;
+      if (!isIframeMode && !isMonitoring) return;
 
       // We query ALL pending orders (Kitchen, Bar, Housekeeping, etc.)
       const { data: pendingOrders, error } = await db.from('guest_orders')
@@ -189,10 +236,28 @@
 
       const newCount = pendingOrders ? pendingOrders.length : 0;
 
+      // ==========================================
+      // MODE 1: DASHBOARD BANNER (IFRAME)
+      // ==========================================
+      if (isIframeMode) {
+        const banner = document.getElementById('iframe-banner');
+        const bannerText = document.getElementById('iframe-banner-text');
+        
+        if (newCount > 0) {
+          banner.classList.remove('hidden');
+          bannerText.textContent = `${newCount} NEW ORDER${newCount > 1 ? 'S' : ''} WAITING! TAP TO VIEW`;
+        } else {
+          banner.classList.add('hidden');
+        }
+        return;
+      }
+
+      // ==========================================
+      // MODE 2: STANDALONE FULL SCREEN
+      // ==========================================
       if (newCount > 0) {
-        // If count increased OR we haven't acknowledged yet, keep alerting
         if (newCount > currentPendingCount || !isAcknowledged) {
-          isAcknowledged = false; // Reset acknowledgment state if new orders arrive
+          isAcknowledged = false; 
           
           document.getElementById('standby-screen').classList.add('hidden');
           document.getElementById('alert-screen').classList.remove('hidden');
@@ -205,7 +270,6 @@
           startSound();
         }
       } else {
-        // Zero pending orders -> Force standby mode and silence
         document.getElementById('alert-screen').classList.add('hidden');
         document.getElementById('standby-screen').classList.remove('hidden');
         document.body.classList.remove('blink-active');
@@ -214,6 +278,12 @@
       }
 
       currentPendingCount = newCount;
+    }
+
+    // Start checking immediately for iframe mode (no user click needed)
+    if (isIframeMode) {
+      checkAlerts();
+      setInterval(checkAlerts, 5000);
     }
   </script>
 </body>
