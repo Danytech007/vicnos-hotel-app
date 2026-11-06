@@ -42,7 +42,6 @@
     
     .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
     
-    /* INLINE CSS FOR THE BANNER - BULLETPROOF */
     @keyframes blink-banner { 
         0% { opacity: 1; background-color: #dc2626; } 
         50% { opacity: 1; background-color: #991b1b; } 
@@ -53,9 +52,8 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col relative">
 
-  <!-- GLOBAL NEW ORDER BANNER -->
-  <!-- Notice we REMOVED the 'hidden' class and added style="display: none;" -->
-  <div id="global-order-banner" class="alert-banner" style="display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; z-index: 999999 !important; background-color: #dc2626; color: white; text-align: center; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important; border-bottom: 4px solid #fff;">
+  <!-- GLOBAL NEW ORDER BANNER (Starts offscreen, slides down when active) -->
+  <div id="global-order-banner" class="alert-banner" style="position: fixed; top: -150px; left: 0; right: 0; z-index: 999999; background-color: #dc2626; color: white; text-align: center; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-bottom: 4px solid #fff; transition: top 0.3s ease-in-out;">
     <div style="display: flex; justify-content: center; align-items: center; gap: 12px; font-weight: 900; font-size: 24px; letter-spacing: 2px;">
       <span style="font-size: 32px;">🚨</span>
       <span id="global-order-text">NEW ORDER RECEIVED!</span>
@@ -77,6 +75,12 @@
 
   <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4">
     
+    <!-- ================= RECEPTIONIST VIEW ================= -->
+    <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
+      <!-- Receptionist UI -->
+    </div>
+
+    <!-- ================= DARK MODE VIEW (F&B STAFF) ================= -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
       
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
@@ -88,7 +92,7 @@
       
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in" id="ops-action-buttons"></div>
 
-      <div id="dashboard-live-orders" class="hidden glass-card p-5 rounded-2xl fade-in border border-slate-700/50">
+      <div id="dashboard-live-orders" class="hidden glass-card p-5 rounded-2xl fade-in border border-slate-700/50 mt-4">
         <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
             <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-amber-400 animate-pulse"></i> Live Orders Queue</h3>
             <button onclick="loadLiveDashboardOrders()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg"><i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Refresh</button>
@@ -98,6 +102,16 @@
         </div>
       </div>
 
+      <div id="ops-low-stock-banner" class="hidden glass-card bg-red-500/10 border-red-500/30 p-4 rounded-xl flex items-start gap-3">
+        <div class="bg-red-500/20 p-2 rounded-full text-red-400 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+        <div><h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3><p id="ops-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p></div>
+      </div>
+      
+      <!-- RESTORED: BILLS AND STOCK BUTTONS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
+        <div class="glass-card p-5 rounded-2xl"><div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 id="ops-bills-title" class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bills (Checkout Due)</h3></div><div id="ops-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div></div>
+        <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center"><div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div><h3 class="font-bold text-white mb-2">Received New Stock?</h3><p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p><a id="ops-stock-request-link" href="#" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a></div>
+      </div>
     </div>
 
   </main>
@@ -173,7 +187,7 @@
         const nav = document.getElementById('main-nav');
 
         if (newOrders && newOrders.length > 0) {
-            banner.style.display = 'block'; // FORCE SHOW
+            banner.style.top = '0px'; // SLIDE DOWN
             nav.style.marginTop = "100px"; 
             
             const latest = newOrders[0];
@@ -188,7 +202,7 @@
             }
 
         } else {
-            banner.style.display = 'none'; // FORCE HIDE
+            banner.style.top = '-150px'; // SLIDE UP OFF SCREEN
             nav.style.marginTop = "0px";
             if (alertSoundInterval) {
                 clearInterval(alertSoundInterval);
@@ -290,6 +304,22 @@
       }
       
       btnContainer.innerHTML = buttonsHtml;
+      document.getElementById('ops-stock-request-link').href = `stock-request.html?dept=${dept}`;
+      document.getElementById('ops-bills-title').innerHTML = `<i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room ${dept} Bills (Checkout Due)`;
+
+      const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
+      const list = document.getElementById('ops-room-bills-list');
+      if (departures && departures.length > 0) {
+        const { data: charges } = await db.from('folio_charges').select('booking_id, amount').eq('department', dept).in('booking_id', departures.map(d => d.id));
+        let billsHtml = '', hasBills = false;
+        departures.forEach(d => {
+           const totalOwed = (charges?.filter(c => c.booking_id === d.id) || []).reduce((sum, c) => sum + Number(c.amount), 0);
+           if (totalOwed > 0) { hasBills = true; billsHtml += `<div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">${dept} Bill</p></div></div>`; }
+        });
+        if (hasBills) list.innerHTML = billsHtml;
+        else list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No ${dept.toLowerCase()} bills owed by checking-out guests today.</p>`;
+      } else { list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>'; }
+      
       lucide.createIcons();
     }
 
