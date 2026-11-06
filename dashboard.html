@@ -36,11 +36,11 @@
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
     
-    /* THE AGGRESSIVE BLINKER */
+    /* THE FLASHING RED ANIMATION */
     @keyframes flash-red {
-        0% { background-color: #dc2626; border-color: #fca5a5; }
-        50% { background-color: #7f1d1d; border-color: #dc2626; }
-        100% { background-color: #dc2626; border-color: #fca5a5; }
+        0% { background-color: #dc2626; }
+        50% { background-color: #7f1d1d; }
+        100% { background-color: #dc2626; }
     }
     .alert-banner { 
         animation: flash-red 0.8s infinite !important; 
@@ -67,7 +67,7 @@
 
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
       
-      <!-- LIVE ORDERS QUEUE (Moved to the very top) -->
+      <!-- LIVE ORDERS QUEUE -->
       <div id="dashboard-live-orders" class="hidden fade-in">
         
         <!-- THE BLINKER BANNER -->
@@ -170,7 +170,15 @@
     async function checkNewOrders() {
         if (!currentDept) return;
         
-        const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
+        // CRITICAL FIX: Look for 'Kitchen', 'Food', and 'Bar' depending on role
+        let queryDept;
+        if (currentDept === 'Waitress') {
+            queryDept = ['Kitchen', 'Food', 'Bar'];
+        } else if (currentDept === 'Kitchen') {
+            queryDept = ['Kitchen', 'Food']; // Catches both!
+        } else {
+            queryDept = ['Bar'];
+        }
         
         const { data: newOrders, error } = await db.from('guest_orders')
             .select('id, room_number, table_number')
@@ -209,7 +217,14 @@
         if (!currentDept) return;
         const list = document.getElementById('dashboard-orders-list');
         
-        const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
+        let queryDept;
+        if (currentDept === 'Waitress') {
+            queryDept = ['Kitchen', 'Food', 'Bar'];
+        } else if (currentDept === 'Kitchen') {
+            queryDept = ['Kitchen', 'Food'];
+        } else {
+            queryDept = ['Bar'];
+        }
         
         const { data: orders } = await db.from('guest_orders')
             .select('*')
@@ -243,7 +258,7 @@
                         </div>
                         <div class="space-y-2 mb-4">${itemsHtml}</div>
                     </div>
-                    <button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-4 transition active:scale-95 shadow-lg shadow-amber-500/20">Start ${order.department === 'Kitchen' ? 'Cooking' : 'Preparing'}</button>
+                    <button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-4 transition active:scale-95 shadow-lg shadow-amber-500/20">Start ${order.department === 'Kitchen' || order.department === 'Food' ? 'Cooking' : 'Preparing'}</button>
                 </div>
             `;
         }).join('');
