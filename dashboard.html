@@ -49,14 +49,14 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- GLOBAL NEW ORDER BANNER (Fixed to top, persistent) -->
-  <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white p-4 text-center alert-banner shadow-lg border-b-4 border-red-800">
-    <div class="flex items-center justify-center gap-3 font-bold text-lg">
-      <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
+  <!-- MASSIVE RED BLINKER BANNER (Fixed to top) -->
+  <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white p-4 text-center alert-banner shadow-2xl border-b-4 border-red-800">
+    <div class="flex items-center justify-center gap-3 font-bold text-xl tracking-wide">
+      <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
       <span id="global-order-text">NEW ORDER RECEIVED!</span>
-      <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
+      <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
     </div>
-    <p class="text-xs text-red-100 mt-1 font-medium">Scroll down to start preparing</p>
+    <p class="text-sm text-red-100 mt-1 font-medium">Please check the queue below</p>
   </div>
 
   <nav id="main-nav" class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center transition-all duration-300">
@@ -75,55 +75,6 @@
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
       <!-- Receptionist UI -->
-      <div id="live-upgrade-alert" class="hidden bg-red-600 text-white p-4 rounded-xl shadow-lg fade-in flex justify-between items-center blink-alert cursor-pointer" onclick="window.location.href='manage-booking.html'">
-        <div class="flex items-center gap-3">
-            <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
-            <div>
-                <h3 class="font-bold text-sm">URGENT: Guest Request!</h3>
-                <p id="live-upgrade-text" class="text-red-100 text-xs mt-1 font-medium">A guest is waiting...</p>
-            </div>
-        </div>
-        <i data-lucide="chevron-right" class="w-6 h-6"></i>
-      </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 fade-in">
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Available</p><p id="stat-available" class="text-2xl font-black text-emerald-600">0</p></div><div class="bg-emerald-50 p-2 rounded-full"><i data-lucide="door-open" class="w-5 h-5 text-emerald-600"></i></div></div>
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Occupied</p><p id="stat-occupied" class="text-2xl font-black text-blue-600">0</p></div><div class="bg-blue-50 p-2 rounded-full"><i data-lucide="users" class="w-5 h-5 text-blue-600"></i></div></div>
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Reserved</p><p id="stat-reserved" class="text-2xl font-black text-purple-600">0</p></div><div class="bg-purple-50 p-2 rounded-full"><i data-lucide="calendar-check" class="w-5 h-5 text-purple-600"></i></div></div>
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Dirty</p><p id="stat-dirty" class="text-2xl font-black text-amber-500">0</p></div><div class="bg-amber-50 p-2 rounded-full"><i data-lucide="sparkles" class="w-5 h-5 text-amber-500"></i></div></div>
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"><div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Maintenance</p><p id="stat-maintenance" class="text-2xl font-black text-red-600">0</p></div><div class="bg-red-50 p-2 rounded-full"><i data-lucide="wrench" class="w-5 h-5 text-red-600"></i></div></div>
-      </div>
-      
-      <div class="grid grid-cols-2 md:grid-cols-7 gap-3 fade-in">
-        <a href="./checkin.html" class="bg-slate-900 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition text-sm"><i data-lucide="log-in" class="w-4 h-4"></i> Check-In</a>
-        <a href="./checkout.html" class="bg-orange-600 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> Check-Out</a>
-        <a href="./guest-history.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i> Directory</a>
-        <a href="./qr-code.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="qr-code" class="w-4 h-4 text-purple-500"></i> QR Codes</a>
-        <a href="./pos.html?dept=Minimart" id="recep-orders-btn" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm relative"><i data-lucide="shopping-cart" class="w-4 h-4 text-teal-600"></i> Minimart POS <span id="recep-dot" class="hidden absolute top-1 right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span></a>
-        <a href="./maintenance.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="wrench" class="w-4 h-4 text-red-500"></i> Maintenance</a>
-        <a href="./internal-chat.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4 text-emerald-500"></i> Staff Chat</a>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 fade-in">
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
-            <div><h2 class="text-xl font-bold text-gray-800">Room Status & Key Cards</h2><p class="text-xs text-gray-500 mt-1">Click any room to manage Door, Reservation, or Check-in.</p></div>
-            <button onclick="loadReceptionistData()" class="text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button>
-          </div>
-          <div class="flex gap-2 overflow-x-auto hide-scroll mb-4 pb-1">
-            <button onclick="filterRooms('All', this)" class="filter-btn active px-4 py-2 rounded-lg text-xs font-bold border border-gray-200 whitespace-nowrap transition">All Rooms</button>
-            <button onclick="filterRooms('Available', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Available</button>
-            <button onclick="filterRooms('Occupied', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Occupied</button>
-            <button onclick="filterRooms('Reserved', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Reserved</button>
-            <button onclick="filterRooms('Dirty', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Dirty</button>
-          </div>
-          <div id="room-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4"><p class="text-gray-500 text-sm animate-pulse">Loading rooms...</p></div>
-        </div>
-        <div class="fade-in space-y-4">
-          <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2"><i data-lucide="plane-landing" class="w-4 h-4 text-blue-500"></i> Arrivals Today</h3><div id="arrivals-list" class="space-y-3"><p class="text-xs text-gray-500">Loading...</p></div></div>
-          <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2"><i data-lucide="plane-takeoff" class="w-4 h-4 text-orange-500"></i> Departures Today</h3><div id="departures-list" class="space-y-3"><p class="text-xs text-gray-500">Loading...</p></div></div>
-        </div>
-      </div>
     </div>
 
     <!-- ================= DARK MODE VIEW (F&B STAFF) ================= -->
@@ -163,41 +114,10 @@
 
     <!-- ================= STANDARD VIEW ================= -->
     <div id="standard-view" class="hidden text-slate-200 p-4 min-h-screen bg-slate-900">
-      <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden mb-8 mt-4">
-        <div class="relative z-10"><p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p><h2 id="std-admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2></div>
-        <span id="std-role-badge" class="relative z-10 bg-blue-500/20 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-500/30 tracking-wide">ROLE</span>
-      </div>
-      <div id="std-operations-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 pb-8"></div>
+      <!-- Standard View -->
     </div>
 
   </main>
-
-  <div id="action-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-end md:items-center justify-center z-[100] p-0 md:p-4">
-    <div class="bg-white w-full max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl fade-in">
-      <div class="flex justify-between items-center mb-4">
-        <div>
-          <h2 class="text-2xl font-black text-gray-900">Room <span id="modal-room-num">---</span></h2>
-          <p id="modal-guest-name" class="text-sm font-bold text-blue-600">No Guest</p>
-        </div>
-        <button onclick="closeActionModal()" class="bg-gray-100 p-2 rounded-full text-gray-500"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="space-y-3 mt-6" id="modal-actions-container"></div>
-    </div>
-  </div>
-
-  <div id="arit-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center fade-in">
-      <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="credit-card" class="w-10 h-10 text-blue-600"></i></div>
-      <h2 id="arit-title" class="text-xl font-bold text-gray-900 mb-2">ARIT Key Encoder</h2>
-      <p id="arit-desc" class="text-sm text-gray-500 mb-6">Place the card on the ARIT machine, then click below to encode.</p>
-      <button onclick="writeCard()" id="write-card-btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Activate Card Now</button>
-      <button onclick="closeAritModal()" class="mt-4 text-gray-500 text-sm font-bold hover:text-gray-800">Cancel</button>
-    </div>
-  </div>
-  <div id="loading-overlay" class="fixed inset-0 bg-white/90 backdrop-blur-md hidden items-center justify-center z-[120] flex-col">
-    <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-    <p class="text-blue-900 font-bold animate-pulse">Writing data to ARIT Hardware...</p>
-  </div>
 
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
@@ -209,12 +129,8 @@
     lucide.createIcons();
 
     let currentUser = null, currentRole = null;
-    let selectedRoom = null;
-    let allRoomsData = [];
-    let currentFilter = 'All';
-    let heartbeatInterval = null;
-    let orderCheckInterval = null;
     let currentDept = '';
+    let orderCheckInterval = null;
     let alertSoundInterval = null;
 
     async function init() {
@@ -235,8 +151,7 @@
           document.getElementById('receptionist-view').classList.remove('hidden');
           document.getElementById('duty-title').textContent = 'Receptionist on Duty';
           loadReceptionistData();
-          startHeartbeat();
-          orderCheckInterval = setInterval(checkNewOrders, 5000); 
+          orderCheckInterval = setInterval(checkNewOrders, 3000); 
         } 
         else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
           currentDept = (currentRole === 'barman' || currentRole === 'bar') ? 'Bar' : (currentRole === 'waitress' ? 'Waitress' : 'Kitchen');
@@ -256,26 +171,15 @@
           loadDarkOpsData(currentRole);
           loadLiveDashboardOrders(); 
           
+          // THE HEARTBEAT: Checks for new orders every 3 seconds
           orderCheckInterval = setInterval(() => {
               checkNewOrders();
               loadLiveDashboardOrders();
-          }, 5000);
-        }
-        else {
-          document.getElementById('standard-view').classList.remove('hidden');
-          document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
-          document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
-          document.getElementById('duty-title').textContent = profile.role + ' Portal';
-          renderStandardOperations(profile.role);
+          }, 3000);
         }
       } catch (err) {
         alert("Dashboard Init Error: " + err.message);
       }
-    }
-
-    function startHeartbeat() {
-        checkUpgradeRequests(); 
-        heartbeatInterval = setInterval(() => { checkUpgradeRequests(); }, 10000); 
     }
 
     async function checkNewOrders() {
@@ -283,7 +187,7 @@
         
         const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
         
-        // Only fetch PENDING orders for the alert banner
+        // Fetch ONLY Pending orders
         const { data: newOrders } = await db.from('guest_orders')
             .select('id, room_number, table_number')
             .in('department', queryDept)
@@ -295,7 +199,7 @@
 
         if (newOrders && newOrders.length > 0) {
             banner.classList.remove('hidden');
-            nav.classList.add('mt-20'); // Push navbar down
+            nav.style.marginTop = "76px"; 
             
             const latest = newOrders[0];
             const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
@@ -309,9 +213,8 @@
             }
 
         } else {
-            // If no more pending orders, hide the banner and stop the sound
             banner.classList.add('hidden');
-            nav.classList.remove('mt-20');
+            nav.style.marginTop = "0px";
             if (alertSoundInterval) {
                 clearInterval(alertSoundInterval);
                 alertSoundInterval = null;
@@ -325,7 +228,7 @@
         
         const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
         
-        // ONLY FETCH PENDING ORDERS. If it's Preparing or Ready, it disappears.
+        // ONLY FETCH PENDING ORDERS. 
         const { data: orders } = await db.from('guest_orders')
             .select('*')
             .in('department', queryDept)
@@ -368,11 +271,8 @@
     async function updateOrderStatus(orderId, newStatus) {
       await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
       loadLiveDashboardOrders();
-      checkNewOrders(); // Re-check so banner disappears if queue is empty
+      checkNewOrders(); 
     }
-
-    async function checkUpgradeRequests() { /* Receptionist logic */ }
-    async function loadReceptionistData() { /* Receptionist logic */ }
 
     async function loadDarkOpsData(role) {
       const today = new Date().toISOString().split('T')[0];
@@ -407,7 +307,6 @@
             <a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>
           `;
       } else {
-          // FIXED: Changed "Bar Board" to "Bar Orders"
           buttonsHtml = `
             <a href="pos.html?dept=Bar" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="wine" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar POS</span></a>
             <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a>
@@ -437,7 +336,6 @@
     }
 
     async function logout() { 
-        clearInterval(heartbeatInterval);
         clearInterval(orderCheckInterval);
         localStorage.clear(); 
         await db.auth.signOut(); 
