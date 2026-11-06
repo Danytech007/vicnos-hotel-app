@@ -81,7 +81,7 @@
     </button>
   </div>
 
-  <!-- RIGHT SIDE: CART & CHECKOUT (Hidden on mobile, slides up as modal) -->
+  <!-- RIGHT SIDE: CART & CHECKOUT -->
   <div id="cart-panel" class="hidden md:flex w-full md:w-[400px] bg-slate-900 flex-col h-full min-h-0 shrink-0 relative z-50 shadow-2xl fixed md:relative inset-0 md:inset-auto fade-in">
     
     <!-- CART HEADER -->
@@ -120,6 +120,9 @@
         <button onclick="setPaymentMethod('Transfer')" id="pay-transfer" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="smartphone" class="w-4 h-4"></i> Transfer</button>
         <button onclick="setPaymentMethod('Charge_to_Room')" id="pay-room" class="py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="door-closed" class="w-4 h-4"></i> To Room</button>
       </div>
+      
+      <!-- STAFF CREDIT BUTTON -->
+      <button onclick="setPaymentMethod('Staff_Credit')" id="pay-staff" class="w-full py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2 mb-3 border border-slate-600"><i data-lucide="users" class="w-4 h-4"></i> Staff Credit (Pay Later)</button>
 
       <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-yellow-500 text-black py-4 rounded-xl font-black text-lg shadow-lg shadow-yellow-500/20 active:scale-95 transition flex items-center justify-center gap-2">
         <i data-lucide="check-circle" class="w-6 h-6"></i> Charge ₦0
@@ -138,6 +141,21 @@
       <div class="flex gap-3">
         <button onclick="closeRoomModal()" class="w-1/3 bg-slate-800 text-white font-bold py-3 rounded-xl border border-slate-700">Cancel</button>
         <button onclick="confirmRoomCharge()" class="flex-1 bg-yellow-500 text-black font-bold py-3 rounded-xl shadow-lg">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff Selection Modal -->
+  <div id="staff-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in border-t-4 border-indigo-500">
+      <h2 class="text-xl font-bold text-white mb-2 text-center">Charge to Staff</h2>
+      <p class="text-xs text-slate-400 text-center mb-6">Select the staff member buying on credit.</p>
+      <select id="staff-select" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none font-bold text-lg mb-6">
+        <option value="">-- Select Staff --</option>
+      </select>
+      <div class="flex gap-3">
+        <button onclick="closeStaffModal()" class="w-1/3 bg-slate-800 text-white font-bold py-3 rounded-xl border border-slate-700">Cancel</button>
+        <button onclick="confirmStaffCharge()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">Confirm</button>
       </div>
     </div>
   </div>
@@ -184,6 +202,7 @@
     let userProfile = null;
     let selectedPaymentMethod = 'Cash';
     let selectedRoomForCharge = null;
+    let selectedStaffForCredit = null;
     let currentCategory = 'All';
 
     async function init() {
@@ -196,6 +215,7 @@
 
       loadProducts();
       loadRoomsForCharge();
+      loadStaffForCredit();
       setPaymentMethod('Cash');
     }
 
@@ -384,7 +404,7 @@
     function setPaymentMethod(method) {
       selectedPaymentMethod = method;
       
-      ['pay-cash', 'pay-pos', 'pay-transfer', 'pay-room'].forEach(id => {
+      ['pay-cash', 'pay-pos', 'pay-transfer', 'pay-room', 'pay-staff'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.className = "py-3 rounded-xl font-bold bg-slate-700 text-white transition active:scale-95 flex items-center justify-center gap-2 border border-slate-600";
       });
@@ -393,33 +413,40 @@
       if (method === 'POS') document.getElementById('pay-pos').className = "py-3 rounded-xl font-bold bg-blue-500 text-white shadow-md shadow-blue-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-blue-400";
       if (method === 'Transfer') document.getElementById('pay-transfer').className = "py-3 rounded-xl font-bold bg-purple-500 text-white shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-purple-400";
       if (method === 'Charge_to_Room') document.getElementById('pay-room').className = "py-3 rounded-xl font-bold bg-orange-500 text-white shadow-md shadow-orange-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-orange-400";
+      if (method === 'Staff_Credit') document.getElementById('pay-staff').className = "w-full py-3 rounded-xl font-bold bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition active:scale-95 flex items-center justify-center gap-2 border border-indigo-400 mb-3";
     }
 
-    // --- FIXED: ROOM LOOKUP LOGIC ---
     async function loadRoomsForCharge() {
-      // 1. Get all rooms
       const { data: rooms } = await db.from('rooms').select('id, room_number');
-      
-      // 2. Get active bookings
       const { data: activeBookings } = await db.from('bookings').select('room_id').eq('status', 'Checked In');
-      
       const occupiedRoomIds = activeBookings ? activeBookings.map(b => b.room_id) : [];
-      
-      // 3. Filter rooms that have an active booking
       const occupiedRooms = rooms ? rooms.filter(r => occupiedRoomIds.includes(r.id)) : [];
       
       const select = document.getElementById('room-select');
       select.innerHTML = '<option value="">-- Select Room --</option>';
       
       if (occupiedRooms.length > 0) {
-        // Sort alphabetically by room number
         occupiedRooms.sort((a, b) => a.room_number.localeCompare(b.room_number));
-        
         occupiedRooms.forEach(r => {
           select.innerHTML += `<option value="${r.room_number}">Room ${r.room_number}</option>`;
         });
       } else {
         select.innerHTML = '<option value="">No active guests found.</option>';
+      }
+    }
+
+    async function loadStaffForCredit() {
+      const { data: profiles } = await db.from('profiles').select('id, full_name, role').eq('is_active', true).order('full_name');
+      
+      const select = document.getElementById('staff-select');
+      select.innerHTML = '<option value="">-- Select Staff --</option>';
+      
+      if (profiles && profiles.length > 0) {
+        profiles.forEach(p => {
+          select.innerHTML += `<option value="${p.id}">${p.full_name} (${p.role})</option>`;
+        });
+      } else {
+        select.innerHTML = '<option value="">No active staff found.</option>';
       }
     }
 
@@ -436,12 +463,31 @@
       processCheckout(); 
     }
 
+    function closeStaffModal() {
+      document.getElementById('staff-modal').classList.add('hidden');
+      document.getElementById('staff-modal').classList.remove('flex');
+    }
+
+    function confirmStaffCharge() {
+      const staffId = document.getElementById('staff-select').value;
+      if (!staffId) return alert("Please select a staff member.");
+      selectedStaffForCredit = staffId;
+      closeStaffModal();
+      processCheckout(); 
+    }
+
     async function processCheckout() {
       if (cart.length === 0) return alert("Cart is empty.");
       
       if (selectedPaymentMethod === 'Charge_to_Room' && !selectedRoomForCharge) {
         document.getElementById('room-modal').classList.remove('hidden');
         document.getElementById('room-modal').classList.add('flex');
+        return;
+      }
+
+      if (selectedPaymentMethod === 'Staff_Credit' && !selectedStaffForCredit) {
+        document.getElementById('staff-modal').classList.remove('hidden');
+        document.getElementById('staff-modal').classList.add('flex');
         return;
       }
 
@@ -497,6 +543,17 @@
           }
         }
 
+        // --- ADDED STAFF CREDIT LOGIC ---
+        if (selectedPaymentMethod === 'Staff_Credit' && selectedStaffForCredit) {
+          await db.from('staff_credits').insert({
+            staff_id: selectedStaffForCredit,
+            pos_order_id: order.id,
+            amount: total,
+            description: cart.map(i => `${i.qty}x ${i.name}`).join(', '),
+            status: 'Unpaid'
+          });
+        }
+
         document.getElementById('r-date').innerText = new Date().toLocaleString();
         document.getElementById('r-table').innerText = tableNum + (selectedRoomForCharge ? ` (Room ${selectedRoomForCharge})` : '');
         document.getElementById('r-barman').innerText = userProfile ? userProfile.full_name : 'Staff';
@@ -521,11 +578,12 @@
             receipt.classList.add('hidden');
             cart = [];
             selectedRoomForCharge = null;
+            selectedStaffForCredit = null;
             document.getElementById('table-number').value = '';
             renderCart();
             filterCategory(currentCategory, document.querySelector('.cat-btn'));
             btn.disabled = false;
-            toggleCartModal(); // Close mobile cart on success
+            toggleCartModal();
           }, 500);
         }, 100);
 
