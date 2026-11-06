@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos HotelStack - Dashboard</title>
   
-  <!-- AGGRESSIVE CACHE KILLER -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -38,17 +37,17 @@
     .gold-text { color: #fbbf24; }
     
     @keyframes blink-banner { 
-        0% { opacity: 1; background-color: #dc2626; box-shadow: 0 0 20px #dc2626; } 
-        50% { opacity: 1; background-color: #991b1b; box-shadow: 0 0 10px #991b1b; } 
-        100% { opacity: 1; background-color: #dc2626; box-shadow: 0 0 20px #dc2626; } 
+        0% { opacity: 1; background-color: #dc2626; } 
+        50% { opacity: 1; background-color: #991b1b; } 
+        100% { opacity: 1; background-color: #dc2626; } 
     }
     .alert-banner { animation: blink-banner 0.8s infinite !important; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col relative">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- BANNER: Always exists in DOM, slides down from top via transform -->
-  <div id="global-order-banner" class="alert-banner" style="position: fixed; top: 0; left: 0; right: 0; z-index: 99999999; background-color: #dc2626; color: white; text-align: center; padding: 20px; border-bottom: 4px solid #fff; transform: translateY(-100%); transition: transform 0.3s ease;">
+  <!-- THE BANNER IS NOW THE VERY FIRST ELEMENT IN THE BODY -->
+  <div id="global-order-banner" class="alert-banner" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; z-index: 99999999; background-color: #dc2626; color: white; text-align: center; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-bottom: 4px solid #fff;">
     <div style="display: flex; justify-content: center; align-items: center; gap: 12px; font-weight: 900; font-size: 24px; letter-spacing: 2px;">
       <span style="font-size: 32px;">🚨</span>
       <span id="global-order-text">NEW ORDER RECEIVED!</span>
@@ -68,7 +67,8 @@
     </div>
   </nav>
 
-  <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4">
+  <!-- ADDED ID TO MAIN TO PUSH IT DOWN -->
+  <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4 transition-all duration-300">
     
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6"></div>
 
@@ -117,7 +117,7 @@
 
     let currentUser = null, currentRole = null;
     let currentDept = '';
-    let realtimeChannel = null;
+    let orderCheckInterval = null;
     let alertSoundInterval = null;
 
     async function init() {
@@ -150,27 +150,16 @@
           document.getElementById('duty-title').textContent = title;
           loadDarkOpsData(currentRole);
           loadLiveDashboardOrders(); 
-          
-          // Start the background checks
           checkNewOrders();
-          setupRealtime();
+
+          orderCheckInterval = setInterval(() => {
+              checkNewOrders();
+              loadLiveDashboardOrders();
+          }, 3000);
         }
       } catch (err) {
         console.error(err);
       }
-    }
-
-    // INSTANT REALTIME UPDATE
-    function setupRealtime() {
-        if (realtimeChannel) db.removeChannel(realtimeChannel);
-        
-        realtimeChannel = db.channel('dashboard-live-orders')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_orders' }, payload => {
-                // Whenever ANY order changes, re-check the banner and reload the queue
-                checkNewOrders();
-                loadLiveDashboardOrders();
-            })
-            .subscribe();
     }
 
     async function checkNewOrders() {
@@ -187,9 +176,13 @@
 
         const banner = document.getElementById('global-order-banner');
         const bannerText = document.getElementById('global-order-text');
+        const main = document.getElementById('main-content');
+        const nav = document.querySelector('nav');
 
         if (newOrders && newOrders.length > 0) {
-            banner.style.transform = 'translateY(0%)'; // SLIDE DOWN
+            banner.style.display = 'block'; // SHOW BANNER
+            main.style.marginTop = "100px"; // PUSH PAGE DOWN
+            nav.style.marginTop = "100px"; // PUSH NAV DOWN
             
             const latest = newOrders[0];
             const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
@@ -203,7 +196,9 @@
             }
 
         } else {
-            banner.style.transform = 'translateY(-100%)'; // SLIDE UP
+            banner.style.display = 'none'; // HIDE BANNER
+            main.style.marginTop = "0px";
+            nav.style.marginTop = "0px";
             if (alertSoundInterval) {
                 clearInterval(alertSoundInterval);
                 alertSoundInterval = null;
@@ -324,8 +319,7 @@
     }
 
     async function logout() { 
-        if (realtimeChannel) db.removeChannel(realtimeChannel);
-        clearInterval(alertSoundInterval);
+        clearInterval(orderCheckInterval);
         localStorage.clear(); 
         await db.auth.signOut(); 
         window.location.replace('index.html'); 
