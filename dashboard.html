@@ -49,7 +49,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- GLOBAL NEW ORDER BANNER (Fixed to absolute top of screen) -->
+  <!-- GLOBAL NEW ORDER BANNER (Fixed to top, persistent) -->
   <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white p-4 text-center alert-banner shadow-lg border-b-4 border-red-800">
     <div class="flex items-center justify-center gap-3 font-bold text-lg">
       <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
@@ -59,7 +59,6 @@
     <p class="text-xs text-red-100 mt-1 font-medium">Scroll down to start preparing</p>
   </div>
 
-  <!-- Add top margin dynamically if banner is visible to prevent navbar overlapping -->
   <nav id="main-nav" class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center transition-all duration-300">
     <div class="flex items-center gap-3">
       <div class="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
@@ -296,7 +295,7 @@
 
         if (newOrders && newOrders.length > 0) {
             banner.classList.remove('hidden');
-            nav.classList.add('mt-20'); // Push navbar down so banner doesn't cover it
+            nav.classList.add('mt-20'); // Push navbar down
             
             const latest = newOrders[0];
             const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
