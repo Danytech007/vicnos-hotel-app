@@ -225,7 +225,7 @@
           document.getElementById('duty-title').textContent = 'Receptionist on Duty';
           loadReceptionistData();
           startHeartbeat();
-          orderCheckInterval = setInterval(checkNewOrders, 10000); // Blinker for Minimart
+          orderCheckInterval = setInterval(checkNewOrders, 10000);
         } 
         else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
           document.body.classList.add('dark-theme');
@@ -270,7 +270,6 @@
             .eq('status', 'Pending')
             .gte('created_at', lastCheckTime);
 
-        // Specific blinker for Waitress (checks both Kitchen and Bar)
         if (currentRole === 'waitress') {
              const { data: kitchenOrders } = await db.from('guest_orders').select('id').eq('department', 'Kitchen').eq('status', 'Pending').gte('created_at', lastCheckTime);
              const { data: barOrders } = await db.from('guest_orders').select('id').eq('department', 'Bar').eq('status', 'Pending').gte('created_at', lastCheckTime);
@@ -285,7 +284,6 @@
                  }
              }
         } else {
-            // For Barman & Reception
             const btn = document.getElementById('orders-alert-btn') || document.getElementById('recep-orders-btn');
             const dot = document.getElementById('recep-dot');
             

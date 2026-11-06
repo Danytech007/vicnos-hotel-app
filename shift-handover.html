@@ -42,16 +42,22 @@
 
   <main class="p-4 max-w-2xl mx-auto space-y-6 mt-4">
     
-    <!-- START SHIFT VIEW -->
-    <div id="start-shift-view" class="hidden flex-col items-center justify-center py-10 text-center fade-in">
-      <div class="bg-slate-800/50 p-6 rounded-full mb-6 border border-slate-700">
-        <i data-lucide="play-circle" class="w-16 h-16 text-emerald-500"></i>
+    <!-- START SHIFT VIEW (Opening Stock Count) -->
+    <div id="start-shift-view" class="hidden flex-col items-center py-6 text-center fade-in">
+      <div class="bg-slate-800/50 p-4 rounded-full mb-4 border border-slate-700">
+        <i data-lucide="clipboard-list" class="w-12 h-12 text-indigo-400"></i>
       </div>
-      <h2 class="text-2xl font-bold text-white mb-2">Ready to start?</h2>
-      <p class="text-slate-400 text-sm px-6 mb-8">You have no active shift. Please confirm you are on duty to start accepting orders and recording sales.</p>
+      <h2 class="text-2xl font-bold text-white mb-1">Opening Stock Count</h2>
+      <p class="text-slate-400 text-sm px-6 mb-6">You must confirm your physical stock before starting your shift. Enter the exact quantity you have right now.</p>
       
+      <div class="w-full glass-card p-4 rounded-xl text-left mb-6">
+        <div id="opening-stock-list" class="space-y-3 max-h-[50vh] overflow-y-auto hide-scroll pr-1">
+          <p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading inventory...</p>
+        </div>
+      </div>
+
       <button onclick="startShift()" id="start-btn" class="w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition text-lg flex items-center justify-center gap-2">
-        <i data-lucide="log-in" class="w-6 h-6"></i> Start My Shift
+        <i data-lucide="log-in" class="w-6 h-6"></i> Submit & Start Shift
       </button>
     </div>
 
@@ -88,32 +94,19 @@
         </div>
       </div>
 
-      <!-- PHYSICAL STOCK COUNT -->
-      <div class="glass-card p-5 rounded-2xl border border-indigo-500/30 bg-indigo-500/5">
-        <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
-          <h3 class="font-bold text-indigo-400 text-sm flex items-center gap-2"><i data-lucide="package" class="w-4 h-4"></i> Physical Stock Count</h3>
-          <button onclick="loadStockCount()" class="text-[10px] bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-500 transition">Refresh List</button>
-        </div>
-        <p class="text-xs text-slate-400 mb-4">Count the physical items in your station and enter the quantities below.</p>
-        
-        <div id="stock-count-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll pr-1">
-          <p class="text-xs text-slate-400 text-center py-2">Loading stock items...</p>
-        </div>
-      </div>
-
-      <!-- END SHIFT & CASH COUNT -->
+      <!-- END SHIFT HANDOVER -->
       <div class="glass-card p-5 rounded-2xl border border-red-500/30 bg-red-500/5">
-        <h3 class="font-bold text-red-400 mb-2 text-sm flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> End Shift Handover</h3>
-        <p class="text-xs text-slate-400 mb-4">Before ending your shift, please physically count the cash in your drawer.</p>
+        <h3 class="font-bold text-red-400 mb-2 text-sm flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> End Shift & Handover</h3>
+        <p class="text-xs text-slate-400 mb-4">Reconcile your POS receipts with the system sales and remit cash (if applicable).</p>
         
         <div>
-          <label class="block text-xs font-bold text-slate-400 mb-1">Physical Cash Count (₦)</label>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Physical Cash Remitted (₦)</label>
           <input type="number" id="physical-cash" placeholder="Enter cash amount" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-red-500 mb-2">
           <p id="discrepancy-msg" class="text-xs font-bold mb-4 hidden"></p>
         </div>
 
         <button onclick="endShift()" id="end-btn" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-red-500/20 active:scale-95 transition flex items-center justify-center gap-2">
-          <i data-lucide="log-out" class="w-5 h-5"></i> End Shift & Submit Count
+          <i data-lucide="log-out" class="w-5 h-5"></i> End Shift & Submit Handover
         </button>
       </div>
 
@@ -134,7 +127,10 @@
     let currentRole = null;
     let department = 'Bar';
     let activeShift = null;
-    let stockItems = [];
+    let inventoryItems = [];
+    
+    // Cashless Policy Toggle (Set to true if hotel doesn't accept physical cash)
+    const CASHLESS_POLICY = false; 
 
     async function init() {
       const { data: { user } } = await db.auth.getUser();
@@ -150,6 +146,10 @@
       else department = 'Bar';
 
       document.getElementById('nav-dept').textContent = department + ' Station';
+      
+      if (CASHLESS_POLICY) {
+          document.getElementById('physical-cash').parentElement.style.display = 'none';
+      }
 
       checkActiveShift();
     }
@@ -166,6 +166,7 @@
         activeShift = shifts[0];
         showActiveShiftView();
       } else {
+        loadOpeningStock(); // Start shift view needs the stock list
         showStartShiftView();
       }
     }
@@ -176,25 +177,103 @@
       document.getElementById('active-shift-view').classList.add('hidden');
     }
 
-    async function startShift() {
-      const btn = document.getElementById('start-btn');
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Starting...`;
-      btn.disabled = true;
+    async function loadOpeningStock() {
+      const list = document.getElementById('opening-stock-list');
+      list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading inventory...</p>';
 
-      const { error } = await db.from('shifts').insert({
-        user_id: currentUser.id,
-        department: department,
-        status: 'Active'
-      });
+      const { data: items } = await db.from('inventory')
+        .select('*')
+        .eq('department', department)
+        .order('item_name');
 
-      if (error) {
-        alert("Error starting shift: " + error.message);
-        btn.innerHTML = `<i data-lucide="log-in" class="w-6 h-6"></i> Start My Shift`;
-        btn.disabled = false;
+      if (!items || items.length === 0) {
+        list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">No items found in inventory for this station.</p>';
         return;
       }
 
-      window.location.reload();
+      inventoryItems = items;
+
+      list.innerHTML = items.map(item => `
+        <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+          <div>
+            <p class="text-xs font-bold text-white">${item.item_name}</p>
+            <p class="text-[10px] text-slate-400">System: ${item.stock_quantity}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="number" id="open-stock-${item.id}" placeholder="${item.stock_quantity}" class="w-16 bg-slate-900 border border-slate-600 text-white text-sm p-2 rounded text-center focus:border-emerald-500 outline-none" oninput="checkDiscrepancy('${item.id}', ${item.stock_quantity})">
+            <span id="diff-${item.id}" class="text-[10px] font-bold w-12 text-right"></span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function checkDiscrepancy(itemId, systemQty) {
+        const input = document.getElementById(`open-stock-${itemId}`);
+        const diffLabel = document.getElementById(`diff-${itemId}`);
+        
+        if (input.value === "") { diffLabel.textContent = ""; return; }
+        
+        const physical = Number(input.value);
+        const diff = physical - systemQty;
+        
+        if (diff === 0) {
+            diffLabel.textContent = "✅ OK";
+            diffLabel.className = "text-[10px] font-bold w-12 text-right text-emerald-400";
+        } else if (diff < 0) {
+            diffLabel.textContent = `${diff} Missing`;
+            diffLabel.className = "text-[10px] font-bold w-12 text-right text-red-400";
+        } else {
+            diffLabel.textContent = `+${diff} Extra`;
+            diffLabel.className = "text-[10px] font-bold w-12 text-right text-amber-400";
+        }
+    }
+
+    async function startShift() {
+      const btn = document.getElementById('start-btn');
+      
+      // Verify all items are counted
+      let allCounted = true;
+      let stockUpdates = [];
+      
+      for (const item of inventoryItems) {
+          const inputEl = document.getElementById(`open-stock-${item.id}`);
+          if (!inputEl || inputEl.value === "") {
+              allCounted = false;
+              inputEl.classList.add('border-red-500');
+          } else {
+              inputEl.classList.remove('border-red-500');
+              stockUpdates.push({ id: item.id, qty: Number(inputEl.value) });
+          }
+      }
+
+      if (!allCounted) {
+          return alert("Please enter the physical count for ALL items before starting your shift.");
+      }
+
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Starting...`;
+      btn.disabled = true;
+
+      try {
+        // 1. Update inventory to match physical counts
+        for (const update of stockUpdates) {
+            await db.from('inventory').update({ stock_quantity: update.qty }).eq('id', update.id);
+        }
+
+        // 2. Create active shift
+        const { error } = await db.from('shifts').insert({
+          user_id: currentUser.id,
+          department: department,
+          status: 'Active'
+        });
+
+        if (error) throw error;
+
+        window.location.reload();
+      } catch (err) {
+        alert("Error starting shift: " + err.message);
+        btn.innerHTML = `<i data-lucide="log-in" class="w-6 h-6"></i> Submit & Start Shift`;
+        btn.disabled = false;
+      }
     }
 
     async function showActiveShiftView() {
@@ -226,62 +305,37 @@
       document.getElementById('shift-order-count').textContent = count;
       document.getElementById('shift-total-sales').textContent = `₦${totalSales.toLocaleString()}`;
       
-      document.getElementById('physical-cash').addEventListener('input', (e) => {
-        const physical = Number(e.target.value);
-        const msg = document.getElementById('discrepancy-msg');
-        
-        if (physical === 0) { msg.classList.add('hidden'); return; }
-        
-        msg.classList.remove('hidden');
-        const diff = physical - cash;
-        
-        if (diff === 0) {
-          msg.textContent = "✅ Perfect match!";
-          msg.className = "text-xs font-bold mb-4 text-emerald-400";
-        } else if (diff < 0) {
-          msg.textContent = `⚠️ Shortage of ₦${Math.abs(diff).toLocaleString()}`;
-          msg.className = "text-xs font-bold mb-4 text-red-400";
-        } else {
-          msg.textContent = `⚠️ Overage of ₦${diff.toLocaleString()}`;
-          msg.className = "text-xs font-bold mb-4 text-amber-400";
-        }
-      });
-
-      loadStockCount();
-    }
-
-    async function loadStockCount() {
-      const list = document.getElementById('stock-count-list');
-      list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading...</p>';
-
-      const { data: items } = await db.from('inventory')
-        .select('*')
-        .eq('department', department)
-        .order('item_name');
-
-      if (!items || items.length === 0) {
-        list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">No items found in inventory for this station.</p>';
-        return;
+      if (!CASHLESS_POLICY) {
+          document.getElementById('physical-cash').addEventListener('input', (e) => {
+            const physical = Number(e.target.value);
+            const msg = document.getElementById('discrepancy-msg');
+            
+            if (physical === 0) { msg.classList.add('hidden'); return; }
+            
+            msg.classList.remove('hidden');
+            const diff = physical - cash;
+            
+            if (diff === 0) {
+              msg.textContent = "✅ Perfect match!";
+              msg.className = "text-xs font-bold mb-4 text-emerald-400";
+            } else if (diff < 0) {
+              msg.textContent = `⚠️ Shortage of ₦${Math.abs(diff).toLocaleString()}`;
+              msg.className = "text-xs font-bold mb-4 text-red-400";
+            } else {
+              msg.textContent = `⚠️ Overage of ₦${diff.toLocaleString()}`;
+              msg.className = "text-xs font-bold mb-4 text-amber-400";
+            }
+          });
       }
-
-      stockItems = items;
-
-      list.innerHTML = items.map(item => `
-        <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg border border-slate-700">
-          <div>
-            <p class="text-xs font-bold text-white">${item.item_name}</p>
-            <p class="text-[10px] text-slate-400">System Stock: ${item.stock_quantity}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <input type="number" id="stock-${item.id}" placeholder="${item.stock_quantity}" class="w-16 bg-slate-900 border border-slate-600 text-white text-xs p-1 rounded text-center">
-          </div>
-        </div>
-      `).join('');
     }
 
     async function endShift() {
-      const physicalCash = Number(document.getElementById('physical-cash').value);
-      if (!document.getElementById('physical-cash').value) return alert("Please enter your physical cash count.");
+      let physicalCash = 0;
+      
+      if (!CASHLESS_POLICY) {
+          physicalCash = Number(document.getElementById('physical-cash').value);
+          if (!document.getElementById('physical-cash').value) return alert("Please enter your physical cash remittance.");
+      }
 
       if (!confirm("Are you sure you want to end your shift? This will lock your sales and send the report to the Accountant.")) return;
 
@@ -290,6 +344,7 @@
       btn.disabled = true;
 
       try {
+        // 1. Update shift status to 'Ended'
         const { error } = await db.from('shifts').update({
           status: 'Ended',
           total_cash_sales: physicalCash
@@ -297,35 +352,25 @@
 
         if (error) throw error;
 
-        let stockMessage = "";
-        let itemsUpdated = 0;
-        
-        for (const item of stockItems) {
-            const inputEl = document.getElementById(`stock-${item.id}`);
-            if (inputEl && inputEl.value !== "") {
-                const physicalCount = Number(inputEl.value);
-                if (physicalCount !== item.stock_quantity) {
-                    await db.from('inventory').update({ stock_quantity: physicalCount }).eq('id', item.id);
-                    stockMessage += `${item.item_name}: ${physicalCount}. `;
-                    itemsUpdated++;
-                }
-            }
-        }
+        // 2. Create a notification log for the Accountant
+        const reportMsg = CASHLESS_POLICY 
+            ? `${department} shift ended. Cashless Policy: No cash expected.`
+            : `${department} shift ended. Physical cash remitted: ₦${physicalCash.toLocaleString()}`;
 
         await db.from('guest_orders').insert({
           department: 'Shift Handover',
           room_number: 'N/A',
-          items: [{ message: `${department} shift ended. Physical cash: ₦${physicalCash.toLocaleString()}. Stock Count: ${itemsUpdated > 0 ? stockMessage : 'No stock changes'}` }],
+          items: [{ message: reportMsg }],
           total_amount: physicalCash,
           status: 'Pending'
         });
 
-        alert("✅ Shift Ended Successfully!\nYour sales and physical stock counts have been sent to the Manager.");
+        alert("✅ Shift Ended Successfully!\nYour sales have been locked. Please hand over to the next staff.");
         window.location.href = 'dashboard.html';
 
       } catch (err) {
         alert("Error ending shift: " + err.message);
-        btn.innerHTML = `<i data-lucide="log-out" class="w-5 h-5"></i> End Shift & Submit Count`;
+        btn.innerHTML = `<i data-lucide="log-out" class="w-5 h-5"></i> End Shift & Submit Handover`;
         btn.disabled = false;
       }
     }
