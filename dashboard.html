@@ -36,6 +36,7 @@
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
     
+    /* AGGRESSIVE BLINKING */
     @keyframes blink-banner { 
         0% { opacity: 1; background-color: #dc2626; } 
         50% { opacity: 1; background-color: #991b1b; } 
@@ -44,10 +45,10 @@
     .alert-banner { animation: blink-banner 0.8s infinite !important; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col relative">
 
-  <!-- THE BANNER IS NOW THE VERY FIRST ELEMENT IN THE BODY -->
-  <div id="global-order-banner" class="alert-banner" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; z-index: 99999999; background-color: #dc2626; color: white; text-align: center; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-bottom: 4px solid #fff;">
+  <!-- THE FIXED BLINKER BANNER -->
+  <div id="global-order-banner" class="alert-banner" style="display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 999999; background-color: #dc2626; color: white; text-align: center; padding: 20px; border-bottom: 4px solid #fff;">
     <div style="display: flex; justify-content: center; align-items: center; gap: 12px; font-weight: 900; font-size: 24px; letter-spacing: 2px;">
       <span style="font-size: 32px;">🚨</span>
       <span id="global-order-text">NEW ORDER RECEIVED!</span>
@@ -67,8 +68,7 @@
     </div>
   </nav>
 
-  <!-- ADDED ID TO MAIN TO PUSH IT DOWN -->
-  <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4 transition-all duration-300">
+  <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4">
     
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6"></div>
 
@@ -176,13 +176,9 @@
 
         const banner = document.getElementById('global-order-banner');
         const bannerText = document.getElementById('global-order-text');
-        const main = document.getElementById('main-content');
-        const nav = document.querySelector('nav');
 
         if (newOrders && newOrders.length > 0) {
             banner.style.display = 'block'; // SHOW BANNER
-            main.style.marginTop = "100px"; // PUSH PAGE DOWN
-            nav.style.marginTop = "100px"; // PUSH NAV DOWN
             
             const latest = newOrders[0];
             const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
@@ -197,8 +193,6 @@
 
         } else {
             banner.style.display = 'none'; // HIDE BANNER
-            main.style.marginTop = "0px";
-            nav.style.marginTop = "0px";
             if (alertSoundInterval) {
                 clearInterval(alertSoundInterval);
                 alertSoundInterval = null;
