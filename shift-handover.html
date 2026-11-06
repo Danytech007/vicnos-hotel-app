@@ -42,7 +42,7 @@
 
   <main class="p-4 max-w-2xl mx-auto space-y-6 mt-4">
     
-    <!-- START SHIFT VIEW (Opening Stock Count) -->
+    <!-- START SHIFT VIEW -->
     <div id="start-shift-view" class="hidden flex-col items-center py-6 text-center fade-in">
       <div class="bg-slate-800/50 p-4 rounded-full mb-4 border border-slate-700">
         <i data-lucide="clipboard-list" class="w-12 h-12 text-indigo-400"></i>
@@ -94,7 +94,6 @@
         </div>
       </div>
 
-      <!-- END SHIFT HANDOVER -->
       <div class="glass-card p-5 rounded-2xl border border-red-500/30 bg-red-500/5">
         <h3 class="font-bold text-red-400 mb-2 text-sm flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> End Shift & Handover</h3>
         <p class="text-xs text-slate-400 mb-4">Reconcile your POS receipts with the system sales and remit cash (if applicable).</p>
@@ -193,18 +192,24 @@
       const list = document.getElementById('opening-stock-list');
       list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading inventory...</p>';
 
-      // Pull from inventory to get the actual stock levels (deduplicated)
-      const { data: items } = await db.from('inventory')
+      // Fetch from inventory table
+      const { data: items, error } = await db.from('inventory')
         .select('*')
         .in('department', inventoryDept)
         .order('item_name');
+
+      if (error) {
+          console.error(error);
+          list.innerHTML = '<p class="text-xs text-red-400 text-center py-2">Error loading inventory.</p>';
+          return;
+      }
 
       if (!items || items.length === 0) {
         list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">No items found in inventory for this station.</p>';
         return;
       }
 
-      // Remove duplicates just in case
+      // Remove duplicates
       const uniqueItems = [];
       const map = new Map();
       for (const item of items) {
