@@ -193,6 +193,7 @@
       const list = document.getElementById('opening-stock-list');
       list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading inventory...</p>';
 
+      // Pull from inventory to get the actual stock levels (deduplicated)
       const { data: items } = await db.from('inventory')
         .select('*')
         .in('department', inventoryDept)
@@ -203,9 +204,18 @@
         return;
       }
 
-      inventoryItems = items;
+      // Remove duplicates just in case
+      const uniqueItems = [];
+      const map = new Map();
+      for (const item of items) {
+          if(!map.has(item.item_name)){
+              map.set(item.item_name, true);
+              uniqueItems.push(item);
+          }
+      }
+      inventoryItems = uniqueItems;
 
-      list.innerHTML = items.map(item => `
+      list.innerHTML = uniqueItems.map(item => `
         <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700">
           <div>
             <p class="text-xs font-bold text-white">${item.item_name}</p>
