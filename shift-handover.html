@@ -126,7 +126,7 @@
     let currentUser = null;
     let currentRole = null;
     let dept = 'Bar'; // The department for the shift record
-    let inventoryDept = 'Bar'; // The department to pull stock from
+    let inventoryDept = ['Bar']; // The department to pull stock from
     let activeShift = null;
     let inventoryItems = [];
     
@@ -140,22 +140,21 @@
       const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
       currentRole = profile.role;
       
-      // --- CRITICAL FIX: Map the Waitress to the Kitchen Inventory ---
       if (currentRole === 'chef' || currentRole === 'kitchen') {
           dept = 'Kitchen';
-          inventoryDept = 'Kitchen';
+          inventoryDept = ['Kitchen', 'Food'];
       }
       else if (currentRole === 'receptionist') {
           dept = 'Minimart';
-          inventoryDept = 'Minimart';
+          inventoryDept = ['Minimart'];
       }
       else if (currentRole === 'waitress') {
           dept = 'Waitress'; // The shift is logged under the Waitress
-          inventoryDept = 'Kitchen'; // But she counts Kitchen stock
+          inventoryDept = ['Kitchen', 'Food']; // But she counts Kitchen/Food stock
       }
       else {
           dept = 'Bar';
-          inventoryDept = 'Bar';
+          inventoryDept = ['Bar'];
       }
 
       document.getElementById('nav-dept').textContent = dept + ' Station';
@@ -194,10 +193,9 @@
       const list = document.getElementById('opening-stock-list');
       list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading inventory...</p>';
 
-      // Uses inventoryDept (e.g., Kitchen for Waitress)
       const { data: items } = await db.from('inventory')
         .select('*')
-        .eq('department', inventoryDept)
+        .in('department', inventoryDept)
         .order('item_name');
 
       if (!items || items.length === 0) {
@@ -267,12 +265,10 @@
       btn.disabled = true;
 
       try {
-        // Update the specific inventory items
         for (const update of stockUpdates) {
             await db.from('inventory').update({ stock_quantity: update.qty }).eq('id', update.id);
         }
 
-        // Log the shift
         const { error } = await db.from('shifts').insert({
           user_id: currentUser.id,
           department: dept,
