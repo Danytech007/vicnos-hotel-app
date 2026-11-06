@@ -101,7 +101,7 @@
         
         <div>
           <label class="block text-xs font-bold text-slate-400 mb-1">Physical Cash Remitted (₦)</label>
-          <input type="number" id="physical-cash" placeholder="Enter cash amount" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-red-500 mb-2">
+          <input type="number" id="physical-cash" placeholder="Enter cash amount (optional)" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-red-500 mb-2">
           <p id="discrepancy-msg" class="text-xs font-bold mb-4 hidden"></p>
         </div>
 
@@ -129,7 +129,6 @@
     let activeShift = null;
     let inventoryItems = [];
     
-    // Cashless Policy Toggle (Set to true if hotel doesn't accept physical cash)
     const CASHLESS_POLICY = false; 
 
     async function init() {
@@ -166,7 +165,7 @@
         activeShift = shifts[0];
         showActiveShiftView();
       } else {
-        loadOpeningStock(); // Start shift view needs the stock list
+        loadOpeningStock();
         showStartShiftView();
       }
     }
@@ -231,7 +230,6 @@
     async function startShift() {
       const btn = document.getElementById('start-btn');
       
-      // Verify all items are counted
       let allCounted = true;
       let stockUpdates = [];
       
@@ -254,12 +252,10 @@
       btn.disabled = true;
 
       try {
-        // 1. Update inventory to match physical counts
         for (const update of stockUpdates) {
             await db.from('inventory').update({ stock_quantity: update.qty }).eq('id', update.id);
         }
 
-        // 2. Create active shift
         const { error } = await db.from('shifts').insert({
           user_id: currentUser.id,
           department: department,
@@ -280,7 +276,14 @@
       document.getElementById('start-shift-view').classList.add('hidden');
       document.getElementById('active-shift-view').classList.remove('hidden');
 
-      const startTime = new Date(activeShift.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      // --- FIXED INVALID DATE BUG ---
+      let startTime = "--:--";
+      if (activeShift && activeShift.created_at) {
+          const dateObj = new Date(activeShift.created_at);
+          if (!isNaN(dateObj.getTime())) {
+              startTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+      }
       document.getElementById('shift-start-time').textContent = `Started at ${startTime}`;
 
       const { data: orders } = await db.from('pos_orders')
@@ -332,9 +335,11 @@
     async function endShift() {
       let physicalCash = 0;
       
+      // --- FIXED CASH BUG ---
       if (!CASHLESS_POLICY) {
-          physicalCash = Number(document.getElementById('physical-cash').value);
-          if (!document.getElementById('physical-cash').value) return alert("Please enter your physical cash remittance.");
+          const inputVal = document.getElementById('physical-cash').value;
+          // Allow it to be blank and default to 0 instead of throwing an error alert
+          physicalCash = inputVal ? Number(inputVal) : 0; 
       }
 
       if (!confirm("Are you sure you want to end your shift? This will lock your sales and send the report to the Accountant.")) return;
@@ -344,15 +349,27 @@
       btn.disabled = true;
 
       try {
-        // 1. Update shift status to 'Ended'
-        const { error } = await db.from('shifts').update({
+        // --- FIXED STATUS BUG ---
+        // Send 'Ended' but if the DB constraint fails, try 'Completed' as fallback
+        let updateError = null;
+        const res = await db.from('shifts').update({
           status: 'Ended',
           total_cash_sales: physicalCash
         }).eq('id', activeShift.id);
+        
+        updateError = res.error;
 
-        if (error) throw error;
+        if (updateError && updateError.message.includes('check constraint')) {
+             // The DB only allows 'Active' or 'Completed', so we use 'Completed'
+             const fallbackRes = await db.from('shifts').update({
+                status: 'Completed',
+                total_cash_sales: physicalCash
+             }).eq('id', activeShift.id);
+             updateError = fallbackRes.error;
+        }
 
-        // 2. Create a notification log for the Accountant
+        if (updateError) throw updateError;
+
         const reportMsg = CASHLESS_POLICY 
             ? `${department} shift ended. Cashless Policy: No cash expected.`
             : `${department} shift ended. Physical cash remitted: ₦${physicalCash.toLocaleString()}`;
