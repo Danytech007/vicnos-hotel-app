@@ -29,9 +29,21 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulse-border { 0% { border-color: rgba(251, 191, 36, 0.3); } 50% { border-color: rgba(251, 191, 36, 1); box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); } 100% { border-color: rgba(251, 191, 36, 0.3); } }
     .new-order { animation: pulse-border 2s infinite; }
+    @keyframes blink-banner { 0% { opacity: 1; background-color: #dc2626; } 50% { opacity: 0.8; background-color: #7f1d1d; } 100% { opacity: 1; background-color: #dc2626; } }
+    .alert-banner { animation: blink-banner 1s infinite; }
   </style>
 </head>
 <body class="min-h-screen pb-10">
+
+  <!-- BLINKING NEW ORDER BANNER -->
+  <div id="new-order-banner" class="hidden fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white p-4 text-center cursor-pointer alert-banner shadow-lg" onclick="acknowledgeAlert()">
+    <div class="flex items-center justify-center gap-3 font-bold text-lg">
+      <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
+      <span id="banner-text">NEW ORDER RECEIVED!</span>
+      <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
+    </div>
+    <p class="text-xs text-red-100 mt-1 font-medium">Tap here to acknowledge and view</p>
+  </div>
 
   <nav class="bg-slate-900/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50 p-4 flex justify-between items-center">
     <div class="flex items-center gap-3">
@@ -94,6 +106,7 @@
     lucide.createIcons();
 
     let lastOrderCount = 0;
+    let soundInterval = null;
 
     async function loadOrders() {
       const { data: orders, error } = await db.from('guest_orders')
@@ -105,9 +118,14 @@
       if (error) { console.error("Error loading orders:", error); return; }
 
       if (orders && orders.length > lastOrderCount) {
-        playNotificationSound();
+        triggerAlert(orders.length);
       }
-      lastOrderCount = orders ? orders.length : 0;
+      
+      if (!document.getElementById('new-order-banner').classList.contains('hidden')) {
+          lastOrderCount = orders ? orders.length : 0;
+      } else {
+          lastOrderCount = orders ? orders.length : 0;
+      }
 
       const colNew = document.getElementById('col-new');
       const colPreparing = document.getElementById('col-preparing');
@@ -135,7 +153,6 @@
           }
         } catch(e) { itemsHtml = `<p class="text-white text-xs break-all">${JSON.stringify(order.items)}</p>`; }
 
-        // Show payment method if it's an outside order
         let paymentHtml = '';
         if (order.payment_method && order.payment_method !== 'N/A') {
             paymentHtml = `
@@ -175,6 +192,27 @@
       updateStats(countNew, countPreparing, countReady);
     }
 
+    function triggerAlert(orderCount) {
+        const banner = document.getElementById('new-order-banner');
+        const bannerText = document.getElementById('banner-text');
+        
+        banner.classList.remove('hidden');
+        bannerText.textContent = `${orderCount} NEW ORDER(S) WAITING!`;
+        
+        if (!soundInterval) {
+            playNotificationSound();
+            soundInterval = setInterval(playNotificationSound, 3000);
+        }
+    }
+
+    function acknowledgeAlert() {
+        document.getElementById('new-order-banner').classList.add('hidden');
+        if (soundInterval) {
+            clearInterval(soundInterval);
+            soundInterval = null;
+        }
+    }
+
     function updateStats(n, p, r) {
       document.getElementById('stat-new').textContent = n;
       document.getElementById('stat-preparing').textContent = p;
@@ -196,7 +234,7 @@
     }
 
     loadOrders();
-    setInterval(loadOrders, 5000);
+    setInterval(loadOrders, 5000); 
   </script>
 </body>
 </html>
