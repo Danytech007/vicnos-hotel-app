@@ -50,10 +50,10 @@
     .alert-banner { animation: blink-banner 0.8s infinite !important; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col relative">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- GLOBAL NEW ORDER BANNER (Starts offscreen, slides down when active) -->
-  <div id="global-order-banner" class="alert-banner" style="position: fixed; top: -150px; left: 0; right: 0; z-index: 999999; background-color: #dc2626; color: white; text-align: center; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-bottom: 4px solid #fff; transition: top 0.3s ease-in-out;">
+  <!-- GLOBAL NEW ORDER BANNER (Sits at the top of the page, hidden by default) -->
+  <div id="global-order-banner" class="alert-banner" style="display: none; background-color: #dc2626; color: white; text-align: center; padding: 16px; border-bottom: 4px solid #fff;">
     <div style="display: flex; justify-content: center; align-items: center; gap: 12px; font-weight: 900; font-size: 24px; letter-spacing: 2px;">
       <span style="font-size: 32px;">🚨</span>
       <span id="global-order-text">NEW ORDER RECEIVED!</span>
@@ -62,7 +62,7 @@
     <p style="font-size: 14px; margin-top: 4px; font-weight: 700; color: #fecaca;">Check the queue below immediately</p>
   </div>
 
-  <nav id="main-nav" class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center transition-all duration-300">
+  <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center transition-all duration-300">
     <div class="flex items-center gap-3">
       <div class="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
       <div><h1 id="nav-brand" class="font-bold text-gray-900 text-lg leading-tight">Vicnos HotelStack</h1><p id="user-role-display" class="text-[10px] text-blue-600 uppercase tracking-widest font-bold">Loading...</p></div>
@@ -107,7 +107,6 @@
         <div><h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3><p id="ops-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p></div>
       </div>
       
-      <!-- RESTORED: BILLS AND STOCK BUTTONS -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
         <div class="glass-card p-5 rounded-2xl"><div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 id="ops-bills-title" class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bills (Checkout Due)</h3></div><div id="ops-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center"><div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div><h3 class="font-bold text-white mb-2">Received New Stock?</h3><p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p><a id="ops-stock-request-link" href="#" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a></div>
@@ -177,18 +176,18 @@
         
         const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
         
-        const { data: newOrders } = await db.from('guest_orders')
+        const { data: newOrders, error } = await db.from('guest_orders')
             .select('id, room_number, table_number')
             .in('department', queryDept)
             .eq('status', 'Pending');
 
+        if (error) console.error("Banner check error:", error);
+
         const banner = document.getElementById('global-order-banner');
         const bannerText = document.getElementById('global-order-text');
-        const nav = document.getElementById('main-nav');
 
         if (newOrders && newOrders.length > 0) {
-            banner.style.top = '0px'; // SLIDE DOWN
-            nav.style.marginTop = "100px"; 
+            banner.style.display = 'block'; // FORCE SHOW
             
             const latest = newOrders[0];
             const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
@@ -202,8 +201,7 @@
             }
 
         } else {
-            banner.style.top = '-150px'; // SLIDE UP OFF SCREEN
-            nav.style.marginTop = "0px";
+            banner.style.display = 'none'; // FORCE HIDE
             if (alertSoundInterval) {
                 clearInterval(alertSoundInterval);
                 alertSoundInterval = null;
