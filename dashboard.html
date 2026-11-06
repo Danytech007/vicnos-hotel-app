@@ -43,29 +43,22 @@
     
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
-    
-    /* VERY AGGRESSIVE BLINKING FOR THE BANNER */
-    @keyframes blink-banner { 
-        0% { opacity: 1; background-color: #dc2626; box-shadow: 0 0 20px #dc2626; } 
-        50% { opacity: 0.9; background-color: #991b1b; box-shadow: 0 0 10px #991b1b; } 
-        100% { opacity: 1; background-color: #dc2626; box-shadow: 0 0 20px #dc2626; } 
-    }
+    @keyframes blink-banner { 0% { opacity: 1; background-color: #dc2626; } 50% { opacity: 0.8; background-color: #7f1d1d; } 100% { opacity: 1; background-color: #dc2626; } }
     .alert-banner { animation: blink-banner 1s infinite; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col relative">
 
   <!-- GLOBAL NEW ORDER BANNER -->
-  <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white p-5 text-center alert-banner border-b-4 border-white">
-    <div class="flex items-center justify-center gap-3 font-black text-2xl tracking-wide uppercase">
+  <div id="global-order-banner" class="hidden bg-red-600 text-white p-4 text-center alert-banner shadow-2xl border-b-4 border-red-800" style="position: fixed; top: 0; left: 0; right: 0; z-index: 99999;">
+    <div class="flex items-center justify-center gap-3 font-black text-xl tracking-wide uppercase">
       <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
       <span id="global-order-text">NEW ORDER RECEIVED!</span>
       <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
     </div>
-    <p class="text-sm text-red-100 mt-2 font-bold">Check the queue below immediately</p>
+    <p class="text-sm text-red-100 mt-1 font-bold">Check the queue below immediately</p>
   </div>
 
-  <!-- Navbar -->
   <nav id="main-nav" class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center transition-all duration-300">
     <div class="flex items-center gap-3">
       <div class="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
@@ -79,15 +72,9 @@
 
   <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4">
     
-    <!-- ================= RECEPTIONIST VIEW ================= -->
-    <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
-      <!-- Receptionist UI -->
-    </div>
-
-    <!-- ================= DARK MODE VIEW (F&B STAFF) ================= -->
+    <!-- DARK MODE VIEW -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
       
-      <!-- STATS GRID -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Total Sales Today</p><p id="ops-total-sales" class="text-2xl font-black gold-text">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Credits</p><p id="ops-credit-sales" class="text-2xl font-black text-amber-400">₦0</p></div>
@@ -95,31 +82,18 @@
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-indigo-500/20 to-transparent border-indigo-500/30"><p class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider mb-1">Shift Status</p><p id="ops-shift-status" class="text-lg font-bold text-white">No Active Shift</p></div>
       </div>
       
-      <!-- ACTION BUTTONS -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in" id="ops-action-buttons"></div>
 
-      <!-- LIVE ORDERS QUEUE -->
-      <div id="dashboard-live-orders" class="hidden glass-card p-5 rounded-2xl fade-in border border-slate-700/50 mt-4">
+      <div id="dashboard-live-orders" class="hidden glass-card p-5 rounded-2xl fade-in border border-slate-700/50">
         <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
             <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-amber-400 animate-pulse"></i> Live Orders Queue</h3>
             <button onclick="loadLiveDashboardOrders()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg"><i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Refresh</button>
         </div>
-        
         <div id="dashboard-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <p class="text-sm text-slate-400 col-span-full text-center py-6">Loading active orders...</p>
         </div>
       </div>
 
-      <!-- OTHER WIDGETS -->
-      <div id="ops-low-stock-banner" class="hidden glass-card bg-red-500/10 border-red-500/30 p-4 rounded-xl flex items-start gap-3">
-        <div class="bg-red-500/20 p-2 rounded-full text-red-400 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
-        <div><h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3><p id="ops-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p></div>
-      </div>
-      
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
-        <div class="glass-card p-5 rounded-2xl"><div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 id="ops-bills-title" class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bills (Checkout Due)</h3></div><div id="ops-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div></div>
-        <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center"><div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div><h3 class="font-bold text-white mb-2">Received New Stock?</h3><p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p><a id="ops-stock-request-link" href="#" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a></div>
-      </div>
     </div>
 
   </main>
@@ -151,13 +125,7 @@
         document.getElementById('admin-name').textContent = profile.full_name;
         document.getElementById('user-role-display').textContent = profile.role;
         
-        if (currentRole === 'receptionist') {
-          currentDept = 'Minimart';
-          document.getElementById('receptionist-view').classList.remove('hidden');
-          document.getElementById('duty-title').textContent = 'Receptionist on Duty';
-          orderCheckInterval = setInterval(checkNewOrders, 3000); 
-        } 
-        else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
+        if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
           currentDept = (currentRole === 'barman' || currentRole === 'bar') ? 'Bar' : (currentRole === 'waitress' ? 'Waitress' : 'Kitchen');
           
           document.body.classList.add('dark-theme');
@@ -174,18 +142,15 @@
           document.getElementById('duty-title').textContent = title;
           loadDarkOpsData(currentRole);
           loadLiveDashboardOrders(); 
-          
-          // CHECK IMMEDIATELY ON LOAD
           checkNewOrders();
 
-          // Start the heartbeat loop
           orderCheckInterval = setInterval(() => {
               checkNewOrders();
               loadLiveDashboardOrders();
           }, 3000);
         }
       } catch (err) {
-        alert("Dashboard Init Error: " + err.message);
+        console.error(err);
       }
     }
 
@@ -194,7 +159,6 @@
         
         const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
         
-        // Fetch ONLY Pending orders from the database
         const { data: newOrders } = await db.from('guest_orders')
             .select('id, room_number, table_number')
             .in('department', queryDept)
@@ -206,7 +170,7 @@
 
         if (newOrders && newOrders.length > 0) {
             banner.classList.remove('hidden');
-            nav.style.marginTop = "90px"; // Push navbar down
+            nav.style.marginTop = "90px"; 
             
             const latest = newOrders[0];
             const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
@@ -235,7 +199,6 @@
         
         const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
         
-        // ONLY FETCH PENDING ORDERS. 
         const { data: orders } = await db.from('guest_orders')
             .select('*')
             .in('department', queryDept)
@@ -278,18 +241,19 @@
     async function updateOrderStatus(orderId, newStatus) {
       await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
       loadLiveDashboardOrders();
-      checkNewOrders(); // Re-check immediately to hide banner if queue is now empty
+      checkNewOrders(); 
     }
 
-    // Helper functions omitted for brevity but assumed to exist based on previous codes
-    async function loadDarkOpsData(role) { /* ... */ }
+    async function loadDarkOpsData(role) {
+        // Omitted for brevity
+    }
+
     async function logout() { 
         clearInterval(orderCheckInterval);
         localStorage.clear(); 
         await db.auth.signOut(); 
         window.location.replace('index.html'); 
     }
-    
     init();
   </script>
 </body>
