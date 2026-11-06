@@ -38,16 +38,20 @@
     .filter-btn.active { background-color: #0f172a; color: white; border-color: #0f172a; }
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
-    .blink-banner { animation: blink 0.8s infinite; }
+    @keyframes blink-banner { 0% { opacity: 1; background-color: #dc2626; } 50% { opacity: 0.8; background-color: #7f1d1d; } 100% { opacity: 1; background-color: #dc2626; } }
+    .alert-banner { animation: blink-banner 1s infinite; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white p-3 text-center cursor-pointer blink-banner shadow-lg" onclick="window.location.href='bar-orders.html'">
-    <div class="flex items-center justify-center gap-2 font-bold text-sm">
-      <i data-lucide="bell-ring" class="w-5 h-5 animate-bounce"></i>
+  <!-- GLOBAL NEW ORDER BANNER -->
+  <div id="global-order-banner" class="hidden fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white p-4 text-center cursor-pointer alert-banner shadow-lg" onclick="acknowledgeAlert()">
+    <div class="flex items-center justify-center gap-3 font-bold text-lg">
+      <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
       <span id="global-order-text">NEW ORDER RECEIVED!</span>
+      <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
     </div>
+    <p class="text-xs text-red-100 mt-1 font-medium">Tap here to acknowledge and view</p>
   </div>
 
   <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center">
@@ -63,6 +67,7 @@
 
   <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4">
     
+    <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
       <div id="live-upgrade-alert" class="hidden bg-red-600 text-white p-4 rounded-xl shadow-lg fade-in flex justify-between items-center blink-alert cursor-pointer" onclick="window.location.href='manage-booking.html'">
         <div class="flex items-center gap-3">
@@ -115,24 +120,41 @@
       </div>
     </div>
 
+    <!-- ================= DARK MODE VIEW (F&B STAFF) ================= -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
-      <div id="ops-low-stock-banner" class="hidden glass-card bg-red-500/10 border-red-500/30 p-4 rounded-xl flex items-start gap-3">
-        <div class="bg-red-500/20 p-2 rounded-full text-red-400 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
-        <div><h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3><p id="ops-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p></div>
-      </div>
+      
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Total Sales Today</p><p id="ops-total-sales" class="text-2xl font-black gold-text">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Credits</p><p id="ops-credit-sales" class="text-2xl font-black text-amber-400">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Cash to Remit</p><p id="ops-cash-sales" class="text-2xl font-black text-emerald-400">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-indigo-500/20 to-transparent border-indigo-500/30"><p class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider mb-1">Shift Status</p><p id="ops-shift-status" class="text-lg font-bold text-white">No Active Shift</p></div>
       </div>
+      
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in" id="ops-action-buttons"></div>
+
+      <!-- LIVE ORDERS ON DASHBOARD -->
+      <div id="dashboard-live-orders" class="hidden glass-card p-5 rounded-2xl fade-in border border-slate-700/50">
+        <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
+            <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-amber-400 animate-pulse"></i> Live Orders Queue</h3>
+            <button onclick="loadLiveDashboardOrders()" class="text-xs text-slate-400 hover:text-white"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button>
+        </div>
+        <div id="dashboard-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <p class="text-sm text-slate-400">Loading active orders...</p>
+        </div>
+      </div>
+
+      <div id="ops-low-stock-banner" class="hidden glass-card bg-red-500/10 border-red-500/30 p-4 rounded-xl flex items-start gap-3">
+        <div class="bg-red-500/20 p-2 rounded-full text-red-400 flex-shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+        <div><h3 class="text-red-400 font-bold text-sm">Low Stock Alert!</h3><p id="ops-low-stock-items" class="text-red-300 text-xs mt-1 font-medium">Loading items...</p></div>
+      </div>
+      
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
         <div class="glass-card p-5 rounded-2xl"><div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 id="ops-bills-title" class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bills (Checkout Due)</h3></div><div id="ops-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center"><div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div><h3 class="font-bold text-white mb-2">Received New Stock?</h3><p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p><a id="ops-stock-request-link" href="#" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a></div>
       </div>
     </div>
 
+    <!-- ================= STANDARD VIEW ================= -->
     <div id="standard-view" class="hidden text-slate-200 p-4 min-h-screen bg-slate-900">
       <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden mb-8 mt-4">
         <div class="relative z-10"><p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p><h2 id="std-admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2></div>
@@ -186,48 +208,61 @@
     let heartbeatInterval = null;
     let orderCheckInterval = null;
     let lastCheckTime = new Date().toISOString();
+    let currentDept = '';
 
     async function init() {
-      const { data: { user } } = await db.auth.getUser();
-      if (!user) { window.location.href = 'index.html'; return; }
-      currentUser = user;
+      try {
+        const { data: { user } } = await db.auth.getUser();
+        if (!user) { window.location.href = 'index.html'; return; }
+        currentUser = user;
 
-      const { data: profile } = await db.from('profiles').select('full_name, role').eq('id', user.id).single();
-      if (!profile) return;
+        const { data: profile } = await db.from('profiles').select('full_name, role').eq('id', user.id).single();
+        if (!profile) return;
 
-      currentRole = profile.role;
-      document.getElementById('admin-name').textContent = profile.full_name;
-      document.getElementById('user-role-display').textContent = profile.role;
-      
-      if (currentRole === 'receptionist') {
-        document.getElementById('receptionist-view').classList.remove('hidden');
-        document.getElementById('duty-title').textContent = 'Receptionist on Duty';
-        loadReceptionistData();
-        startHeartbeat();
-        orderCheckInterval = setInterval(checkNewOrders, 5000); 
-      } 
-      else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
-        document.body.classList.add('dark-theme');
-        document.getElementById('nav-brand').classList.add('text-white');
-        document.getElementById('nav-welcome').classList.add('text-white');
-        document.getElementById('dark-ops-view').classList.remove('hidden');
+        currentRole = profile.role;
+        document.getElementById('admin-name').textContent = profile.full_name;
+        document.getElementById('user-role-display').textContent = profile.role;
         
-        let title = 'Staff on Duty';
-        if (currentRole === 'barman' || currentRole === 'bar') title = 'Barman on Duty';
-        if (currentRole === 'chef' || currentRole === 'kitchen') title = 'Chef on Duty';
-        if (currentRole === 'waitress') title = 'Waitress on Duty';
-        
-        document.getElementById('duty-title').textContent = title;
-        loadDarkOpsData(currentRole);
-        
-        orderCheckInterval = setInterval(checkNewOrders, 5000);
-      }
-      else {
-        document.getElementById('standard-view').classList.remove('hidden');
-        document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
-        document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
-        document.getElementById('duty-title').textContent = profile.role + ' Portal';
-        renderStandardOperations(profile.role);
+        if (currentRole === 'receptionist') {
+          currentDept = 'Minimart';
+          document.getElementById('receptionist-view').classList.remove('hidden');
+          document.getElementById('duty-title').textContent = 'Receptionist on Duty';
+          loadReceptionistData();
+          startHeartbeat();
+          orderCheckInterval = setInterval(checkNewOrders, 5000); 
+        } 
+        else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
+          currentDept = (currentRole === 'barman' || currentRole === 'bar') ? 'Bar' : (currentRole === 'waitress' ? 'Waitress' : 'Kitchen');
+          
+          document.body.classList.add('dark-theme');
+          document.getElementById('nav-brand').classList.add('text-white');
+          document.getElementById('nav-welcome').classList.add('text-white');
+          document.getElementById('dark-ops-view').classList.remove('hidden');
+          document.getElementById('dashboard-live-orders').classList.remove('hidden'); // Show live orders on dashboard
+          
+          let title = 'Staff on Duty';
+          if (currentRole === 'barman' || currentRole === 'bar') title = 'Barman on Duty';
+          if (currentRole === 'chef' || currentRole === 'kitchen') title = 'Chef on Duty';
+          if (currentRole === 'waitress') title = 'Waitress on Duty';
+          
+          document.getElementById('duty-title').textContent = title;
+          loadDarkOpsData(currentRole);
+          loadLiveDashboardOrders(); // Load the orders directly
+          
+          orderCheckInterval = setInterval(() => {
+              checkNewOrders();
+              loadLiveDashboardOrders();
+          }, 5000);
+        }
+        else {
+          document.getElementById('standard-view').classList.remove('hidden');
+          document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
+          document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
+          document.getElementById('duty-title').textContent = profile.role + ' Portal';
+          renderStandardOperations(profile.role);
+        }
+      } catch (err) {
+        alert("Dashboard Init Error: " + err.message);
       }
     }
 
@@ -236,17 +271,17 @@
         heartbeatInterval = setInterval(() => { checkUpgradeRequests(); }, 10000); 
     }
 
+    let alertSoundInterval = null;
+
     async function checkNewOrders() {
-        if (!currentRole) return;
-        let dept = '';
-        if (currentRole === 'barman' || currentRole === 'bar') dept = 'Bar';
-        else if (currentRole === 'waitress') dept = 'Waitress';
-        else if (currentRole === 'receptionist') dept = 'Minimart';
-        else dept = 'Kitchen';
+        if (!currentDept) return;
+        
+        // Query for specific department
+        const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
         
         const { data: newOrders } = await db.from('guest_orders')
             .select('id, room_number, table_number')
-            .eq('department', dept)
+            .in('department', queryDept)
             .eq('status', 'Pending');
 
         const banner = document.getElementById('global-order-banner');
@@ -259,22 +294,80 @@
             const loc = latest.room_number ? `Room ${latest.room_number}` : `Table ${latest.table_number || 'N/A'}`;
             bannerText.textContent = `${newOrders.length} NEW ORDER(S) WAITING! Latest: ${loc}`;
             
-            const now = new Date().toISOString();
-            const { count } = await db.from('guest_orders').select('*', { count: 'exact', head: true }).eq('department', dept).eq('status', 'Pending').gte('created_at', lastCheckTime);
-            if (count > 0) {
+            if (!alertSoundInterval) {
                 try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
+                alertSoundInterval = setInterval(() => {
+                    try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
+                }, 3000);
             }
-            lastCheckTime = now;
-
-            // ROUTE TO CORRECT PAGE
-            if (dept === 'Bar') banner.setAttribute('onclick', "window.location.href='bar-orders.html'");
-            if (dept === 'Kitchen') banner.setAttribute('onclick', "window.location.href='order-board.html'");
-            if (dept === 'Minimart') banner.setAttribute('onclick', "window.location.href='pos.html?dept=Minimart'");
-            if (dept === 'Waitress') banner.setAttribute('onclick', "window.location.href='waitress-sales.html'");
 
         } else {
-            banner.classList.add('hidden');
+            acknowledgeAlert(); // Hide if no orders left
         }
+    }
+
+    function acknowledgeAlert() {
+        document.getElementById('global-order-banner').classList.add('hidden');
+        if (alertSoundInterval) {
+            clearInterval(alertSoundInterval);
+            alertSoundInterval = null;
+        }
+    }
+
+    async function loadLiveDashboardOrders() {
+        if (!currentDept) return;
+        const list = document.getElementById('dashboard-orders-list');
+        
+        const queryDept = currentDept === 'Waitress' ? ['Kitchen', 'Food', 'Bar'] : [currentDept];
+        
+        const { data: orders } = await db.from('guest_orders')
+            .select('*')
+            .in('department', queryDept)
+            .in('status', ['Pending', 'Preparing', 'Ready'])
+            .order('created_at', { ascending: true });
+
+        if (!orders || orders.length === 0) {
+            list.innerHTML = '<p class="text-sm text-slate-400 py-4 col-span-full text-center">No active orders right now.</p>';
+            return;
+        }
+
+        list.innerHTML = orders.map(order => {
+            let itemsHtml = '';
+            try {
+              const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+              if (Array.isArray(items)) {
+                itemsHtml = items.map(item => `<div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-white font-bold text-xs">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join('');
+              }
+            } catch(e) {}
+
+            let borderClass = order.status === 'Pending' ? 'border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : (order.status === 'Preparing' ? 'border-blue-500' : 'border-emerald-500');
+
+            return `
+                <div class="glass-card p-4 rounded-xl border-l-4 ${borderClass} fade-in relative overflow-hidden">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">${order.department}</span>
+                            <h3 class="font-black text-sm text-white mt-1">${order.room_number ? 'Room ' + order.room_number : 'Table ' + (order.table_number || 'N/A')}</h3>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded ${order.status === 'Pending' ? 'bg-amber-500/20 text-amber-400' : (order.status === 'Preparing' ? 'bg-blue-500/20 text-blue-400' : 'bg-emerald-500/20 text-emerald-400')}">${order.status}</span>
+                    </div>
+                    <div class="space-y-1 mb-3">${itemsHtml}</div>
+                    
+                    <div class="flex gap-2 mt-auto">
+                        ${order.status === 'Pending' ? `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-1.5 rounded-lg text-xs transition">Start Preparing</button>` : ''}
+                        ${order.status === 'Preparing' ? `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded-lg text-xs transition">Mark as Ready</button>` : ''}
+                        ${order.status === 'Ready' ? `<p class="text-center text-xs text-emerald-400 font-bold w-full py-1.5">Waiting for pickup</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+      loadLiveDashboardOrders();
+      checkNewOrders();
     }
 
     async function checkUpgradeRequests() {
@@ -522,7 +615,6 @@
       const btnContainer = document.getElementById('ops-action-buttons');
       let buttonsHtml = '';
 
-      // --- FIXED KITCHEN BUTTONS ---
       if (dept === 'Kitchen') {
           buttonsHtml = `
             <a href="order-board.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Kitchen Orders</span></a>
@@ -533,14 +625,15 @@
           buttonsHtml = `
             <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="utensils-crossed" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Take Order</span></a>
             <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a>
-            <a href="waitress-sales.html" id="orders-alert-btn" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">My Orders</span></a>
+            <!-- FIXED: Points to the live board page -->
+            <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">My Orders</span></a>
             <a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>
           `;
       } else {
           buttonsHtml = `
             <a href="pos.html?dept=Bar" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="wine" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar POS</span></a>
             <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a>
-            <a href="bar-orders.html" id="orders-alert-btn" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar Orders</span></a>
+            <a href="bar-orders.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar Orders</span></a>
             <a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>
           `;
       }
