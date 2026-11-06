@@ -27,6 +27,7 @@
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .hide-scroll::-webkit-scrollbar { display: none; }
   </style>
 </head>
 <body class="min-h-screen pb-10">
@@ -41,7 +42,7 @@
 
   <main class="p-4 max-w-2xl mx-auto space-y-6 mt-4">
     
-    <!-- START SHIFT VIEW (Shown if no active shift) -->
+    <!-- START SHIFT VIEW -->
     <div id="start-shift-view" class="hidden flex-col items-center justify-center py-10 text-center fade-in">
       <div class="bg-slate-800/50 p-6 rounded-full mb-6 border border-slate-700">
         <i data-lucide="play-circle" class="w-16 h-16 text-emerald-500"></i>
@@ -54,7 +55,7 @@
       </button>
     </div>
 
-    <!-- ACTIVE SHIFT VIEW (Shown if shift is active) -->
+    <!-- ACTIVE SHIFT VIEW -->
     <div id="active-shift-view" class="hidden space-y-6 fade-in">
       
       <div class="glass-card p-6 rounded-2xl text-center border-t-4 border-emerald-500">
@@ -87,6 +88,20 @@
         </div>
       </div>
 
+      <!-- PHYSICAL STOCK COUNT -->
+      <div class="glass-card p-5 rounded-2xl border border-indigo-500/30 bg-indigo-500/5">
+        <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+          <h3 class="font-bold text-indigo-400 text-sm flex items-center gap-2"><i data-lucide="package" class="w-4 h-4"></i> Physical Stock Count</h3>
+          <button onclick="loadStockCount()" class="text-[10px] bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-500 transition">Refresh List</button>
+        </div>
+        <p class="text-xs text-slate-400 mb-4">Count the physical items in your station and enter the quantities below.</p>
+        
+        <div id="stock-count-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll pr-1">
+          <p class="text-xs text-slate-400 text-center py-2">Loading stock items...</p>
+        </div>
+      </div>
+
+      <!-- END SHIFT & CASH COUNT -->
       <div class="glass-card p-5 rounded-2xl border border-red-500/30 bg-red-500/5">
         <h3 class="font-bold text-red-400 mb-2 text-sm flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> End Shift Handover</h3>
         <p class="text-xs text-slate-400 mb-4">Before ending your shift, please physically count the cash in your drawer.</p>
@@ -119,6 +134,7 @@
     let currentRole = null;
     let department = 'Bar';
     let activeShift = null;
+    let stockItems = [];
 
     async function init() {
       const { data: { user } } = await db.auth.getUser();
@@ -129,7 +145,9 @@
       currentRole = profile.role;
       
       if (currentRole === 'chef' || currentRole === 'kitchen') department = 'Kitchen';
-      if (currentRole === 'receptionist') department = 'Minimart';
+      else if (currentRole === 'receptionist') department = 'Minimart';
+      else if (currentRole === 'waitress') department = 'Waitress';
+      else department = 'Bar';
 
       document.getElementById('nav-dept').textContent = department + ' Station';
 
@@ -186,7 +204,6 @@
       const startTime = new Date(activeShift.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       document.getElementById('shift-start-time').textContent = `Started at ${startTime}`;
 
-      // Fetch all POS orders for this department since the shift started
       const { data: orders } = await db.from('pos_orders')
         .select('*')
         .eq('department', department)
@@ -209,7 +226,6 @@
       document.getElementById('shift-order-count').textContent = count;
       document.getElementById('shift-total-sales').textContent = `₦${totalSales.toLocaleString()}`;
       
-      // Save expected cash to compare later
       document.getElementById('physical-cash').addEventListener('input', (e) => {
         const physical = Number(e.target.value);
         const msg = document.getElementById('discrepancy-msg');
@@ -230,6 +246,37 @@
           msg.className = "text-xs font-bold mb-4 text-amber-400";
         }
       });
+
+      loadStockCount();
+    }
+
+    async function loadStockCount() {
+      const list = document.getElementById('stock-count-list');
+      list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading...</p>';
+
+      const { data: items } = await db.from('inventory')
+        .select('*')
+        .eq('department', department)
+        .order('item_name');
+
+      if (!items || items.length === 0) {
+        list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">No items found in inventory for this station.</p>';
+        return;
+      }
+
+      stockItems = items;
+
+      list.innerHTML = items.map(item => `
+        <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+          <div>
+            <p class="text-xs font-bold text-white">${item.item_name}</p>
+            <p class="text-[10px] text-slate-400">System Stock: ${item.stock_quantity}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="number" id="stock-${item.id}" placeholder="${item.stock_quantity}" class="w-16 bg-slate-900 border border-slate-600 text-white text-xs p-1 rounded text-center">
+          </div>
+        </div>
+      `).join('');
     }
 
     async function endShift() {
@@ -243,24 +290,37 @@
       btn.disabled = true;
 
       try {
-        // 1. Update shift status to 'Ended' and save physical count
         const { error } = await db.from('shifts').update({
           status: 'Ended',
-          total_cash_sales: physicalCash // Saving the physical count
+          total_cash_sales: physicalCash
         }).eq('id', activeShift.id);
 
         if (error) throw error;
 
-        // 2. Create a notification log for the Accountant
+        let stockMessage = "";
+        let itemsUpdated = 0;
+        
+        for (const item of stockItems) {
+            const inputEl = document.getElementById(`stock-${item.id}`);
+            if (inputEl && inputEl.value !== "") {
+                const physicalCount = Number(inputEl.value);
+                if (physicalCount !== item.stock_quantity) {
+                    await db.from('inventory').update({ stock_quantity: physicalCount }).eq('id', item.id);
+                    stockMessage += `${item.item_name}: ${physicalCount}. `;
+                    itemsUpdated++;
+                }
+            }
+        }
+
         await db.from('guest_orders').insert({
           department: 'Shift Handover',
           room_number: 'N/A',
-          items: [{ message: `${department} shift ended by staff. Physical cash counted: ₦${physicalCash.toLocaleString()}` }],
+          items: [{ message: `${department} shift ended. Physical cash: ₦${physicalCash.toLocaleString()}. Stock Count: ${itemsUpdated > 0 ? stockMessage : 'No stock changes'}` }],
           total_amount: physicalCash,
           status: 'Pending'
         });
 
-        alert("✅ Shift Ended Successfully!\nYour sales have been locked. Please hand over the physical cash to the supervisor/accountant.");
+        alert("✅ Shift Ended Successfully!\nYour sales and physical stock counts have been sent to the Manager.");
         window.location.href = 'dashboard.html';
 
       } catch (err) {

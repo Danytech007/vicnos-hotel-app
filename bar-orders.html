@@ -52,7 +52,7 @@
         <p id="stat-new" class="text-3xl font-black text-amber-400">0</p>
       </div>
       <div class="glass-card p-4 rounded-xl text-center border-l-4 border-blue-500">
-        <p class="text-[10px] text-slate-400 uppercase font-bold">Mixing</p>
+        <p class="text-[10px] text-slate-400 uppercase font-bold">Preparing</p>
         <p id="stat-preparing" class="text-3xl font-black text-blue-400">0</p>
       </div>
       <div class="glass-card p-4 rounded-xl text-center border-l-4 border-emerald-500">
@@ -71,8 +71,8 @@
 
       <!-- PREPARING -->
       <div>
-        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i data-lucide="wine" class="w-4 h-4 text-blue-500"></i> Mixing / Pouring</h2>
-        <div id="col-preparing" class="space-y-3"><p class="text-center text-slate-500 py-6 text-sm">Nothing being mixed.</p></div>
+        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i data-lucide="wine" class="w-4 h-4 text-blue-500"></i> Preparing</h2>
+        <div id="col-preparing" class="space-y-3"><p class="text-center text-slate-500 py-6 text-sm">Nothing preparing.</p></div>
       </div>
 
       <!-- READY -->
@@ -96,7 +96,6 @@
     let lastOrderCount = 0;
 
     async function loadOrders() {
-      // Fetch ONLY Bar orders
       const { data: orders, error } = await db.from('guest_orders')
         .select('*')
         .eq('department', 'Bar')
@@ -119,7 +118,7 @@
 
       if (!orders || orders.length === 0) {
         colNew.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">No new drink orders.</p>';
-        colPreparing.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">Nothing being mixed.</p>';
+        colPreparing.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">Nothing preparing.</p>';
         colReady.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">No drinks ready.</p>';
         updateStats(0, 0, 0);
         return;
@@ -146,7 +145,7 @@
             </div>
             <div class="space-y-1 mb-4">${itemsHtml}</div>
             <div class="mt-4">
-              ${order.status === 'Pending' ? `<button onclick="updateStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm transition">Start Mixing</button>` : ''}
+              ${order.status === 'Pending' ? `<button onclick="updateStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm transition">Start Preparing</button>` : ''}
               ${order.status === 'Preparing' ? `<button onclick="updateStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm transition">Drinks are Ready</button>` : ''}
               ${order.status === 'Ready' ? `<p class="text-center text-xs text-emerald-400 font-bold">Waiting for Waitress...</p>` : ''}
             </div>
@@ -159,7 +158,7 @@
       });
 
       if (countNew === 0) colNew.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">No new drink orders.</p>';
-      if (countPreparing === 0) colPreparing.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">Nothing being mixed.</p>';
+      if (countPreparing === 0) colPreparing.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">Nothing preparing.</p>';
       if (countReady === 0) colReady.innerHTML = '<p class="text-center text-slate-500 py-6 text-sm">No drinks ready.</p>';
 
       updateStats(countNew, countPreparing, countReady);
@@ -185,7 +184,6 @@
       } catch(err) {}
     }
 
-    // Auto-refresh every 10 seconds
     loadOrders();
     setInterval(loadOrders, 10000);
   </script>
