@@ -22,55 +22,33 @@
       overflow: hidden; 
     }
 
-    /* Makes the page transparent when loaded inside the dashboard iframe */
-    body.iframe-mode {
-      background-color: transparent !important;
-    }
+    body.iframe-mode { background-color: transparent !important; }
     
-    .glass-card { 
-      background: rgba(30, 41, 59, 0.7); 
-      backdrop-filter: blur(12px); 
-      border: 1px solid rgba(255, 255, 255, 0.08); 
-    }
-    
-    /* The massive full-screen flash (Standalone Mode) */
     @keyframes flash-red {
       0% { background-color: #dc2626; box-shadow: inset 0 0 0 0 rgba(220, 38, 38, 0); }
       50% { background-color: #7f1d1d; box-shadow: inset 0 0 150px 20px rgba(220, 38, 38, 0.8); }
       100% { background-color: #dc2626; box-shadow: inset 0 0 0 0 rgba(220, 38, 38, 0); }
     }
-    
-    .blink-active { 
-      animation: flash-red 1s infinite; 
-    }
+    .blink-active { animation: flash-red 1s infinite; }
 
-    /* The top banner flash (Iframe Mode) */
     @keyframes banner-flash {
       0% { background-color: #dc2626; color: #ffffff; }
       50% { background-color: #991b1b; color: #fca5a5; }
       100% { background-color: #dc2626; color: #ffffff; }
     }
-
-    .banner-blink {
-      animation: banner-flash 0.8s infinite;
-    }
+    .banner-blink { animation: banner-flash 0.8s infinite; }
     
     @keyframes pulse-ring {
       0% { transform: scale(0.9); opacity: 0.7; }
       50% { transform: scale(1.1); opacity: 1; }
       100% { transform: scale(0.9); opacity: 0.7; }
     }
-    
-    .ring-pulse {
-      animation: pulse-ring 1.5s infinite;
-    }
+    .ring-pulse { animation: pulse-ring 1.5s infinite; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-center items-center transition-colors duration-300 relative">
 
-  <!-- ========================================== -->
-  <!-- IFRAME MODE (For Dashboard)                -->
-  <!-- ========================================== -->
+  <!-- IFRAME MODE (For Dashboard) -->
   <a href="dashboard.html" id="iframe-banner" class="hidden w-full h-full cursor-pointer flex items-center justify-center p-2 banner-blink shadow-2xl border-b-4 border-red-900">
       <div class="flex items-center justify-center gap-3 font-black text-lg md:text-2xl tracking-wider drop-shadow-md">
         <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
@@ -79,93 +57,61 @@
       </div>
   </a>
 
-  <!-- ========================================== -->
-  <!-- STANDALONE MODE (For Second Window)        -->
-  <!-- ========================================== -->
+  <!-- STANDALONE MODE (For Second Window) -->
   <div id="standalone-container" class="w-full h-full flex flex-col relative">
-
-    <!-- SOUND UNLOCK OVERLAY -->
     <div id="sound-unlock-overlay" class="absolute inset-0 z-[200] bg-[#0b1120] flex flex-col items-center justify-center p-6 text-center">
       <i data-lucide="volume-x" class="w-16 h-16 text-slate-400 mb-4"></i>
       <h2 class="text-2xl font-bold text-white mb-2">Monitor Standing By</h2>
-      <p class="text-slate-400 mb-8 max-w-md text-sm">Browsers block sound until you interact with the page. Click below to enable voice alerts and start the monitor.</p>
+      <p class="text-slate-400 mb-8 max-w-md text-sm">Click below to enable voice alerts.</p>
       <button onclick="enableStandaloneMonitor()" class="bg-amber-500 hover:bg-amber-400 text-black font-black py-4 px-8 rounded-xl text-lg transition shadow-[0_0_20px_rgba(251,191,36,0.4)] flex items-center gap-2">
         <i data-lucide="power" class="w-6 h-6"></i> START LIVE MONITOR
       </button>
     </div>
 
-    <!-- STANDBY SCREEN -->
     <div id="standby-screen" class="hidden w-full h-full flex flex-col items-center justify-center text-center">
       <div class="bg-slate-800/50 p-8 rounded-full mb-6 inline-block ring-pulse border border-slate-700">
         <i data-lucide="shield-check" class="w-20 h-20 text-emerald-500"></i>
       </div>
       <h1 class="text-4xl font-black text-white mb-2">ALL CLEAR</h1>
-      <p class="text-slate-400 text-lg">Monitoring for new orders...</p>
     </div>
 
-    <!-- ALERT SCREEN -->
     <div id="alert-screen" class="hidden w-full h-full flex flex-col items-center justify-center p-6">
-      <div class="animate-bounce mb-4">
-        <i data-lucide="bell-ring" class="w-24 h-24 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]"></i>
-      </div>
-      
-      <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter mb-2 drop-shadow-lg text-center leading-none">
-        NEW ORDER!
-      </h1>
-      
-      <div class="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 mb-10 shadow-2xl flex items-center gap-3">
+      <div class="animate-bounce mb-4"><i data-lucide="bell-ring" class="w-24 h-24 text-white"></i></div>
+      <h1 class="text-6xl font-black text-white mb-2">NEW ORDER!</h1>
+      <div class="bg-black/40 px-6 py-3 rounded-full border border-white/20 mb-10 flex items-center gap-3">
         <span class="text-white font-bold text-xl uppercase tracking-widest" id="alert-count">1 PENDING</span>
       </div>
-
-      <div class="flex flex-wrap justify-center gap-4">
-        <a href="dashboard.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
-          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
-        </a>
-        <a href="order-board.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
-          <i data-lucide="chef-hat" class="w-4 h-4"></i> Kitchen Board
-        </a>
-        <a href="bar-orders.html" class="bg-black/50 hover:bg-black text-white font-bold py-3 px-6 rounded-xl border border-white/30 transition flex items-center gap-2 text-sm">
-          <i data-lucide="wine" class="w-4 h-4"></i> Bar Board
-        </a>
-      </div>
-
-      <button onclick="acknowledgeAlerts()" class="mt-12 bg-white text-red-600 hover:bg-red-50 font-black py-4 px-12 rounded-full text-xl transition shadow-2xl flex items-center gap-2 transform hover:scale-105 active:scale-95">
+      <button onclick="acknowledgeAlerts()" class="mt-12 bg-white text-red-600 hover:bg-red-50 font-black py-4 px-12 rounded-full text-xl transition shadow-2xl flex items-center gap-2">
         <i data-lucide="check" class="w-6 h-6"></i> SILENCE ALARM
       </button>
     </div>
-
-    <div class="absolute bottom-4 w-full text-center">
-      <p class="text-xs text-slate-500 font-medium tracking-wider uppercase">Powered by DEKY</p>
-    </div>
-
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) { 
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) { registration.unregister(); }
-      });
-    }
-
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    // Determine Mode
     const urlParams = new URLSearchParams(window.location.search);
     const isIframeMode = urlParams.get('mode') === 'banner';
+    const userRole = urlParams.get('role') || 'all';
 
     let isMonitoring = false;
     let voiceInterval = null;
     let currentPendingCount = 0;
     let isAcknowledged = false;
 
-    // Initialize UI based on mode
     if (isIframeMode) {
       document.body.classList.add('iframe-mode');
       document.getElementById('standalone-container').style.display = 'none';
+      
+      // If they tap the banner, acknowledge it so the alarm stops
+      document.getElementById('iframe-banner').addEventListener('click', () => {
+          isAcknowledged = true;
+          stopVoice();
+      });
     } else {
       document.getElementById('sound-unlock-overlay').style.display = 'flex';
     }
@@ -173,7 +119,7 @@
     function enableStandaloneMonitor() {
       document.getElementById('sound-unlock-overlay').style.display = 'none';
       isMonitoring = true;
-      speakAlert(); // Unlock audio context on user click
+      speakAlert();
       checkAlerts(); 
       setInterval(checkAlerts, 5000); 
     }
@@ -186,22 +132,20 @@
       document.getElementById('standby-screen').classList.remove('hidden');
     }
 
-    // ==========================================
-    // TEXT-TO-SPEECH LOGIC (Deep Voice)
-    // ==========================================
+    // LOUD, DEEP, URGENT VOICE
     function speakAlert() {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       
-      const utterance = new SpeechSynthesisUtterance("New orders. Check the system.");
+      const utterance = new SpeechSynthesisUtterance("Attention. New order waiting. Please check the system.");
       const voices = window.speechSynthesis.getVoices();
       const maleVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David') || v.name.includes('Google UK English Male'));
       
       if (maleVoice) utterance.voice = maleVoice;
       
-      utterance.pitch = 0.6; // Deep voice
-      utterance.rate = 0.9;  
-      utterance.volume = 1.0;
+      utterance.pitch = 0.5;   // Even deeper
+      utterance.rate = 1.0;    // Normal speed (so it's clear)
+      utterance.volume = 1.0;  // Max volume
       
       window.speechSynthesis.speak(utterance);
     }
@@ -209,26 +153,31 @@
     function startVoice() {
       if (voiceInterval) return;
       speakAlert();
-      voiceInterval = setInterval(speakAlert, 5000); // Repeat every 5 seconds
+      // Repeats every 3 seconds instead of 5 (More urgent)
+      voiceInterval = setInterval(speakAlert, 3000);
     }
 
     function stopVoice() {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-      if (voiceInterval) {
-        clearInterval(voiceInterval);
-        voiceInterval = null;
-      }
+      if (voiceInterval) { clearInterval(voiceInterval); voiceInterval = null; }
     }
 
     async function checkAlerts() {
       if (!isIframeMode && !isMonitoring) return;
 
-      // FILTERED QUERY: We ONLY care about actual Food/Drink orders.
-      // We explicitly exclude 'Shift Handover' and 'Porter Request' so the alarm doesn't go off for them.
-      const { data: pendingOrders, error } = await db.from('guest_orders')
-        .select('id, department')
-        .eq('status', 'Pending')
-        .in('department', ['Bar', 'Kitchen', 'Food']); 
+      let query = db.from('guest_orders').select('id, department').eq('status', 'Pending');
+
+      if (userRole === 'barman' || userRole === 'bar') {
+        query = query.eq('department', 'Bar');
+      } else if (userRole === 'chef' || userRole === 'kitchen') {
+        query = query.in('department', ['Kitchen', 'Food']);
+      } else if (userRole === 'waitress') {
+        query = query.in('department', ['Kitchen', 'Food', 'Bar']);
+      } else {
+        query = query.in('department', ['Bar', 'Kitchen', 'Food']);
+      }
+
+      const { data: pendingOrders, error } = await query;
 
       if (error) {
         console.error("Alert Query Error:", error);
@@ -237,9 +186,6 @@
 
       const newCount = pendingOrders ? pendingOrders.length : 0;
 
-      // ==========================================
-      // MODE 1: DASHBOARD BANNER (IFRAME)
-      // ==========================================
       if (isIframeMode) {
         const banner = document.getElementById('iframe-banner');
         const bannerText = document.getElementById('iframe-banner-text');
@@ -248,31 +194,30 @@
           banner.classList.remove('hidden');
           bannerText.textContent = `${newCount} NEW ORDER${newCount > 1 ? 'S' : ''} WAITING! TAP TO VIEW`;
           
-          if (newCount > currentPendingCount) {
-            speakAlert();
+          // If count increased, or it hasn't been acknowledged yet, start the alarm
+          if (newCount > currentPendingCount || !isAcknowledged) {
+             startVoice();
           }
         } else {
           banner.classList.add('hidden');
+          // If all orders are attended to (0 pending), reset and stop alarm
+          if (currentPendingCount > 0) {
+              isAcknowledged = false;
+              stopVoice();
+          }
         }
         currentPendingCount = newCount;
         return;
       }
 
-      // ==========================================
-      // MODE 2: STANDALONE FULL SCREEN
-      // ==========================================
+      // Standalone mode logic
       if (newCount > 0) {
         if (newCount > currentPendingCount || !isAcknowledged) {
           isAcknowledged = false; 
-          
           document.getElementById('standby-screen').classList.add('hidden');
           document.getElementById('alert-screen').classList.remove('hidden');
           document.getElementById('alert-count').textContent = `${newCount} PENDING`;
-          
-          if (!document.body.classList.contains('blink-active')) {
-            document.body.classList.add('blink-active');
-          }
-          
+          if (!document.body.classList.contains('blink-active')) document.body.classList.add('blink-active');
           startVoice();
         }
       } else {
@@ -282,7 +227,6 @@
         stopVoice();
         isAcknowledged = false; 
       }
-
       currentPendingCount = newCount;
     }
 
