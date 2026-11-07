@@ -39,9 +39,9 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- RED BLINKER IFRAME OVERLAY -->
+  <!-- RED BLINKER IFRAME OVERLAY (With Cache Buster) -->
   <div id="global-alert-container" class="fixed top-0 left-0 right-0 z-[99999] pointer-events-none w-full h-[60px]">
-    <iframe src="live-alerts.html?mode=banner" class="w-full h-full pointer-events-auto border-none" scrolling="no" style="overflow:hidden;"></iframe>
+    <iframe id="alert-iframe" src="live-alerts.html?mode=banner" class="w-full h-full pointer-events-auto border-none" scrolling="no" style="overflow:hidden;"></iframe>
   </div>
 
   <!-- PUSH MAIN CONTENT DOWN SO NAV ISN'T HIDDEN BY IFRAME -->
@@ -126,6 +126,10 @@
         if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
           currentDept = (currentRole === 'barman' || currentRole === 'bar') ? 'Bar' : (currentRole === 'waitress' ? 'Waitress' : 'Kitchen');
           
+          // Tell the iframe who is logged in so it filters correctly (Added timestamp to bust Vercel cache)
+          const iframe = document.getElementById('alert-iframe');
+          iframe.src = `live-alerts.html?mode=banner&role=${currentRole}&t=${new Date().getTime()}`;
+
           document.body.classList.add('dark-theme');
           document.getElementById('nav-brand').classList.add('text-white');
           document.getElementById('nav-welcome').classList.add('text-white');
@@ -163,11 +167,11 @@
             queryDept = ['Bar'];
         }
         
-        // NOW FETCHING BOTH PENDING AND PREPARING
+        // FETCH BOTH PENDING AND PREPARING
         const { data: orders } = await db.from('guest_orders')
             .select('*')
             .in('department', queryDept)
-            .in('status', ['Pending', 'Preparing']) 
+            .in('status', ['Pending', 'Preparing', 'Ready']) 
             .order('created_at', { ascending: true });
 
         if (!orders || orders.length === 0) {
@@ -184,29 +188,49 @@
               }
             } catch(e) {}
 
-            // Determine status colors and buttons based on role and department
-            let badgeColor = order.status === 'Pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400';
+            let badgeColor = 'bg-slate-700 text-slate-300';
+            if (order.status === 'Pending') badgeColor = 'bg-amber-500/20 text-amber-400';
+            if (order.status === 'Preparing') badgeColor = 'bg-blue-500/20 text-blue-400';
+            if (order.status === 'Ready') badgeColor = 'bg-emerald-500/20 text-emerald-400';
+
             let actionButtons = '';
 
-            if (order.status === 'Pending') {
-                if (currentRole === 'waitress' || (currentDept === 'Kitchen' && (order.department === 'Kitchen' || order.department === 'Food'))) {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg shadow-amber-500/20">Start Preparing</button>`;
+            // WAITRESS CONTROLS
+            if (currentRole === 'waitress') {
+                if (order.status === 'Pending') {
+                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
                 }
-                if (currentRole === 'waitress' || currentDept === 'Bar') {
-                     actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg shadow-emerald-500/20">Mark Ready (Skip Prep)</button>`;
+                if (order.status === 'Preparing') {
+                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
                 }
-            } else if (order.status === 'Preparing') {
-                badgeColor = 'bg-blue-500/20 text-blue-400';
-                if (currentRole === 'waitress' || currentDept === 'Bar' || currentDept === 'Kitchen') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg shadow-emerald-500/20">Mark Ready</button>`;
+                if (order.status === 'Ready') {
+                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>`;
+                }
+            } 
+            // BARMAN CONTROLS (Bar only)
+            else if (currentRole === 'barman' || currentRole === 'bar') {
+                if (order.status === 'Pending') {
+                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
+                }
+                if (order.status === 'Preparing') {
+                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
+                }
+                if (order.status === 'Ready') {
+                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>`;
+                }
+            }
+            // CHEF CONTROLS (Kitchen only)
+            else if (currentRole === 'chef' || currentRole === 'kitchen') {
+                if (order.status === 'Pending') {
+                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
+                }
+                if (order.status === 'Preparing') {
+                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
                 }
             }
 
-            // If Waitress or Barman, they can mark "Delivered" (Completed) if it's already Ready
-            // (We don't show Ready on dashboard queue anymore, but just in case)
-            
             return `
-                <div class="glass-card p-5 rounded-2xl border-l-4 ${order.status === 'Pending' ? 'border-amber-500' : 'border-blue-500'} shadow-lg fade-in flex flex-col justify-between h-full">
+                <div class="glass-card p-5 rounded-2xl border-l-4 ${order.status === 'Pending' ? 'border-amber-500' : order.status === 'Preparing' ? 'border-blue-500' : 'border-emerald-500'} shadow-lg fade-in flex flex-col justify-between h-full">
                     <div>
                         <div class="flex justify-between items-start mb-4 pb-3 border-b border-slate-700">
                             <div>
@@ -219,7 +243,6 @@
                     </div>
                     <div class="flex flex-col gap-2 mt-4">
                         ${actionButtons}
-                        ${order.status === 'Ready' ? `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>` : ''}
                     </div>
                 </div>
             `;
