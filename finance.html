@@ -468,20 +468,21 @@
       document.getElementById('new-item-name').value = ''; document.getElementById('new-item-qty').value = ''; document.getElementById('add-stock-modal').classList.add('hidden'); alert(`✅ ${name} added/updated successfully.`); loadKitchenStock();
     }
 
-    // --- FIXED: DAILY PORTIONS WITH STRICT TIMEZONE ---
+    // --- FIXED: DAILY PORTIONS USING POS_ORDERS FIRST ---
     async function loadDailyPortions() {
       const dateInput = document.getElementById('portion-date');
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
       
       const selectedDate = dateInput.value; 
+      // Use strict local time matching for the day
       const startOfDay = new Date(`${selectedDate}T00:00:00`).toISOString();
-      const endOfDay = new Date(`${selectedDate}T23:59:59`).toISOString();
+      const endOfDay = new Date(`${selectedDate}T23:59:59.999Z`).toISOString();
       
       const list = document.getElementById('daily-portions-list'); 
       list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Loading sold portions...</p>';
 
       // 1. Get all POS Orders for this day that are Kitchen/Waitress
-      const { data: posOrders } = await db.from('pos_orders').select('id').gte('created_at', startOfDay).lte('created_at', endOfDay).in('department', ['Kitchen', 'Waitress']);
+      const { data: posOrders } = await db.from('pos_orders').select('id').gte('created_at', startOfDay).lte('created_at', endOfDay).in('department', ['Kitchen', 'Waitress', 'Food']);
       
       if (!posOrders || posOrders.length === 0) { 
           list.innerHTML = '<p class="text-center text-slate-500 py-4">No kitchen sales recorded for this day.</p>'; 
@@ -512,7 +513,7 @@
       list.innerHTML = html;
     }
 
-    // --- FIXED: PROTEIN SALES WITH STRICT TIMEZONE ---
+    // --- FIXED: PROTEIN SALES USING POS_ORDERS FIRST ---
     async function loadProteinSales() {
       const monthInput = document.getElementById('protein-month');
       if (!monthInput.value) { const now = new Date(); monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; }
