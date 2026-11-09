@@ -127,6 +127,17 @@
     <!-- ================= DARK MODE VIEW (F&B STAFF) ================= -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
       
+      <!-- NEW LOW STOCK ALERT BANNER -->
+      <div id="low-stock-banner" class="hidden bg-amber-500 text-black p-4 rounded-2xl shadow-lg flex items-start gap-3 fade-in">
+        <div class="bg-black/10 p-2 rounded-full flex-shrink-0">
+            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        </div>
+        <div class="flex-1">
+            <h3 class="font-black text-sm uppercase tracking-wide">Low Stock Alert!</h3>
+            <p id="low-stock-items" class="text-xs font-bold mt-1">Loading items...</p>
+        </div>
+      </div>
+
       <!-- LIVE ORDERS QUEUE -->
       <div id="dashboard-live-orders" class="hidden fade-in">
         <div class="glass-card p-5 rounded-2xl border border-slate-700/50">
@@ -236,7 +247,6 @@
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
-    // SCREEN WAKE LOCK LOGIC
     let wakeLock = null;
     async function requestWakeLock() {
       try {
@@ -313,10 +323,12 @@
           document.getElementById('duty-title').textContent = title;
           loadDarkOpsData(currentRole);
           loadLiveDashboardOrders(); 
+          loadLowStock();
           
           orderCheckInterval = setInterval(() => {
               loadLiveDashboardOrders();
-          }, 5000);
+              loadLowStock();
+          }, 10000);
         }
         else {
           document.getElementById('standard-view').classList.remove('hidden');
@@ -328,6 +340,33 @@
       } catch (err) {
         console.error(err);
       }
+    }
+
+    // ==========================================
+    // LOW STOCK LOGIC (NEW)
+    // ==========================================
+    async function loadLowStock() {
+        if (!currentDept) return;
+        
+        let queryDept;
+        if (currentDept === 'Waitress') queryDept = ['Kitchen', 'Food', 'Bar'];
+        else if (currentDept === 'Kitchen') queryDept = ['Kitchen', 'Food'];
+        else queryDept = ['Bar'];
+
+        const { data: lowStock } = await db.from('inventory')
+            .select('*')
+            .in('department', queryDept)
+            .lte('stock_quantity', 5); // 5 or less is low
+
+        const banner = document.getElementById('low-stock-banner');
+        const list = document.getElementById('low-stock-items');
+
+        if (lowStock && lowStock.length > 0) {
+            banner.classList.remove('hidden');
+            list.textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(' | ');
+        } else {
+            banner.classList.add('hidden');
+        }
     }
 
     // RECEPTIONIST LOGIC
@@ -370,8 +409,6 @@
 
     async function loadReceptionistData() {
       const { data: rooms } = await db.from('rooms').select('*').order('room_number');
-      
-      // FETCH ANY BOOKING THAT IS NOT CHECKED OUT
       const { data: bookings } = await db.from('bookings').select('*, guests(full_name)').in('status', ['Checked In', 'Reserved']);
       
       let stats = { Available: 0, Occupied: 0, Reserved: 0, Dirty: 0, Maintenance: 0 };
@@ -647,31 +684,18 @@
     }
 
     // ==========================================
-    // F&B LOGIC (RESTORED)
+    // F&B LOGIC
     // ==========================================
-    async function checkNewOrders() {
-        if (!currentDept) return;
-        // Since the banner is handled by the iframe, we only need to refresh the queue here
-    }
-
+    async function checkNewOrders() { }
     async function loadLiveDashboardOrders() {
         if (!currentDept) return;
         const list = document.getElementById('dashboard-orders-list');
-        
         let queryDept;
-        if (currentDept === 'Waitress') {
-            queryDept = ['Kitchen', 'Food', 'Bar'];
-        } else if (currentDept === 'Kitchen') {
-            queryDept = ['Kitchen', 'Food'];
-        } else {
-            queryDept = ['Bar'];
-        }
+        if (currentDept === 'Waitress') queryDept = ['Kitchen', 'Food', 'Bar'];
+        else if (currentDept === 'Kitchen') queryDept = ['Kitchen', 'Food'];
+        else queryDept = ['Bar'];
         
-        const { data: orders } = await db.from('guest_orders')
-            .select('*')
-            .in('department', queryDept)
-            .in('status', ['Pending', 'Preparing', 'Ready']) 
-            .order('created_at', { ascending: true });
+        const { data: orders } = await db.from('guest_orders').select('*').in('department', queryDept).in('status', ['Pending', 'Preparing', 'Ready']).order('created_at', { ascending: true });
 
         if (!orders || orders.length === 0) {
             list.innerHTML = '<p class="text-sm text-slate-400 py-6 col-span-full text-center">No active orders right now.</p>';
@@ -681,30 +705,23 @@
         list.innerHTML = orders.map(order => {
             let itemsHtml = '';
             try {
-              const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-              if (Array.isArray(items)) {
-                itemsHtml = items.map(item => `<div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-white font-bold text-sm">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join('');
-              }
+                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                if (Array.isArray(items)) {
+                    itemsHtml = items.map(item => `<div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-white font-bold text-sm">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join('');
+                }
             } catch(e) {}
 
             let badgeColor = 'bg-slate-700 text-slate-300';
             if (order.status === 'Pending') badgeColor = 'bg-amber-500/20 text-amber-400';
             if (order.status === 'Preparing') badgeColor = 'bg-blue-500/20 text-blue-400';
             if (order.status === 'Ready') badgeColor = 'bg-emerald-500/20 text-emerald-400';
-
             let actionButtons = '';
 
-            if (currentRole === 'waitress') {
+            if (currentRole === 'waitress' || currentRole === 'barman' || currentRole === 'bar') {
                 if (order.status === 'Pending') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
                 if (order.status === 'Preparing') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
                 if (order.status === 'Ready') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>`;
-            } 
-            else if (currentRole === 'barman' || currentRole === 'bar') {
-                if (order.status === 'Pending') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
-                if (order.status === 'Preparing') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
-                if (order.status === 'Ready') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>`;
-            }
-            else if (currentRole === 'chef' || currentRole === 'kitchen') {
+            } else if (currentRole === 'chef' || currentRole === 'kitchen') {
                 if (order.status === 'Pending') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
                 if (order.status === 'Preparing') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
             }
@@ -728,10 +745,7 @@
         lucide.createIcons();
     }
 
-    async function updateOrderStatus(orderId, newStatus) {
-      await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
-      loadLiveDashboardOrders();
-    }
+    async function updateOrderStatus(orderId, newStatus) { await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId); loadLiveDashboardOrders(); }
 
     async function loadDarkOpsData(role) {
       const today = new Date().toISOString().split('T')[0];
@@ -794,9 +808,7 @@
       lucide.createIcons();
     }
 
-    // ==========================================
-    // STANDARD VIEW (SUPER ADMIN / MANAGER)
-    // ==========================================
+    // STANDARD VIEW
     function renderStandardOperations(role) {
       const grid = document.getElementById('std-operations-grid'); let buttons = '';
       const btn = (href, icon, color, bg, label) => `<a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-700/50 active:scale-95 transition-all shadow-sm group cursor-pointer"><div class="${bg} p-2.5 sm:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"><i data-lucide="${icon}" class="w-5 h-5 sm:w-6 sm:h-6 ${color}"></i></div><span class="text-[10px] sm:text-xs font-medium text-slate-300 text-center leading-tight">${label}</span></a>`;
