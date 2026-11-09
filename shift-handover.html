@@ -194,43 +194,73 @@
       const list = document.getElementById('opening-stock-list');
       list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading inventory...</p>';
 
-      const { data: items, error } = await db.from('inventory')
-        .select('*')
-        .in('department', inventoryDept)
-        .order('item_name');
+      try {
+          // 1. Fetch ALL items from inventory for this station
+          const { data: invItems } = await db.from('inventory').select('*').in('department', inventoryDept);
+          
+          // 2. Fetch ALL items from the Manager Menu (menu_items) for this station
+          const { data: menuItems } = await db.from('menu_items').select('*').in('category', inventoryDept);
 
-      if (error) {
-          list.innerHTML = `<p class="text-xs text-red-400 text-center py-2">Error: ${error.message}</p>`;
-          return;
-      }
+          let finalList = [];
 
-      if (!items || items.length === 0) {
-        list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">No items found in inventory for this station.</p>';
-        return;
-      }
+          if (inventoryDept.includes('Bar')) {
+              // For Bar, we only use inventory as the source of truth
+              finalList = invItems || [];
+          } else {
+              // For Kitchen/Waitress, we combine both to ensure ALL food items appear
+              const combinedMap = new Map();
 
-      const uniqueItems = [];
-      const map = new Map();
-      for (const item of items) {
-          if(!map.has(item.item_name)){
-              map.set(item.item_name, true);
-              uniqueItems.push(item);
+              // Add all items from Manager Menu (this ensures all items show up)
+              if (menuItems) {
+                  menuItems.forEach(m => {
+                      combinedMap.set(m.name.toLowerCase(), {
+                          id: m.id, // We use menu ID if it doesn't exist in inventory
+                          item_name: m.name,
+                          stock_quantity: 0, // Default to 0 since it hasn't been counted yet
+                          is_menu_item: true
+                      });
+                  });
+              }
+
+              // Overwrite/Add items from Inventory (this gives us the actual stock numbers)
+              if (invItems) {
+                  invItems.forEach(i => {
+                      combinedMap.set(i.item_name.toLowerCase(), {
+                          id: i.id, 
+                          item_name: i.item_name,
+                          stock_quantity: i.stock_quantity,
+                          is_menu_item: false
+                      });
+                  });
+              }
+
+              finalList = Array.from(combinedMap.values());
           }
-      }
-      inventoryItems = uniqueItems;
 
-      list.innerHTML = uniqueItems.map(item => `
-        <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-          <div>
-            <p class="text-xs font-bold text-white">${item.item_name}</p>
-            <p class="text-[10px] text-slate-400">System: ${item.stock_quantity}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <input type="number" id="open-stock-${item.id}" value="${item.stock_quantity}" class="w-16 bg-slate-900 border border-slate-600 text-white text-sm p-2 rounded text-center focus:border-emerald-500 outline-none" oninput="checkDiscrepancy('${item.id}', ${item.stock_quantity})">
-            <span id="diff-${item.id}" class="text-[10px] font-bold w-12 text-right">✅ OK</span>
-          </div>
-        </div>
-      `).join('');
+          if (finalList.length === 0) {
+            list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">No items found for this station.</p>';
+            return;
+          }
+
+          finalList.sort((a, b) => a.item_name.localeCompare(b.item_name));
+          inventoryItems = finalList;
+
+          list.innerHTML = finalList.map(item => `
+            <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+              <div>
+                <p class="text-xs font-bold text-white">${item.item_name}</p>
+                <p class="text-[10px] text-slate-400">System: ${item.stock_quantity}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="number" id="open-stock-${item.id}" value="${item.stock_quantity}" class="w-16 bg-slate-900 border border-slate-600 text-white text-sm p-2 rounded text-center focus:border-emerald-500 outline-none" oninput="checkDiscrepancy('${item.id}', ${item.stock_quantity})">
+                <span id="diff-${item.id}" class="text-[10px] font-bold w-12 text-right">✅ OK</span>
+              </div>
+            </div>
+          `).join('');
+
+      } catch (err) {
+          list.innerHTML = `<p class="text-xs text-red-400 text-center py-2">Error: ${err.message}</p>`;
+      }
     }
 
     function checkDiscrepancy(itemId, systemQty) {
@@ -269,7 +299,7 @@
               inputEl.classList.add('border-red-500');
           } else {
               inputEl.classList.remove('border-red-500');
-              stockUpdates.push({ id: item.id, qty: Number(inputEl.value) });
+              stockUpdates.push({ id: item.id, qty: Number(inputEl.value), isMenuItem: item.is_menu_item, name: item.item_name });
           }
       }
 
@@ -284,7 +314,16 @@
 
       try {
         for (const update of stockUpdates) {
-            await db.from('inventory').update({ stock_quantity: update.qty }).eq('id', update.id);
+            if (update.isMenuItem) {
+                await db.from('inventory').insert({
+                    item_name: update.name,
+                    department: 'Kitchen',
+                    stock_quantity: update.qty,
+                    price: 0
+                });
+            } else {
+                await db.from('inventory').update({ stock_quantity: update.qty }).eq('id', update.id);
+            }
         }
 
         const { error } = await db.from('shifts').insert({

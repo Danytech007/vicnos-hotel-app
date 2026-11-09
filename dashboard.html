@@ -247,6 +247,7 @@
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
+    // SCREEN WAKE LOCK LOGIC
     let wakeLock = null;
     async function requestWakeLock() {
       try {
@@ -343,20 +344,24 @@
     }
 
     // ==========================================
-    // LOW STOCK LOGIC (NEW)
+    // LOW STOCK LOGIC
     // ==========================================
     async function loadLowStock() {
         if (!currentDept) return;
         
         let queryDept;
-        if (currentDept === 'Waitress') queryDept = ['Kitchen', 'Food', 'Bar'];
-        else if (currentDept === 'Kitchen') queryDept = ['Kitchen', 'Food'];
-        else queryDept = ['Bar'];
+        if (currentDept === 'Waitress') {
+            queryDept = ['Kitchen', 'Food']; // Waitress ONLY checks Kitchen
+        } else if (currentDept === 'Kitchen') {
+            queryDept = ['Kitchen', 'Food'];
+        } else {
+            queryDept = ['Bar']; // Barman only checks Bar
+        }
 
         const { data: lowStock } = await db.from('inventory')
             .select('*')
             .in('department', queryDept)
-            .lte('stock_quantity', 5); // 5 or less is low
+            .lte('stock_quantity', 5);
 
         const banner = document.getElementById('low-stock-banner');
         const list = document.getElementById('low-stock-items');
