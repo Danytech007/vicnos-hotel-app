@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos - Management & Finance Portal</title>
+  
+  <script>
+    // FORCE CACHE CLEAR
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -461,13 +474,15 @@
       const dateInput = document.getElementById('portion-date');
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
       
-      // FIX: Use the raw string for exact day matching
       const selectedDate = dateInput.value; 
+      const startOfDay = new Date(`${selectedDate}T00:00:00`).toISOString();
+      const endOfDay = new Date(`${selectedDate}T23:59:59`).toISOString();
+      
       const list = document.getElementById('daily-portions-list'); 
       list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Loading sold portions...</p>';
 
       // 1. Get all POS Orders for this day that are Kitchen/Waitress
-      const { data: posOrders } = await db.from('pos_orders').select('id').gte('created_at', `${selectedDate}T00:00:00`).lte('created_at', `${selectedDate}T23:59:59`).in('department', ['Kitchen', 'Waitress']);
+      const { data: posOrders } = await db.from('pos_orders').select('id').gte('created_at', startOfDay).lte('created_at', endOfDay).in('department', ['Kitchen', 'Waitress']);
       
       if (!posOrders || posOrders.length === 0) { 
           list.innerHTML = '<p class="text-center text-slate-500 py-4">No kitchen sales recorded for this day.</p>'; 
@@ -503,11 +518,9 @@
       const monthInput = document.getElementById('protein-month');
       if (!monthInput.value) { const now = new Date(); monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; }
       
-      // FIX: Use strict start/end strings for the month
       const [year, month] = monthInput.value.split('-'); 
-      const startDate = `${year}-${month}-01T00:00:00`; 
-      const nextMonth = new Date(year, month, 1);
-      const endDate = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01T00:00:00`;
+      const startDate = new Date(year, month - 1, 1).toISOString(); 
+      const endDate = new Date(year, month, 1).toISOString();
       
       const list = document.getElementById('protein-sales-list'); 
       list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Calculating protein sales...</p>';

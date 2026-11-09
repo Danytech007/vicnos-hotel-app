@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos - Waitress POS</title>
   
+  <script>
+    // FORCE CACHE CLEAR
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -92,7 +104,7 @@
   <!-- TAB 2: LIVE BOARD -->
   <div id="tab-board" class="hidden flex-1 overflow-y-auto hide-scroll fade-in w-full max-w-6xl mx-auto p-4 pb-24">
     
-    <!-- NEW: Waitress Remittance & Debt Summary -->
+    <!-- Waitress Remittance & Debt Summary -->
     <div class="grid grid-cols-3 gap-3 mb-4">
       <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700 text-center">
         <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">My Cash Sales</p>
@@ -140,7 +152,6 @@
       </div>
 
       <div class="p-4 border-t border-slate-700/50 bg-slate-800/80 shrink-0 pb-8">
-        
         <div class="flex justify-between items-center mb-4">
           <span class="text-slate-400 font-medium">Total:</span>
           <span id="cart-total" class="text-4xl font-black text-white">₦0</span>
@@ -221,29 +232,6 @@
 
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
-
-    // ==========================================
-    // SCREEN WAKE LOCK LOGIC
-    // ==========================================
-    let wakeLock = null;
-    async function requestWakeLock() {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
-          console.log('Screen Wake Lock is active.');
-        }
-      } catch (err) { console.warn(`Wake Lock Error: ${err.name}, ${err.message}`); }
-    }
-    document.addEventListener('visibilitychange', async () => {
-      if (wakeLock !== null && document.visibilityState === 'visible') {
-        await requestWakeLock();
-      }
-    });
-    document.body.addEventListener('click', async () => {
-        if (!wakeLock) { await requestWakeLock(); }
-    }, { once: true });
-    requestWakeLock();
-    // ==========================================
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
