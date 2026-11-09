@@ -48,7 +48,7 @@
 
   <main class="p-4 max-w-4xl mx-auto mt-4">
     
-    <!-- OVERVIEW TAB -->
+    <!-- 1. OVERVIEW TAB -->
     <div id="section-overview" class="tab-content block fade-in">
       <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="w-full md:w-auto"><label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Search Audit Date</label><input type="date" id="audit-date" onchange="loadOverview()" class="bg-slate-900 border border-slate-600 p-2 rounded-lg text-white outline-none text-sm w-full"></div>
@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <!-- SHIFT APPROVALS TAB -->
+    <!-- 2. SHIFT APPROVALS TAB -->
     <div id="section-approvals" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="check-square" class="w-5 h-5 text-indigo-400"></i> Pending Shift Handovers</h2>
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <!-- GUEST FOLIOS TAB -->
+    <!-- 3. GUEST FOLIOS TAB -->
     <div id="section-folios" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
@@ -92,10 +92,10 @@
       </div>
     </div>
 
-    <!-- KITCHEN STOCK TAB -->
+    <!-- 4. KITCHEN STOCK TAB -->
     <div id="section-kstock" class="tab-content hidden fade-in space-y-6">
       
-      <!-- Low Stock Alerts (Added here for quick restocking) -->
+      <!-- Low Stock Alerts -->
       <div id="kstock-low-alert" class="hidden bg-red-500/10 border border-red-500/30 p-4 rounded-2xl mb-4">
         <h3 class="text-red-400 font-bold text-sm mb-2 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Restock Needed (Below 10)</h3>
         <div id="kstock-low-list" class="flex flex-wrap gap-2"></div>
@@ -137,7 +137,7 @@
       </div>
     </div>
 
-    <!-- STAFF ACTIVITY TAB -->
+    <!-- 5. STAFF ACTIVITY TAB -->
     <div id="section-activity" class="tab-content hidden fade-in space-y-6">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-blue-400"></i> Staff Currently On Duty</h2>
@@ -149,7 +149,7 @@
       </div>
     </div>
 
-    <!-- STOCK REQUESTS TAB -->
+    <!-- 6. STOCK REQUESTS TAB -->
     <div id="section-stockreq" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="file-plus" class="w-5 h-5 text-indigo-400"></i> Pending Stock Requests</h2>
@@ -157,17 +157,17 @@
       </div>
     </div>
 
-    <!-- BAD STOCK APPROVALS TAB -->
+    <!-- 7. BAD STOCK APPROVALS TAB -->
     <div id="section-badstock" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50"><h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="alert-octagon" class="w-5 h-5 text-red-400"></i> Pending Bad Stock</h2><div id="badstock-list" class="space-y-4"><p class="text-center text-slate-500 text-sm animate-pulse">Loading reports...</p></div></div>
     </div>
 
-    <!-- TRANSFERS TAB -->
+    <!-- 8. TRANSFERS TAB -->
     <div id="section-transfers" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50"><h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="arrow-right-left" class="w-5 h-5 text-orange-400"></i> Storekeeper Transfers (Audit Trail)</h2><div id="transfers-list" class="space-y-3"><p class="text-center text-slate-500 text-sm animate-pulse">Loading transfer history...</p></div></div>
     </div>
 
-    <!-- CREDITS TAB -->
+    <!-- 9. CREDITS TAB -->
     <div id="section-credits" class="tab-content hidden fade-in">
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50"><h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Unpaid Guest Credits (Rooms)</h2><div id="credits-list" class="space-y-3"><p class="text-center text-slate-500 text-sm animate-pulse">Loading guest credits...</p></div></div>
     </div>
@@ -203,8 +203,20 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lucide.createIcons();
 
-    window.history.replaceState({ tab: 'overview' }, '', '#overview');
-    window.onpopstate = function(event) { if (event.state && event.state.tab) switchTab(event.state.tab, false); else switchTab('overview', false); };
+    // Handle URL hash on load (from the dashboard buttons)
+    window.addEventListener('DOMContentLoaded', () => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash && ['overview', 'approvals', 'folios', 'kstock', 'activity', 'stockreq', 'badstock', 'transfers', 'credits'].includes(hash)) {
+            switchTab(hash, false);
+        } else {
+            switchTab('overview', false);
+        }
+    });
+
+    window.onpopstate = function(event) { 
+        if (event.state && event.state.tab) switchTab(event.state.tab, false); 
+        else switchTab('overview', false); 
+    };
 
     function switchTab(tabId, pushHistory = true) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -212,6 +224,7 @@
         document.querySelectorAll('.tab-btn').forEach(btn => { btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition'; if(['tab-btn-approvals', 'tab-btn-badstock', 'tab-btn-stockreq'].includes(btn.id)) btn.classList.add('flex', 'items-center', 'gap-2'); });
         document.getElementById(`tab-btn-${tabId}`).className = 'tab-btn bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition';
         if(['approvals', 'badstock', 'stockreq'].includes(tabId)) document.getElementById(`tab-btn-${tabId}`).classList.add('flex', 'items-center', 'gap-2');
+        
         if (pushHistory) window.history.pushState({ tab: tabId }, '', `#${tabId}`);
 
         if (tabId === 'overview') loadOverview();
@@ -266,17 +279,15 @@
       methods.forEach(m => { const amt = payTotals[m] || 0; payList.innerHTML += `<div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700"><span class="text-sm font-bold text-slate-300 capitalize">${m.replace('_', ' ')}</span><span class="font-bold ${amt > 0 ? 'text-blue-400' : 'text-slate-500'}">₦${amt.toLocaleString()}</span></div>`; });
     }
 
+    // ... [All other functions remain the same as the previous working version]
     async function loadApprovals() {
       const list = document.getElementById('approvals-list');
       const { data: shifts, error } = await db.from('shifts').select('*').eq('status', 'Pending_Approval').order('end_time', { ascending: true });
-      
       if (error) { list.innerHTML = `<p class="text-center text-red-500 py-6">Error: ${error.message}</p>`; return; }
       if (!shifts || shifts.length === 0) { list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending shift approvals right now. 🎉</p>'; return; }
-      
       const shiftIds = shifts.map(s => s.id);
       const { data: handovers } = await db.from('shift_handovers').select('*').in('shift_id', shiftIds);
       const { data: profiles } = await db.from('profiles').select('id, full_name');
-      
       list.innerHTML = shifts.map(shift => {
         const handover = handovers?.find(h => h.shift_id === shift.id);
         const staff = profiles?.find(p => p.id === shift.user_id);
@@ -287,24 +298,15 @@
     async function loadFolios() {
       const list = document.getElementById('folios-list');
       const { data: bookings } = await db.from('bookings').select(`id, expected_check_out, rooms(room_number), guests(full_name)`).eq('status', 'Checked In');
-      
-      if (!bookings || bookings.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-500 py-6">No guests currently checked in.</p>';
-        return;
-      }
-
+      if (!bookings || bookings.length === 0) { list.innerHTML = '<p class="text-center text-slate-500 py-6">No guests currently checked in.</p>'; return; }
       const { data: charges } = await db.from('folio_charges').select('*').in('booking_id', bookings.map(b => b.id));
-
       list.innerHTML = bookings.map(b => {
         const guestCharges = charges ? charges.filter(c => c.booking_id === b.id) : [];
         const total = guestCharges.reduce((sum, c) => sum + Number(c.amount), 0);
-        
         let chargesHtml = guestCharges.map(c => `<div class="flex justify-between text-xs text-slate-400 border-b border-slate-800 py-1"><span>${c.department}: ${c.description}</span><span>₦${Number(c.amount).toLocaleString()}</span></div>`).join('');
         if (chargesHtml === '') chargesHtml = '<p class="text-xs text-slate-500 italic mt-2">No extra charges on this room yet.</p>';
-
         const checkoutDate = b.expected_check_out ? new Date(b.expected_check_out).toLocaleDateString() : 'Not Set';
         const isCheckingOutToday = b.expected_check_out === new Date().toISOString().split('T')[0];
-
         return `
           <div class="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden ${isCheckingOutToday ? 'border-orange-500/50' : ''}">
             <div class="bg-slate-800/50 p-3 flex justify-between items-center border-b border-slate-700">
@@ -315,35 +317,49 @@
                   <i data-lucide="calendar" class="w-3 h-3 inline mr-1"></i> Checkout: ${checkoutDate}
                 </p>
               </div>
-              <div class="text-right">
-                <p class="text-[10px] text-orange-400 font-bold uppercase">Current Bill</p>
-                <p class="text-lg font-black text-orange-400">₦${total.toLocaleString()}</p>
-              </div>
+              <div class="text-right"><p class="text-[10px] text-orange-400 font-bold uppercase">Current Bill</p><p class="text-lg font-black text-orange-400">₦${total.toLocaleString()}</p></div>
             </div>
-            <div class="p-3 max-h-40 overflow-y-auto hide-scroll">
-              ${chargesHtml}
-            </div>
-          </div>
-        `;
+            <div class="p-3 max-h-40 overflow-y-auto hide-scroll">${chargesHtml}</div>
+          </div>`;
       }).join('');
       lucide.createIcons();
     }
 
+    // FIXED KITCHEN STOCK TO MERGE MENU ITEMS
     async function loadKitchenStock() {
       const list = document.getElementById('kitchen-stock-list');
       const lowAlert = document.getElementById('kstock-low-alert');
       const lowList = document.getElementById('kstock-low-list');
       
-      const { data: items } = await db.from('inventory').select('*').in('department', ['Kitchen', 'Food']).order('item_name');
+      // 1. Fetch inventory items (the actual stock counts)
+      const { data: invItems } = await db.from('inventory').select('*').in('department', ['Kitchen', 'Food']);
       
-      if (!items || items.length === 0) {
+      // 2. Fetch menu items (to catch new items not yet in inventory)
+      const { data: menuItems } = await db.from('menu_items').select('*').in('category', ['Kitchen', 'Food']);
+
+      // 3. Combine them just like the Waitress page does
+      const combinedMap = new Map();
+      if (menuItems) {
+          menuItems.forEach(m => {
+              combinedMap.set(m.name.toLowerCase(), { id: m.id, item_name: m.name, stock_quantity: 0, is_menu_item: true, department: m.category });
+          });
+      }
+      if (invItems) {
+          invItems.forEach(i => {
+              combinedMap.set(i.item_name.toLowerCase(), { id: i.id, item_name: i.item_name, stock_quantity: i.stock_quantity, is_menu_item: false, department: i.department });
+          });
+      }
+
+      const finalList = Array.from(combinedMap.values()).sort((a, b) => a.item_name.localeCompare(b.item_name));
+
+      if (finalList.length === 0) {
         list.innerHTML = '<p class="col-span-full text-center text-slate-500 text-sm py-4">No kitchen items in the system yet. Click "Add Item" to create one.</p>';
         lowAlert.classList.add('hidden');
         return;
       }
 
-      // Check for Low Stock
-      const lowItems = items.filter(i => i.stock_quantity <= 10);
+      // Check for Low Stock (Below 10)
+      const lowItems = finalList.filter(i => i.stock_quantity <= 10);
       if (lowItems.length > 0) {
         lowAlert.classList.remove('hidden');
         lowList.innerHTML = lowItems.map(i => `<span class="bg-red-500/20 text-red-400 text-xs font-bold px-2 py-1 rounded border border-red-500/30">${i.item_name}: ${i.stock_quantity}</span>`).join('');
@@ -351,7 +367,7 @@
         lowAlert.classList.add('hidden');
       }
 
-      list.innerHTML = items.map(i => {
+      list.innerHTML = finalList.map(i => {
         const color = i.stock_quantity <= 10 ? 'text-red-400 border-red-500/30' : 'text-emerald-400 border-slate-700';
         return `
           <div class="bg-slate-900 p-3 rounded-xl border ${color}">
@@ -388,144 +404,58 @@
     async function loadDailyPortions() {
       const dateInput = document.getElementById('portion-date');
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-      
       const selectedDate = dateInput.value, startOfDay = new Date(selectedDate).toISOString(), endOfDay = new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString();
       const list = document.getElementById('daily-portions-list');
-      
       list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Loading sold portions...</p>';
-
-      const { data: items, error } = await db.from('pos_order_items')
-        .select('item_name, quantity, pos_orders!inner(created_at, department)')
-        .gte('pos_orders.created_at', startOfDay)
-        .lt('pos_orders.created_at', endOfDay)
-        .in('pos_orders.department', ['Kitchen', 'Waitress']);
-
-      if (error || !items || items.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-500 py-4">No kitchen sales recorded for this day.</p>';
-        return;
-      }
-
+      const { data: items, error } = await db.from('pos_order_items').select('item_name, quantity, pos_orders!inner(created_at, department)').gte('pos_orders.created_at', startOfDay).lt('pos_orders.created_at', endOfDay).in('pos_orders.department', ['Kitchen', 'Waitress']);
+      if (error || !items || items.length === 0) { list.innerHTML = '<p class="text-center text-slate-500 py-4">No kitchen sales recorded for this day.</p>'; return; }
       const aggregated = {};
-      items.forEach(i => {
-        if (!aggregated[i.item_name]) aggregated[i.item_name] = 0;
-        aggregated[i.item_name] += Number(i.quantity);
-      });
-
-      let html = '';
-      let totalPortions = 0;
-
+      items.forEach(i => { if (!aggregated[i.item_name]) aggregated[i.item_name] = 0; aggregated[i.item_name] += Number(i.quantity); });
+      let html = ''; let totalPortions = 0;
       Object.keys(aggregated).sort().forEach(itemName => {
-        const qty = aggregated[itemName];
-        totalPortions += qty;
-        html += `
-          <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700">
-            <span class="text-sm font-bold text-slate-300">${itemName}</span>
-            <span class="font-bold text-amber-400 text-lg">${qty} Portion${qty > 1 ? 's' : ''}</span>
-          </div>
-        `;
+        const qty = aggregated[itemName]; totalPortions += qty;
+        html += `<div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700"><span class="text-sm font-bold text-slate-300">${itemName}</span><span class="font-bold text-amber-400 text-lg">${qty} Portion${qty > 1 ? 's' : ''}</span></div>`;
       });
-
-      html += `
-        <div class="flex justify-between items-center bg-amber-500/10 p-4 rounded-xl border border-amber-500/30 mt-4">
-          <span class="text-sm font-bold text-amber-400 uppercase tracking-wider">Total Portions Sold</span>
-          <span class="font-black text-amber-400 text-2xl">${totalPortions}</span>
-        </div>
-      `;
-
+      html += `<div class="flex justify-between items-center bg-amber-500/10 p-4 rounded-xl border border-amber-500/30 mt-4"><span class="text-sm font-bold text-amber-400 uppercase tracking-wider">Total Portions Sold</span><span class="font-black text-amber-400 text-2xl">${totalPortions}</span></div>`;
       list.innerHTML = html;
     }
 
     async function loadProteinSales() {
       const monthInput = document.getElementById('protein-month');
-      if (!monthInput.value) {
-        const now = new Date();
-        monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      }
-
+      if (!monthInput.value) { const now = new Date(); monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; }
       const [year, month] = monthInput.value.split('-');
-      const startDate = new Date(year, month - 1, 1).toISOString();
-      const endDate = new Date(year, month, 1).toISOString();
-
-      const list = document.getElementById('protein-sales-list');
-      list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Calculating protein sales...</p>';
-
-      const { data: orderItems, error } = await db.from('pos_order_items')
-        .select('item_name, quantity, pos_orders!inner(created_at)')
-        .gte('pos_orders.created_at', startDate)
-        .lt('pos_orders.created_at', endDate);
-
-      if (error || !orderItems) {
-        list.innerHTML = '<p class="text-center text-red-500">Error loading sales data.</p>';
-        return;
-      }
-
-      const proteins = { 'Beef': 0, 'Chicken': 0, 'Turkey': 0, 'Fish': 0 };
-      let totalProteinsSold = 0;
-
+      const startDate = new Date(year, month - 1, 1).toISOString(); const endDate = new Date(year, month, 1).toISOString();
+      const list = document.getElementById('protein-sales-list'); list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Calculating protein sales...</p>';
+      const { data: orderItems, error } = await db.from('pos_order_items').select('item_name, quantity, pos_orders!inner(created_at)').gte('pos_orders.created_at', startDate).lt('pos_orders.created_at', endDate);
+      if (error || !orderItems) { list.innerHTML = '<p class="text-center text-red-500">Error loading sales data.</p>'; return; }
+      const proteins = { 'Beef': 0, 'Chicken': 0, 'Turkey': 0, 'Fish': 0 }; let totalProteinsSold = 0;
       orderItems.forEach(item => {
-        const name = item.item_name.toLowerCase();
-        const qty = Number(item.quantity) || 1;
-        
+        const name = item.item_name.toLowerCase(); const qty = Number(item.quantity) || 1;
         if (name.includes('beef')) { proteins['Beef'] += qty; totalProteinsSold += qty; }
         if (name.includes('chicken')) { proteins['Chicken'] += qty; totalProteinsSold += qty; }
         if (name.includes('turkey')) { proteins['Turkey'] += qty; totalProteinsSold += qty; }
         if (name.includes('fish')) { proteins['Fish'] += qty; totalProteinsSold += qty; }
       });
-
       let html = '';
-      
       Object.keys(proteins).forEach(p => {
         const sold = proteins[p];
-        html += `
-          <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700 mb-2">
-            <span class="text-sm font-bold text-slate-300">${p} Sold</span>
-            <span class="font-bold ${sold > 0 ? 'text-emerald-400' : 'text-slate-500'} text-lg">${sold}</span>
-          </div>
-        `;
+        html += `<div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700 mb-2"><span class="text-sm font-bold text-slate-300">${p} Sold</span><span class="font-bold ${sold > 0 ? 'text-emerald-400' : 'text-slate-500'} text-lg">${sold}</span></div>`;
       });
-
-      html += `
-        <div class="flex justify-between items-center bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/30 mt-4">
-          <span class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Total Proteins Sold</span>
-          <span class="font-black text-emerald-400 text-2xl">${totalProteinsSold}</span>
-        </div>
-      `;
-
+      html += `<div class="flex justify-between items-center bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/30 mt-4"><span class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Total Proteins Sold</span><span class="font-black text-emerald-400 text-2xl">${totalProteinsSold}</span></div>`;
       list.innerHTML = html;
     }
 
     async function loadActivity() {
       const staffList = document.getElementById('active-staff-list');
       const { data: shifts } = await db.from('shifts').select('*, profiles(full_name)').eq('status', 'Active');
-      
-      if (!shifts || shifts.length === 0) {
-        staffList.innerHTML = '<p class="text-sm text-slate-500 w-full text-center py-2">No staff currently active.</p>';
-      } else {
-        staffList.innerHTML = shifts.map(s => `
-          <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 flex items-center gap-3">
-            <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-            <div>
-              <p class="text-sm font-bold text-white">${s.profiles?.full_name || 'Unknown'}</p>
-              <p class="text-[10px] text-blue-400 uppercase font-bold">${s.department} Shift</p>
-            </div>
-          </div>
-        `).join('');
-      }
-
+      if (!shifts || shifts.length === 0) { staffList.innerHTML = '<p class="text-sm text-slate-500 w-full text-center py-2">No staff currently active.</p>'; } 
+      else { staffList.innerHTML = shifts.map(s => `<div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 flex items-center gap-3"><div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div><div><p class="text-sm font-bold text-white">${s.profiles?.full_name || 'Unknown'}</p><p class="text-[10px] text-blue-400 uppercase font-bold">${s.department} Shift</p></div></div>`).join(''); }
       const auditList = document.getElementById('night-audit-list');
       try {
         const { data: audits, error } = await db.from('night_audits').select('*').order('created_at', { ascending: false }).limit(5);
         if (error || !audits || audits.length === 0) throw new Error("No audits");
-        
-        auditList.innerHTML = audits.map(a => `
-          <div class="p-3 bg-slate-900 rounded-lg border border-slate-700">
-            <p class="font-bold text-sm text-white">Audit: ${new Date(a.created_at).toLocaleDateString()}</p>
-            <p class="text-xs text-slate-400 mt-1">Recorded</p>
-          </div>
-        `).join('');
-      } catch (e) {
-        auditList.innerHTML = '<p class="text-sm text-slate-500 text-center py-2">No recent night audits found.</p>';
-      }
+        auditList.innerHTML = audits.map(a => `<div class="p-3 bg-slate-900 rounded-lg border border-slate-700"><p class="font-bold text-sm text-white">Audit: ${new Date(a.created_at).toLocaleDateString()}</p><p class="text-xs text-slate-400 mt-1">Recorded</p></div>`).join('');
+      } catch (e) { auditList.innerHTML = '<p class="text-sm text-slate-500 text-center py-2">No recent night audits found.</p>'; }
     }
 
     async function loadStockRequests() {
@@ -598,12 +528,9 @@
       const list = document.getElementById('credits-list');
       const { data: bookings } = await db.from('bookings').select(`id, expected_check_out, rooms(room_number), guests(full_name)`).eq('status', 'Checked In');
       if (!bookings || bookings.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No active guests found.</p>';
-      
       const { data: charges } = await db.from('folio_charges').select('booking_id, amount').in('booking_id', bookings.map(b => b.id));
       if (!charges || charges.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 py-6">No outstanding credits right now.</p>';
-      
       const creditTotals = {}; charges.forEach(c => { if(!creditTotals[c.booking_id]) creditTotals[c.booking_id] = 0; creditTotals[c.booking_id] += Number(c.amount); });
-      
       list.innerHTML = '';
       Object.keys(creditTotals).forEach(bId => {
         const booking = bookings.find(b => b.id === bId); const amt = creditTotals[bId];
@@ -616,10 +543,7 @@
                 <p class="text-[10px] text-slate-400">${booking.guests.full_name}</p>
                 <p class="text-[10px] text-orange-400 mt-1"><i data-lucide="calendar" class="w-3 h-3 inline mr-1"></i> Checkout: ${checkoutDate}</p>
               </div>
-              <div class="text-right">
-                <p class="font-bold text-amber-400">₦${amt.toLocaleString()}</p>
-                <p class="text-[9px] text-slate-500 uppercase">Unpaid</p>
-              </div>
+              <div class="text-right"><p class="font-bold text-amber-400">₦${amt.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">Unpaid</p></div>
             </div>`;
         }
       });
@@ -627,7 +551,8 @@
       lucide.createIcons();
     }
 
-    loadOverview();
+    // Load initial tab based on URL hash
+    switchTab(window.location.hash.replace('#', '') || 'overview', false);
   </script>
 </body>
 </html>
