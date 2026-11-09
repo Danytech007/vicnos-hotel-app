@@ -195,34 +195,27 @@
       list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 animate-pulse">Loading inventory...</p>';
 
       try {
-          // 1. Fetch ALL items from inventory for this station
           const { data: invItems } = await db.from('inventory').select('*').in('department', inventoryDept);
-          
-          // 2. Fetch ALL items from the Manager Menu (menu_items) for this station
           const { data: menuItems } = await db.from('menu_items').select('*').in('category', inventoryDept);
 
           let finalList = [];
 
           if (inventoryDept.includes('Bar')) {
-              // For Bar, we only use inventory as the source of truth
               finalList = invItems || [];
           } else {
-              // For Kitchen/Waitress, we combine both to ensure ALL food items appear
               const combinedMap = new Map();
 
-              // Add all items from Manager Menu (this ensures all items show up)
               if (menuItems) {
                   menuItems.forEach(m => {
                       combinedMap.set(m.name.toLowerCase(), {
-                          id: m.id, // We use menu ID if it doesn't exist in inventory
+                          id: m.id, 
                           item_name: m.name,
-                          stock_quantity: 0, // Default to 0 since it hasn't been counted yet
+                          stock_quantity: 0, 
                           is_menu_item: true
                       });
                   });
               }
 
-              // Overwrite/Add items from Inventory (this gives us the actual stock numbers)
               if (invItems) {
                   invItems.forEach(i => {
                       combinedMap.set(i.item_name.toLowerCase(), {
@@ -290,7 +283,8 @@
       errorEl.classList.add('hidden');
       
       let allCounted = true;
-      let stockUpdates = [];
+      let itemsToInsert = [];
+      let itemsToUpdate = [];
       
       for (const item of inventoryItems) {
           const inputEl = document.getElementById(`open-stock-${item.id}`);
@@ -299,7 +293,19 @@
               inputEl.classList.add('border-red-500');
           } else {
               inputEl.classList.remove('border-red-500');
-              stockUpdates.push({ id: item.id, qty: Number(inputEl.value), isMenuItem: item.is_menu_item, name: item.item_name });
+              if (item.is_menu_item) {
+                  itemsToInsert.push({
+                      item_name: item.item_name,
+                      department: 'Kitchen',
+                      stock_quantity: Number(inputEl.value),
+                      price: 0
+                  });
+              } else {
+                  itemsToUpdate.push({
+                      id: item.id,
+                      stock_quantity: Number(inputEl.value)
+                  });
+              }
           }
       }
 
@@ -313,26 +319,26 @@
       btn.disabled = true;
 
       try {
-        for (const update of stockUpdates) {
-            if (update.isMenuItem) {
-                await db.from('inventory').insert({
-                    item_name: update.name,
-                    department: 'Kitchen',
-                    stock_quantity: update.qty,
-                    price: 0
-                });
-            } else {
-                await db.from('inventory').update({ stock_quantity: update.qty }).eq('id', update.id);
-            }
+        // BATCH INSERT (Instant)
+        if (itemsToInsert.length > 0) {
+            const { error: insertError } = await db.from('inventory').insert(itemsToInsert);
+            if (insertError) throw insertError;
         }
 
-        const { error } = await db.from('shifts').insert({
+        // BATCH UPDATE (Instant)
+        if (itemsToUpdate.length > 0) {
+            const { error: updateError } = await db.from('inventory').upsert(itemsToUpdate);
+            if (updateError) throw updateError;
+        }
+
+        // Create Shift
+        const { error: shiftError } = await db.from('shifts').insert({
           user_id: currentUser.id,
           department: dept,
           status: 'Active'
         });
 
-        if (error) throw error;
+        if (shiftError) throw shiftError;
 
         window.location.reload();
       } catch (err) {
