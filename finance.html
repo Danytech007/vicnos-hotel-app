@@ -6,6 +6,7 @@
   <title>Vicnos - Management & Finance Portal</title>
   
   <script>
+    // FORCE CACHE CLEAR
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) { registration.unregister(); }
@@ -474,7 +475,6 @@
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
       
       const selectedDate = dateInput.value; 
-      // Use strict local time matching for the day
       const startOfDay = new Date(`${selectedDate}T00:00:00`).toISOString();
       const endOfDay = new Date(`${selectedDate}T23:59:59.999Z`).toISOString();
       
