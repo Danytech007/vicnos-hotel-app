@@ -30,9 +30,16 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
    
     body.dark-theme { background-color: #0b1120; background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b1120 80%); color: #f8fafc; }
-    body.dark-theme nav { background-color: rgba(30, 41, 59, 0.8) !important; border-color: #334155 !important; }
-    body.dark-theme nav h1, body.dark-theme nav p { color: white !important; }
-   
+    
+    /* Premium Dark Nav for Standard View */
+    body.standard-theme { background-color: #0b1120; color: #f8fafc; }
+    body.standard-theme nav { background-color: rgba(15, 23, 42, 0.9) !important; border-color: #1e293b !important; }
+    body.standard-theme nav h1, body.standard-theme nav p { color: white !important; }
+    body.standard-theme #nav-brand { color: white !important; }
+    body.standard-theme #user-role-display { color: #cbd5e1 !important; }
+    body.standard-theme #admin-name { color: #fbbf24 !important; }
+    body.standard-theme #duty-title { color: #94a3b8 !important; }
+
     .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
     .gold-text { color: #fbbf24; }
    
@@ -56,7 +63,7 @@
 
   <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-sm px-4 py-3 flex justify-between items-center transition-all duration-300">
     <div class="flex items-center gap-3">
-      <div class="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
+      <div id="nav-icon-bg" class="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
       <div><h1 id="nav-brand" class="font-bold text-gray-900 text-lg leading-tight">Vicnos HotelStack</h1><p id="user-role-display" class="text-[10px] text-blue-600 uppercase tracking-widest font-bold">Loading...</p></div>
     </div>
     <div class="flex items-center gap-3">
@@ -171,9 +178,15 @@
 
     <!-- ================= STANDARD VIEW (SUPER ADMIN / MANAGER / ACCOUNTANT) ================= -->
     <div id="standard-view" class="hidden text-slate-200 p-4 min-h-screen bg-slate-900">
+      
+      <!-- Premium Profile Card -->
       <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden mb-8 mt-4">
-        <div class="relative z-10"><p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p><h2 id="std-admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2></div>
-        <span id="std-role-badge" class="relative z-10 bg-blue-500/20 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-500/30 tracking-wide">ROLE</span>
+        <div class="relative z-10">
+            <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p>
+            <h2 id="std-admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2>
+        </div>
+        <!-- Premium Gold Badge -->
+        <span id="std-role-badge" class="relative z-10 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-1.5 rounded-lg tracking-wide shadow-sm">ROLE</span>
       </div>
       
       <!-- PREMIUM GRID -->
@@ -335,6 +348,8 @@
           }, 10000);
         }
         else {
+          document.body.classList.add('standard-theme');
+          document.getElementById('nav-icon-bg').className = "bg-amber-500 p-2 rounded-xl text-slate-900 shadow-md shadow-amber-500/20";
           document.getElementById('standard-view').classList.remove('hidden');
           document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
           document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
@@ -817,13 +832,13 @@
     }
 
     // ==========================================
-    // STANDARD VIEW (PREMIUM ACCOUNTANT/MANAGER DESIGN)
+    // STANDARD VIEW (PREMIUM HILTON-STYLE DESIGN)
     // ==========================================
     function renderStandardOperations(role) {
       const grid = document.getElementById('std-operations-grid'); 
       let buttons = '';
 
-      // Premium Glassmorphism Button Template
+      // Premium Glassmorphism Button Template (Gold/Champagne accents)
       const btn = (href, icon, color, bg, label) => `
         <a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-4 rounded-3xl border border-slate-700/50 flex flex-col items-center justify-center gap-3 hover:bg-slate-700/60 active:scale-95 transition-all shadow-xl group cursor-pointer relative overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -834,10 +849,10 @@
         </a>`;
      
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out');
-      const orderBtn = btn('order-board.html', 'bell', 'text-orange-400 animate-pulse', 'bg-orange-500/20', 'Live Orders');
-      const auditBtn = btn('finance.html', 'bar-chart-2', 'text-emerald-400', 'bg-emerald-500/20', 'Audit & Finance');
-      const maintenanceBtn = btn('maintenance.html', 'wrench', 'text-red-400', 'bg-red-500/20', 'Maintenance');
-      const chatBtn = btn('internal-chat.html', 'message-square', 'text-emerald-400', 'bg-emerald-500/20', 'Staff Chat');
+      const orderBtn = btn('order-board.html', 'bell', 'text-amber-400 animate-pulse', 'bg-amber-500/20', 'Live Orders');
+      const auditBtn = btn('finance.html', 'bar-chart-2', 'text-amber-400', 'bg-amber-500/20', 'Audit & Finance');
+      const maintenanceBtn = btn('maintenance.html', 'wrench', 'text-rose-400', 'bg-rose-500/20', 'Maintenance');
+      const chatBtn = btn('internal-chat.html', 'message-square', 'text-amber-400', 'bg-amber-500/20', 'Staff Chat');
      
       if (role === 'super_admin') {
           buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network');
@@ -848,14 +863,14 @@
           buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit');
           buttons += maintenanceBtn;
           buttons += chatBtn;
-          buttons += btn('manage-highlights.html', 'image', 'text-pink-400', 'bg-pink-500/20', 'Manage Highlights');
+          buttons += btn('manage-highlights.html', 'image', 'text-rose-400', 'bg-rose-500/20', 'Manage Highlights');
           buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In');
           buttons += btn('checkout.html', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
           buttons += btn('guest-history.html', 'users', 'text-indigo-400', 'bg-indigo-500/20', 'Guest Directory');
           buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
           buttons += orderBtn;
-          buttons += btn('admin-menu.html', 'coffee', 'text-yellow-400', 'bg-yellow-500/20', 'Menu Manager');
-          buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
+          buttons += btn('admin-menu.html', 'coffee', 'text-amber-400', 'bg-amber-500/20', 'Menu Manager');
+          buttons += btn('payroll.html', 'banknote', 'text-emerald-400', 'bg-emerald-500/20', 'Payroll');
           buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms');
           buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff');
           buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms');
@@ -865,19 +880,18 @@
           buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal');
       }
       else if (role === 'accountant') {
-          // Premium Accountant Specific Buttons
           buttons += auditBtn;
           buttons += btn('finance.html#folios', 'door-open', 'text-orange-400', 'bg-orange-500/20', 'Guest Folios');
           buttons += btn('finance.html#kstock', 'chef-hat', 'text-indigo-400', 'bg-indigo-500/20', 'Kitchen Stock');
           buttons += btn('finance.html#activity', 'users', 'text-blue-400', 'bg-blue-500/20', 'Staff Activity');
           buttons += btn('finance.html#stockreq', 'file-plus', 'text-purple-400', 'bg-purple-500/20', 'Stock Requests');
-          buttons += btn('finance.html#badstock', 'alert-octagon', 'text-red-400', 'bg-red-500/20', 'Bad Stock');
+          buttons += btn('finance.html#badstock', 'alert-octagon', 'text-rose-400', 'bg-rose-500/20', 'Bad Stock');
           buttons += btn('finance.html#credits', 'receipt', 'text-amber-400', 'bg-amber-500/20', 'Staff Debts');
           buttons += btn('auditor.html', 'shield-alert', 'text-rose-400', 'bg-rose-500/20', 'Internal Audit');
           buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit');
           buttons += maintenanceBtn;
           buttons += chatBtn;
-          buttons += btn('payroll.html', 'banknote', 'text-green-400', 'bg-green-500/20', 'Payroll');
+          buttons += btn('payroll.html', 'banknote', 'text-emerald-400', 'bg-emerald-500/20', 'Payroll');
           buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List');
           buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
           buttons += clockBtn;
@@ -900,7 +914,7 @@
       }
       else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += chatBtn; buttons += clockBtn; }
       else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += maintenanceBtn; buttons += chatBtn; buttons += clockBtn; }
-      else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-red-400', 'bg-red-500/20', 'Security Control'); buttons += chatBtn; buttons += clockBtn; }
+      else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-rose-400', 'bg-rose-500/20', 'Security Control'); buttons += chatBtn; buttons += clockBtn; }
       else { buttons += clockBtn; buttons += chatBtn; }
 
       grid.innerHTML = buttons; lucide.createIcons();
