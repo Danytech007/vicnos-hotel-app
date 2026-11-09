@@ -91,6 +91,23 @@
 
   <!-- TAB 2: LIVE BOARD -->
   <div id="tab-board" class="hidden flex-1 overflow-y-auto hide-scroll fade-in w-full max-w-6xl mx-auto p-4 pb-24">
+    
+    <!-- NEW: Waitress Remittance & Debt Summary -->
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700 text-center">
+        <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">My Cash Sales</p>
+        <p id="waitress-cash" class="text-xl font-black text-emerald-400">₦0</p>
+      </div>
+      <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700 text-center">
+        <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Room Charges</p>
+        <p id="waitress-credit" class="text-xl font-black text-amber-400">₦0</p>
+      </div>
+      <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700 text-center">
+        <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Staff Debts</p>
+        <p id="waitress-staff-credit" class="text-xl font-black text-indigo-400">₦0</p>
+      </div>
+    </div>
+
     <div class="glass-card p-5 rounded-2xl mb-4 border border-slate-700/50">
       <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
         <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-yellow-400"></i> Live Orders</h2>
@@ -557,6 +574,24 @@
     async function loadLiveBoard(isBackgroundPoll = false) {
         const list = document.getElementById('orders-list');
         
+        // NEW: Fetch Waitress Stats for the summary
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todayOrders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', 'Waitress').gte('created_at', today);
+        
+        let cash = 0, credit = 0, staffCredit = 0;
+        if (todayOrders) {
+            todayOrders.forEach(o => { 
+                const amt = Number(o.total_amount);
+                if (o.payment_method === 'Cash' || o.payment_method === 'POS' || o.payment_method === 'Transfer') cash += amt;
+                else if (o.payment_method === 'Charge_to_Room') credit += amt;
+                else if (o.payment_method === 'Staff_Credit') staffCredit += amt;
+            });
+        }
+        
+        document.getElementById('waitress-cash').textContent = `₦${cash.toLocaleString()}`;
+        document.getElementById('waitress-credit').textContent = `₦${credit.toLocaleString()}`;
+        document.getElementById('waitress-staff-credit').textContent = `₦${staffCredit.toLocaleString()}`;
+
         const { data: orders } = await db.from('guest_orders')
             .select('*')
             .in('department', ['Kitchen', 'Bar'])

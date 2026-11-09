@@ -82,7 +82,7 @@
       <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-2 flex items-center gap-2"><i data-lucide="file-text" class="w-5 h-5 text-indigo-400"></i> Submit Report to MD</h2>
         <p class="text-xs text-slate-400 mb-4">Summarize financial findings, shortages, or major expenses for the MD.</p>
-        <textarea id="md-report-text" rows="5" placeholder="e.g. Total revenue for the week was ₦2.5M. We spent ₦400k on kitchen restock. Waitress Ivie had a ₦5k cash shortage on Tuesday..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-indigo-500 text-sm mb-4"></textarea>
+        <textarea id="md-report-text" rows="5" placeholder="e.g. Total revenue for the week was ₦2.5M..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-indigo-500 text-sm mb-4"></textarea>
         <button onclick="submitReportToMD()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg text-sm transition shadow-md flex items-center justify-center gap-2"><i data-lucide="send" class="w-4 h-4"></i> Send Report to MD</button>
       </div>
       <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
@@ -103,7 +103,7 @@
       </div>
       <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700/50">
         <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="globe" class="w-5 h-5 text-blue-400"></i> OTA Commission Tracker</h2>
-        <p class="text-xs text-slate-400 mb-4">Track deductions from Booking.com, Expedia, etc., so you know the exact net amount the hotel receives.</p>
+        <p class="text-xs text-slate-400 mb-4">Track deductions from Booking.com, Expedia, etc.</p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
           <div class="col-span-2 md:col-span-1"><input type="text" id="ota-guest" placeholder="Guest Name" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-white text-sm outline-none focus:border-blue-500"></div>
           <div><input type="text" id="ota-agent" placeholder="Agent (e.g. Booking.com)" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-white text-sm outline-none focus:border-blue-500"></div>
@@ -460,12 +460,14 @@
     async function loadDailyPortions() {
       const dateInput = document.getElementById('portion-date');
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-      const selectedDate = dateInput.value, startOfDay = new Date(selectedDate).toISOString(), endOfDay = new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString();
+      
+      // FIX: Use the raw string for exact day matching
+      const selectedDate = dateInput.value; 
       const list = document.getElementById('daily-portions-list'); 
       list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Loading sold portions...</p>';
 
       // 1. Get all POS Orders for this day that are Kitchen/Waitress
-      const { data: posOrders } = await db.from('pos_orders').select('id').gte('created_at', startOfDay).lt('created_at', endOfDay).in('department', ['Kitchen', 'Waitress']);
+      const { data: posOrders } = await db.from('pos_orders').select('id').gte('created_at', `${selectedDate}T00:00:00`).lte('created_at', `${selectedDate}T23:59:59`).in('department', ['Kitchen', 'Waitress']);
       
       if (!posOrders || posOrders.length === 0) { 
           list.innerHTML = '<p class="text-center text-slate-500 py-4">No kitchen sales recorded for this day.</p>'; 
@@ -500,9 +502,12 @@
     async function loadProteinSales() {
       const monthInput = document.getElementById('protein-month');
       if (!monthInput.value) { const now = new Date(); monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; }
+      
+      // FIX: Use strict start/end strings for the month
       const [year, month] = monthInput.value.split('-'); 
-      const startDate = new Date(year, month - 1, 1).toISOString(); 
-      const endDate = new Date(year, month, 1).toISOString();
+      const startDate = `${year}-${month}-01T00:00:00`; 
+      const nextMonth = new Date(year, month, 1);
+      const endDate = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01T00:00:00`;
       
       const list = document.getElementById('protein-sales-list'); 
       list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Calculating protein sales...</p>';
