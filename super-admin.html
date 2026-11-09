@@ -129,15 +129,12 @@
     }
 
     async function loadOverview() {
-        const cachedStats = localStorage.getItem('vicnos_admin_stats');
-        if (cachedStats) { const s = JSON.parse(cachedStats); document.getElementById('stat-vendors').textContent = s.vendors; document.getElementById('stat-inquiries').textContent = s.inquiries; document.getElementById('stat-commission').textContent = `₦${Number(s.commission).toLocaleString()}`; }
         const { data: vendors } = await db.from('vendors').select('*');
         const { data: inquiries } = await db.from('vendor_inquiries').select('vendor_id');
         const { data: orders } = await db.from('vendor_orders').select('commission_amount').eq('status', 'Released');
         const vCount = vendors ? vendors.length : 0; const iCount = inquiries ? inquiries.length : 0;
         let totalComm = 0; if(orders) orders.forEach(o => totalComm += Number(o.commission_amount));
         document.getElementById('stat-vendors').textContent = vCount; document.getElementById('stat-inquiries').textContent = iCount; document.getElementById('stat-commission').textContent = `₦${totalComm.toLocaleString()}`;
-        localStorage.setItem('vicnos_admin_stats', JSON.stringify({ vendors: vCount, inquiries: iCount, commission: totalComm }));
     }
 
     async function loadAdminVendors() {
@@ -153,41 +150,32 @@
 
     async function deleteVendor(userId, vendorId, name) { if (!confirm(`⚠️ Are you sure you want to PERMANENTLY delete ${name}?`)) return; await db.from('vendors').delete().eq('id', vendorId); loadAdminVendors(); }
 
-    // --- DIRECT INSERTION (NO EDGE FUNCTION) ---
+    // --- EDGE FUNCTION CALL ---
     document.getElementById('vendor-form').addEventListener('submit', async (e) => {
         e.preventDefault(); const btn = document.getElementById('v-btn'); const msg = document.getElementById('v-msg'); btn.innerText = "Creating Login & Vendor..."; btn.disabled = true;
+
         try {
             const file = document.getElementById('v-image').files[0];
             let imageUrl = null;
             if (file) { imageUrl = await uploadImage(file, 'vendor_images'); }
 
-            // 1. Create Auth User
             const email = document.getElementById('v-email').value;
             const password = document.getElementById('v-password').value;
-            const { data: authData, error: authError } = await db.auth.signUp({ email, password });
-            if (authError) throw new Error("Auth Error: " + authError.message);
 
-            // 2. Insert into Vendors
-            const { data: vendorData, error: vendorError } = await db.from('vendors').insert({
-                business_name: document.getElementById('v-name').value,
-                category: document.getElementById('v-category').value,
-                address: document.getElementById('v-address').value,
-                whatsapp_number: document.getElementById('v-whatsapp').value,
-                image_url: imageUrl,
-                is_active: true
-            }).select().single();
-            
-            if (vendorError) throw new Error("Vendor DB Error: " + vendorError.message);
-
-            // 3. Insert into Profiles
-            const { error: profileError } = await db.from('profiles').insert({
-                id: authData.user.id,
-                full_name: document.getElementById('v-name').value,
-                role: 'vendor',
-                vendor_id: vendorData.id
+            // CALL EDGE FUNCTION
+            const { data, error } = await db.functions.invoke('create-vendor', {
+                body: {
+                    email: email,
+                    password: password,
+                    business_name: document.getElementById('v-name').value,
+                    category: document.getElementById('v-category').value,
+                    address: document.getElementById('v-address').value,
+                    whatsapp_number: document.getElementById('v-whatsapp').value,
+                    image_url: imageUrl
+                }
             });
 
-            if (profileError) throw new Error("Profile DB Error: " + profileError.message);
+            if (error) throw new Error(error.message || 'Failed to create vendor');
 
             msg.textContent = "✅ Vendor & Login Created Successfully!"; 
             document.getElementById('vendor-form').reset(); 
