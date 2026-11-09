@@ -468,7 +468,7 @@
       document.getElementById('new-item-name').value = ''; document.getElementById('new-item-qty').value = ''; document.getElementById('add-stock-modal').classList.add('hidden'); alert(`✅ ${name} added/updated successfully.`); loadKitchenStock();
     }
 
-    // --- FIXED: DAILY PORTIONS USING POS_ORDERS FIRST ---
+    // --- FIXED: DAILY PORTIONS WITH STRICT TIMEZONE ---
     async function loadDailyPortions() {
       const dateInput = document.getElementById('portion-date');
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
@@ -512,7 +512,7 @@
       list.innerHTML = html;
     }
 
-    // --- FIXED: PROTEIN SALES USING POS_ORDERS FIRST ---
+    // --- FIXED: PROTEIN SALES WITH STRICT TIMEZONE ---
     async function loadProteinSales() {
       const monthInput = document.getElementById('protein-month');
       if (!monthInput.value) { const now = new Date(); monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; }
