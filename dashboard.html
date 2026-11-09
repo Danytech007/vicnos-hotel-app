@@ -370,7 +370,8 @@
 
     async function loadReceptionistData() {
       const { data: rooms } = await db.from('rooms').select('*').order('room_number');
-      // FETCH BOTH CHECKED IN AND RESERVED
+      
+      // FETCH ANY BOOKING THAT IS NOT CHECKED OUT
       const { data: bookings } = await db.from('bookings').select('*, guests(full_name)').in('status', ['Checked In', 'Reserved']);
       
       let stats = { Available: 0, Occupied: 0, Reserved: 0, Dirty: 0, Maintenance: 0 };
@@ -384,13 +385,14 @@
         let activeBookingId = '';
         let isKeyIssued = false;
 
+        // Find the active booking for this room
         const activeBooking = bookings?.find(b => b.room_id === room.id);
         
         if (activeBooking) {
             displayStatus = activeBooking.status === 'Reserved' ? 'Reserved' : 'Occupied';
             guestName = activeBooking.guests?.full_name || 'Guest';
             activeBookingId = activeBooking.id;
-            isKeyIssued = activeBooking.key_issued !== false; 
+            isKeyIssued = activeBooking.key_issued === true; 
         } else {
             if (displayStatus === 'Occupied' || displayStatus === 'Reserved') displayStatus = 'Available';
         }
@@ -492,7 +494,6 @@
                 <button onclick="openReservationModal('${selectedRoom.id}', '${selectedRoom.room_number}')" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="calendar-check" class="w-5 h-5"></i> Reserve this Room</button>`;
         }
         else if (selectedRoom.status === 'Reserved') {
-            // CONVERT RESERVATION TO CHECK IN
             actionsContainer.innerHTML += `
                 <a href="checkin.html?booking_id=${selectedRoom.activeBookingId}" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="log-in" class="w-5 h-5"></i> Check-In Guest Now</a>
                 <button onclick="cancelReservation('${selectedRoom.id}', '${selectedRoom.activeBookingId}')" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition mt-2"><i data-lucide="x-circle" class="w-5 h-5"></i> Cancel Reservation</button>`;
@@ -589,7 +590,6 @@
         }
     }
 
-    // ... REST OF THE CODE (ARIT, F&B, STANDARD VIEW) REMAINS EXACTLY THE SAME ...
     async function loadMovements() {
       const today = new Date().toISOString().split('T')[0];
       const { data: arrivals } = await db.from('bookings').select('*, rooms(room_number), guests(full_name)').gte('check_in_date', today).eq('status', 'Checked In');
@@ -647,6 +647,7 @@
       }, 2000);
     }
 
+    // F&B LOGIC
     async function checkNewOrders() { }
     async function loadLiveDashboardOrders() { }
     async function updateOrderStatus(orderId, newStatus) { await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId); loadLiveDashboardOrders(); }
