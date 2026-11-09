@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos - Stock Request</title>
+  
+  <script>
+    // FORCE CACHE CLEAR
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -14,6 +27,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
     .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="min-h-screen pb-10">
@@ -133,7 +148,6 @@
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
 
-      // Check URL for department parameter
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('dept')) {
         currentDepartment = urlParams.get('dept');
@@ -147,10 +161,48 @@
     }
 
     async function loadStock() {
-      const { data: items } = await db.from('inventory').select('*').eq('department', currentDepartment).order('item_name');
-      myItems = items || [];
       const list = document.getElementById('stock-list');
       const select = document.getElementById('restock-select');
+      
+      // Determine the exact category names to search for
+      let searchDepts = [currentDepartment];
+      if (currentDepartment === 'Kitchen') searchDepts = ['Kitchen', 'Food'];
+      if (currentDepartment === 'Bar') searchDepts = ['Bar'];
+
+      // 1. Fetch from Inventory (Physical Stock)
+      const { data: invItems } = await db.from('inventory').select('*').in('department', searchDepts);
+      
+      // 2. Fetch from Menu Items (Manager Menu)
+      const { data: menuItems } = await db.from('menu_items').select('*').in('category', searchDepts);
+
+      // 3. Merge them (Menu items first, then overwrite with actual inventory stock if it exists)
+      const combinedMap = new Map();
+
+      if (menuItems) {
+        menuItems.forEach(m => {
+          combinedMap.set(m.name.toLowerCase(), {
+            id: m.id,
+            item_name: m.name,
+            price: m.price || 0,
+            stock_quantity: 0, // Default to 0 if no physical count yet
+            is_menu_item: true
+          });
+        });
+      }
+
+      if (invItems) {
+        invItems.forEach(i => {
+          combinedMap.set(i.item_name.toLowerCase(), {
+            id: i.id,
+            item_name: i.item_name,
+            price: i.price || 0,
+            stock_quantity: i.stock_quantity,
+            is_menu_item: false
+          });
+        });
+      }
+
+      myItems = Array.from(combinedMap.values()).sort((a, b) => a.item_name.localeCompare(b.item_name));
 
       if (myItems.length === 0) {
         list.innerHTML = `<p class="text-center text-slate-500 text-sm py-4">No items in ${currentDepartment} yet.</p>`;
