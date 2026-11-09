@@ -283,8 +283,7 @@
       errorEl.classList.add('hidden');
       
       let allCounted = true;
-      let itemsToInsert = [];
-      let itemsToUpdate = [];
+      let stockUpdates = [];
       
       for (const item of inventoryItems) {
           const inputEl = document.getElementById(`open-stock-${item.id}`);
@@ -293,19 +292,7 @@
               inputEl.classList.add('border-red-500');
           } else {
               inputEl.classList.remove('border-red-500');
-              if (item.is_menu_item) {
-                  itemsToInsert.push({
-                      item_name: item.item_name,
-                      department: 'Kitchen',
-                      stock_quantity: Number(inputEl.value),
-                      price: 0
-                  });
-              } else {
-                  itemsToUpdate.push({
-                      id: item.id,
-                      stock_quantity: Number(inputEl.value)
-                  });
-              }
+              stockUpdates.push({ id: item.id, qty: Number(inputEl.value), isMenuItem: item.is_menu_item, name: item.item_name });
           }
       }
 
@@ -319,26 +306,31 @@
       btn.disabled = true;
 
       try {
-        // BATCH INSERT (Instant)
-        if (itemsToInsert.length > 0) {
-            const { error: insertError } = await db.from('inventory').insert(itemsToInsert);
-            if (insertError) throw insertError;
-        }
+        // THE SPEED FIX: Use Promise.all() to fire all database updates at the exact same time
+        const promises = stockUpdates.map(update => {
+            if (update.isMenuItem) {
+                return db.from('inventory').insert({
+                    item_name: update.name,
+                    department: 'Kitchen',
+                    stock_quantity: update.qty,
+                    price: 0
+                });
+            } else {
+                return db.from('inventory').update({ stock_quantity: update.qty }).eq('id', update.id);
+            }
+        });
 
-        // BATCH UPDATE (Instant)
-        if (itemsToUpdate.length > 0) {
-            const { error: updateError } = await db.from('inventory').upsert(itemsToUpdate);
-            if (updateError) throw updateError;
-        }
+        // Wait for ALL of them to finish simultaneously
+        await Promise.all(promises);
 
-        // Create Shift
-        const { error: shiftError } = await db.from('shifts').insert({
+        // Start the shift
+        const { error } = await db.from('shifts').insert({
           user_id: currentUser.id,
           department: dept,
           status: 'Active'
         });
 
-        if (shiftError) throw shiftError;
+        if (error) throw error;
 
         window.location.reload();
       } catch (err) {
