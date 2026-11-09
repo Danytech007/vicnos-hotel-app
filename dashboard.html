@@ -261,7 +261,6 @@
           orderCheckInterval = setInterval(checkNewOrders, 5000); 
         } 
         else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
-          // STRICT DEPARTMENT MAPPING
           if (currentRole === 'chef' || currentRole === 'kitchen') currentDept = 'Kitchen';
           else if (currentRole === 'waitress') currentDept = 'Waitress';
           else currentDept = 'Bar';
@@ -289,7 +288,6 @@
           }, 5000);
         }
         else {
-          // SUPER ADMIN / MANAGER / ETC
           document.getElementById('standard-view').classList.remove('hidden');
           document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
           document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
@@ -461,10 +459,10 @@
         }
         else if (selectedRoom.status === 'Available') {
             actionsContainer.innerHTML += `<button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="key" class="w-5 h-5"></i> Encode Master Key (Unlock)</button>
-                <button onclick="reserveRoom()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="calendar-check" class="w-5 h-5"></i> Reserve this Room</button>`;
+                <button onclick="reserveRoom('${selectedRoom.id}')" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="calendar-check" class="w-5 h-5"></i> Reserve this Room</button>`;
         }
         else if (selectedRoom.status === 'Reserved') {
-            actionsContainer.innerHTML += `<button onclick="cancelReservation()" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition"><i data-lucide="x-circle" class="w-5 h-5"></i> Cancel Reservation</button>`;
+            actionsContainer.innerHTML += `<button onclick="cancelReservation('${selectedRoom.id}')" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition"><i data-lucide="x-circle" class="w-5 h-5"></i> Cancel Reservation</button>`;
         }
 
         document.getElementById('action-modal').classList.remove('hidden'); 
@@ -475,8 +473,8 @@
     function closeActionModal() { document.getElementById('action-modal').classList.add('hidden'); document.getElementById('action-modal').classList.remove('flex'); }
 
     async function lockDoor() { if (selectedRoom.activeBookingId) { await db.from('bookings').update({ key_issued: false }).eq('id', selectedRoom.activeBookingId); } closeActionModal(); loadReceptionistData(); }
-    async function reserveRoom() { await db.from('rooms').update({ status: 'Reserved' }).eq('id', selectedRoom.id); closeActionModal(); loadReceptionistData(); }
-    async function cancelReservation() { await db.from('rooms').update({ status: 'Available' }).eq('id', selectedRoom.id); closeActionModal(); loadReceptionistData(); }
+    async function reserveRoom(roomId) { await db.from('rooms').update({ status: 'Reserved' }).eq('id', roomId); closeActionModal(); loadReceptionistData(); }
+    async function cancelReservation(roomId) { await db.from('rooms').update({ status: 'Available' }).eq('id', roomId); closeActionModal(); loadReceptionistData(); }
 
     async function loadMovements() {
       const today = new Date().toISOString().split('T')[0];
@@ -536,26 +534,11 @@
     }
 
     // ==========================================
-    // F&B LOGIC (BARMAN / CHEF / WAITRESS)
+    // F&B LOGIC
     // ==========================================
     async function checkNewOrders() {
         if (!currentDept) return;
-        
-        let queryDept;
-        if (currentDept === 'Waitress') {
-            queryDept = ['Kitchen', 'Food', 'Bar'];
-        } else if (currentDept === 'Kitchen') {
-            queryDept = ['Kitchen', 'Food']; 
-        } else {
-            queryDept = ['Bar'];
-        }
-        
-        const { data: newOrders, error } = await db.from('guest_orders')
-            .select('id, room_number, table_number')
-            .in('department', queryDept)
-            .eq('status', 'Pending');
-
-        if (error) console.error(error);
+        // Placeholder for iframe banner logic
     }
 
     async function loadLiveDashboardOrders() {
@@ -563,13 +546,9 @@
         const list = document.getElementById('dashboard-orders-list');
         
         let queryDept;
-        if (currentDept === 'Waitress') {
-            queryDept = ['Kitchen', 'Food', 'Bar'];
-        } else if (currentDept === 'Kitchen') {
-            queryDept = ['Kitchen', 'Food'];
-        } else {
-            queryDept = ['Bar'];
-        }
+        if (currentDept === 'Waitress') queryDept = ['Kitchen', 'Food', 'Bar'];
+        else if (currentDept === 'Kitchen') queryDept = ['Kitchen', 'Food'];
+        else queryDept = ['Bar'];
         
         const { data: orders } = await db.from('guest_orders')
             .select('*')
@@ -598,38 +577,19 @@
 
             let actionButtons = '';
 
-            // WAITRESS CONTROLS
             if (currentRole === 'waitress') {
-                if (order.status === 'Pending') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
-                }
-                if (order.status === 'Preparing') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
-                }
-                if (order.status === 'Ready') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>`;
-                }
+                if (order.status === 'Pending') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
+                if (order.status === 'Preparing') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
+                if (order.status === 'Ready') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>`;
             } 
-            // BARMAN CONTROLS
             else if (currentRole === 'barman' || currentRole === 'bar') {
-                if (order.status === 'Pending') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
-                }
-                if (order.status === 'Preparing') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
-                }
-                if (order.status === 'Ready') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>`;
-                }
+                if (order.status === 'Pending') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
+                if (order.status === 'Preparing') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
+                if (order.status === 'Ready') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Delivered</button>`;
             }
-            // CHEF CONTROLS (NO DELIVERED BUTTON)
             else if (currentRole === 'chef' || currentRole === 'kitchen') {
-                if (order.status === 'Pending') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
-                }
-                if (order.status === 'Preparing') {
-                    actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
-                }
+                if (order.status === 'Pending') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
+                if (order.status === 'Preparing') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
             }
 
             return `
@@ -644,9 +604,7 @@
                         </div>
                         <div class="space-y-2 mb-2">${itemsHtml}</div>
                     </div>
-                    <div class="flex flex-col gap-2 mt-4">
-                        ${actionButtons}
-                    </div>
+                    <div class="flex flex-col gap-2 mt-4">${actionButtons}</div>
                 </div>
             `;
         }).join('');
