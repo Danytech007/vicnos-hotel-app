@@ -191,7 +191,7 @@
         <span id="std-role-badge" class="relative z-10 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-1.5 rounded-lg tracking-wide shadow-sm">ROLE</span>
       </div>
 
-      <!-- NEW: ACCOUNTANT QUICK VIEW (LIVE ROOMS & AUDIT SEARCH) -->
+      <!-- ACCOUNTANT QUICK VIEW (LIVE ROOMS & AUDIT SEARCH) -->
       <div id="accountant-quick-view" class="hidden mb-8 space-y-6">
         
         <!-- Live Room State -->
@@ -1008,9 +1008,8 @@
           buttons += clockBtn;
       }
       else if (role === 'housekeeping') {
-          buttons += btn('housekeeping-requests.html', 'sparkles', 'text-orange-400', 'bg-orange-500/20', 'Guest Requests');
-          buttons += btn('rooms.html', 'bed', 'text-blue-400', 'bg-blue-500/20', 'Clean Rooms');
-          buttons += maintenanceBtn;
+          buttons += btn('housekeeping.html', 'sparkles', 'text-emerald-400', 'bg-emerald-500/20', 'Housekeeping Command');
+          buttons += btn('maintenance.html', 'wrench', 'text-rose-400', 'bg-rose-500/20', 'Maintenance');
           buttons += chatBtn;
           buttons += clockBtn;
       }

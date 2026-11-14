@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos - Housekeeping Command</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-slate-900 border-b border-slate-700/50 p-4 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-slate-800 p-2 rounded-full text-slate-300 hover:bg-slate-700 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-white text-lg leading-tight">Housekeeping</h1><p class="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Leader Command</p></div>
+    </div>
+    <div class="bg-emerald-500/20 p-2 rounded-xl text-emerald-400 border border-emerald-500/30"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
+  </nav>
+
+  <div class="bg-slate-900/80 backdrop-blur-md px-2 py-2 flex gap-2 overflow-x-auto hide-scroll border-b border-slate-700/50 sticky top-[72px] z-40">
+    <button onclick="switchTab('requests')" id="tab-btn-requests" class="tab-btn bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition">Guest Requests</button>
+    <button onclick="switchTab('rooms')" id="tab-btn-rooms" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Room Status</button>
+    <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition">Staff Chat</button>
+  </div>
+
+  <main class="p-4 max-w-4xl mx-auto mt-4">
+    
+    <!-- 1. GUEST REQUESTS TAB -->
+    <div id="section-requests" class="tab-content block fade-in space-y-4">
+      <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 mb-2 flex justify-between items-center">
+        <div><h2 class="font-bold text-white">Pending Guest Requests</h2><p class="text-xs text-slate-400">Towels, Tissue, or Cleaning requests from the Guest Portal.</p></div>
+        <button onclick="loadGuestRequests()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 px-3 rounded-lg"><i data-lucide="refresh-cw" class="w-3 h-3 inline mr-1"></i> Refresh</button>
+      </div>
+      <div id="requests-list" class="space-y-3">
+        <p class="text-center text-slate-500 text-sm animate-pulse">Scanning for requests...</p>
+      </div>
+    </div>
+
+    <!-- 2. ROOM STATUS TAB -->
+    <div id="section-rooms" class="tab-content hidden fade-in space-y-4">
+      <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 mb-2 flex justify-between items-center">
+        <div><h2 class="font-bold text-white">Room Status</h2><p class="text-xs text-slate-400">Tap a Dirty room to clean it and log facility status.</p></div>
+        <button onclick="loadRooms()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 px-3 rounded-lg"><i data-lucide="refresh-cw" class="w-3 h-3 inline mr-1"></i> Refresh</button>
+      </div>
+      <div id="rooms-list" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <p class="col-span-full text-center text-slate-500 text-sm animate-pulse">Loading rooms...</p>
+      </div>
+    </div>
+
+    <!-- 3. STAFF CHAT TAB -->
+    <div id="section-chat" class="tab-content hidden fade-in space-y-4">
+      <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50">
+        <h2 class="font-bold text-white mb-2 flex items-center gap-2"><i data-lucide="message-square" class="w-5 h-5 text-indigo-400"></i> Message Reception / Manager</h2>
+        <textarea id="chat-message" rows="3" placeholder="e.g. Room 104 has a broken AC, please send maintenance..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-indigo-500 text-sm mb-3"></textarea>
+        <button onclick="sendChatMessage()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-sm transition">Send Message</button>
+      </div>
+      <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+        <h3 class="text-sm font-bold text-white mb-3 border-b border-slate-700 pb-2">Recent Messages</h3>
+        <div id="chat-history" class="space-y-3 max-h-60 overflow-y-auto hide-scroll">
+            <p class="text-center text-slate-500 text-sm">No recent messages.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- CLEANING MODAL (Facilities & Photos) -->
+  <div id="cleaning-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto hide-scroll">
+      
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">Room <span id="clean-room-num" class="text-emerald-400">---</span></h2>
+        <button onclick="closeCleaningModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Cleaned By (Staff Name)</label>
+          <input type="text" id="clean-staff-name" placeholder="e.g. Blessing" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- Facility Toggles -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+          <h3 class="text-sm font-bold text-white mb-3 border-b border-slate-700 pb-1">Facility Status Check</h3>
+          
+          <div class="space-y-2 text-sm">
+            <!-- AC -->
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">AC</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-ac" class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+            <!-- Fridge -->
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">Fridge</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-fridge" class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+            <!-- Heater -->
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">Water Heater</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-heater" class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+            <!-- Fan -->
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">Ceiling Fan</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-fan" class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+            <!-- TV -->
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">TV</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-tv" class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Maintenance Complaint & Photo -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+          <h3 class="text-sm font-bold text-white mb-2 text-red-400">Report Broken Item (Optional)</h3>
+          <textarea id="clean-note" rows="2" placeholder="Describe the fault (e.g., AC is making a loud noise)..." class="w-full bg-slate-800 border border-slate-700 p-2 rounded-lg text-white text-sm outline-none focus:border-red-500 mb-2"></textarea>
+          
+          <div class="flex items-center gap-2">
+            <input type="file" id="clean-photo" accept="image/*" capture="environment" class="hidden">
+            <button onclick="document.getElementById('clean-photo').click()" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2">
+              <i data-lucide="camera" class="w-4 h-4"></i> Snap Photo
+            </button>
+            <span id="photo-name" class="text-xs text-slate-400">No photo attached</span>
+          </div>
+        </div>
+
+        <button onclick="submitCleaning()" id="clean-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg transition text-lg mt-2">
+          Complete & Mark Available
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let myUserId = null;
+    let selectedRoomId = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data: { user } } = await db.auth.getUser();
+        if(user) myUserId = user.id;
+        switchTab('requests', false);
+    });
+
+    function switchTab(tabId, pushHistory = true) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`section-${tabId}`).classList.remove('hidden');
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition');
+        document.getElementById(`tab-btn-${tabId}`).className = 'tab-btn bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap shadow-md transition';
+        
+        if (tabId === 'requests') loadGuestRequests();
+        if (tabId === 'rooms') loadRooms();
+        if (tabId === 'chat') loadChat();
+    }
+
+    // 1. GUEST REQUESTS
+    async function loadGuestRequests() {
+        const list = document.getElementById('requests-list');
+        const { data: reqs } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending').order('created_at', { ascending: true });
+
+        if (!reqs || reqs.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-500 py-6">No pending guest requests right now. 🎉</p>';
+            return;
+        }
+
+        list.innerHTML = reqs.map(r => `
+            <div class="bg-slate-900 p-4 rounded-xl border border-orange-500/30 flex justify-between items-center shadow-lg">
+                <div>
+                    <h3 class="font-bold text-white text-lg">Room ${r.room_number}</h3>
+                    <p class="text-xs text-slate-400 mt-1">${new Date(r.created_at).toLocaleTimeString()}</p>
+                    <p class="text-sm text-orange-400 font-bold mt-2">${JSON.stringify(r.items)}</p>
+                </div>
+                <button onclick="completeRequest('${r.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow-md transition flex items-center gap-1">
+                    <i data-lucide="check" class="w-4 h-4"></i> Done
+                </button>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    async function completeRequest(id) {
+        if(!confirm("Mark this request as completed? The guest will be notified.")) return;
+        await db.from('guest_orders').update({ status: 'Completed' }).eq('id', id);
+        loadGuestRequests();
+    }
+
+    // 2. ROOM STATUS
+    async function loadRooms() {
+        const list = document.getElementById('rooms-list');
+        const { data: rooms } = await db.from('rooms').select('*').order('room_number');
+
+        if (!rooms || rooms.length === 0) {
+            list.innerHTML = '<p class="col-span-full text-center text-slate-500">No rooms found.</p>';
+            return;
+        }
+
+        list.innerHTML = rooms.map(r => {
+            let color = 'border-slate-700 text-slate-300';
+            if (r.status === 'Dirty') color = 'border-amber-500 text-amber-400 bg-amber-500/10';
+            if (r.status === 'Available') color = 'border-emerald-500 text-emerald-400 bg-emerald-500/10';
+            if (r.status === 'Occupied') color = 'border-blue-500 text-blue-400 bg-blue-500/10';
+
+            return `
+                <div class="bg-slate-900 p-4 rounded-xl border ${color} cursor-pointer hover:scale-95 transition" onclick="openCleaningModal('${r.id}', '${r.room_number}', '${r.status}')">
+                    <p class="text-[10px] font-bold uppercase tracking-wider">Room</p>
+                    <p class="text-2xl font-black text-white">${r.room_number}</p>
+                    <p class="text-xs font-bold mt-2 uppercase">${r.status}</p>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 3. CLEANING MODAL
+    function openCleaningModal(roomId, roomNumber, status) {
+        if (status !== 'Dirty') {
+            alert(`Room ${roomNumber} is currently ${status}. Only Dirty rooms need cleaning.`);
+            return;
+        }
+        
+        selectedRoomId = roomId;
+        document.getElementById('clean-room-num').textContent = roomNumber;
+        document.getElementById('clean-staff-name').value = '';
+        document.getElementById('clean-note').value = '';
+        document.getElementById('clean-photo').value = '';
+        document.getElementById('photo-name').textContent = "No photo attached";
+        
+        // Default toggles to ON
+        document.getElementById('toggle-ac').checked = true;
+        document.getElementById('toggle-fridge').checked = true;
+        document.getElementById('toggle-heater').checked = true;
+        document.getElementById('toggle-fan').checked = true;
+        document.getElementById('toggle-tv').checked = true;
+
+        document.getElementById('cleaning-modal').classList.remove('hidden');
+        document.getElementById('cleaning-modal').classList.add('flex');
+    }
+
+    function closeCleaningModal() {
+        document.getElementById('cleaning-modal').classList.add('hidden');
+        document.getElementById('cleaning-modal').classList.remove('flex');
+    }
+
+    document.getElementById('clean-photo').addEventListener('change', function(e) {
+        if(e.target.files.length > 0) {
+            document.getElementById('photo-name').textContent = e.target.files[0].name;
+        }
+    });
+
+    async function submitCleaning() {
+        const staffName = document.getElementById('clean-staff-name').value;
+        if(!staffName) return alert("Please enter the name of the cleaner.");
+
+        const btn = document.getElementById('clean-submit-btn');
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Saving...`;
+        btn.disabled = true;
+
+        try {
+            const acStatus = document.getElementById('toggle-ac').checked;
+            const fridgeStatus = document.getElementById('toggle-fridge').checked;
+            const heaterStatus = document.getElementById('toggle-heater').checked;
+            const fanStatus = document.getElementById('toggle-fan').checked;
+            const tvStatus = document.getElementById('toggle-tv').checked;
+            const note = document.getElementById('clean-note').value;
+            const photoFile = document.getElementById('clean-photo').files[0];
+
+            // 1. Update Room status and toggles
+            await db.from('rooms').update({ 
+                status: 'Available',
+                ac_status: acStatus,
+                fridge_status: fridgeStatus,
+                heater_status: heaterStatus,
+                fan_status: fanStatus,
+                tv_status: tvStatus
+            }).eq('id', selectedRoomId);
+
+            // 2. Handle Maintenance Ticket & Photo
+            if (note.trim() !== '' || photoFile) {
+                let photoUrl = null;
+                if (photoFile) {
+                    // Upload to Supabase Storage (Bucket: maintenance-photos)
+                    const fileName = `${Date.now()}_${photoFile.name}`;
+                    const { data: uploadData, error: uploadError } = await db.storage.from('maintenance-photos').upload(fileName, photoFile);
+                    if (!uploadError) {
+                        const { data: urlData } = db.storage.from('maintenance-photos').getPublicUrl(fileName);
+                        photoUrl = urlData.publicUrl;
+                    }
+                }
+
+                await db.from('maintenance_tickets').insert({
+                    room_id: selectedRoomId,
+                    reported_by: myUserId,
+                    issue_description: `Cleaned by ${staffName}. Complaint: ${note || 'See attached photo.'}`,
+                    priority: 'Normal',
+                    status: 'Pending',
+                    photo_url: photoUrl
+                });
+            }
+
+            alert("✅ Room marked available and logs saved!");
+            closeCleaningModal();
+            loadRooms();
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.innerHTML = `Complete & Mark Available`;
+            btn.disabled = false;
+        }
+    }
+
+    // 4. CHAT
+    async function sendChatMessage() {
+        const text = document.getElementById('chat-message').value;
+        if(!text) return;
+        await db.from('internal_chat').insert({ sender_id: myUserId, department: 'Housekeeping', message: text });
+        document.getElementById('chat-message').value = '';
+        loadChat();
+    }
+
+    async function loadChat() {
+        const list = document.getElementById('chat-history');
+        const { data: msgs } = await db.from('internal_chat').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(10);
+        if(!msgs || msgs.length === 0) { list.innerHTML = '<p class="text-center text-slate-500 text-sm">No recent messages.</p>'; return; }
+        list.innerHTML = msgs.map(m => `<div class="bg-slate-900 p-3 rounded-lg border border-slate-700"><p class="text-[10px] text-slate-400 font-bold">${m.profiles?.full_name || 'Staff'} (${m.department})</p><p class="text-sm text-white mt-1">${m.message}</p></div>`).join('');
+    }
+  </script>
+</body>
+</html>
