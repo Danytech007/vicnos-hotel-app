@@ -364,6 +364,10 @@
               loadLowStock();
           }, 10000);
         }
+        else if (currentRole === 'manager' || currentRole === 'md') {
+          // Route Managers and MDs to their dedicated dashboard
+          window.location.href = 'manager.html';
+        }
         else {
           document.body.classList.add('standard-theme');
           document.getElementById('nav-icon-bg').className = "bg-amber-500 p-2 rounded-xl text-slate-900 shadow-md shadow-amber-500/20";

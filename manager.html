@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos - Manager Dashboard</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Manager Dashboard</h1><p class="text-[10px] text-indigo-600 uppercase tracking-widest font-bold">Operations</p></div>
+    </div>
+    <button onclick="document.getElementById('create-staff-modal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl shadow-md transition flex items-center gap-2 text-sm font-bold">
+      <i data-lucide="user-plus" class="w-4 h-4"></i> Add Staff
+    </button>
+  </nav>
+
+  <main class="p-4 max-w-6xl mx-auto mt-4 space-y-6">
+    
+    <!-- TOP METRICS -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Rooms Occupied</p>
+        <p id="stat-occupied" class="text-2xl font-black text-blue-600">0</p>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Rooms Dirty</p>
+        <p id="stat-dirty" class="text-2xl font-black text-amber-500">0</p>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Staff On Duty</p>
+        <p id="stat-staff" class="text-2xl font-black text-emerald-600">0</p>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Open Tickets</p>
+        <p id="stat-tickets" class="text-2xl font-black text-red-600">0</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- HOUSEEKEEPING OVERSIGHT -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+        <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-emerald-500"></i> Housekeeping Live Feed</h2>
+          <a href="housekeeping.html" class="text-xs text-indigo-600 font-bold">View Full</a>
+        </div>
+        <div id="housekeeping-feed" class="space-y-3 max-h-80 overflow-y-auto hide-scroll">
+          <p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>
+        </div>
+      </div>
+
+      <!-- MAINTENANCE TICKETS -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+        <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="wrench" class="w-5 h-5 text-red-500"></i> Open Maintenance</h2>
+          <a href="maintenance.html" class="text-xs text-indigo-600 font-bold">View All</a>
+        </div>
+        <div id="maintenance-feed" class="space-y-3 max-h-80 overflow-y-auto hide-scroll">
+          <p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <a href="night-audit.html" class="bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-lg transition">
+        <i data-lucide="moon" class="w-6 h-6 text-indigo-400"></i>
+        <span class="font-bold text-sm">Run Night Audit</span>
+      </a>
+      <a href="staff.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
+        <i data-lucide="users" class="w-6 h-6 text-indigo-500"></i>
+        <span class="font-bold text-sm">Staff Directory</span>
+      </a>
+      <a href="finance.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
+        <i data-lucide="bar-chart-2" class="w-6 h-6 text-emerald-500"></i>
+        <span class="font-bold text-sm">Audit & Finance</span>
+      </a>
+      <a href="internal-chat.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
+        <i data-lucide="message-square" class="w-6 h-6 text-purple-500"></i>
+        <span class="font-bold text-sm">Staff Chat</span>
+      </a>
+    </div>
+
+  </main>
+
+  <!-- CREATE STAFF MODAL -->
+  <div id="create-staff-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-900">Create New Staff</h2>
+        <button onclick="document.getElementById('create-staff-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      
+      <form id="create-staff-form" class="space-y-3">
+        <div><label class="block text-xs font-bold text-gray-500 mb-1">Full Name</label><input type="text" id="s-name" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500"></div>
+        <div><label class="block text-xs font-bold text-gray-500 mb-1">Email</label><input type="email" id="s-email" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500"></div>
+        <div><label class="block text-xs font-bold text-gray-500 mb-1">Temporary Password</label><input type="text" id="s-password" required minlength="6" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500" placeholder="Min 6 characters"></div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1">Role</label>
+          <select id="s-role" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+            <option value="md">Managing Director (MD)</option>
+            <option value="manager">Manager</option>
+            <option value="accountant">Accountant</option>
+            <option value="receptionist">Receptionist</option>
+            <option value="chef">Chef / Kitchen</option>
+            <option value="barman">Barman</option>
+            <option value="waitress">Waitress</option>
+            <option value="housekeeping">Housekeeping Leader</option>
+            <option value="store_keeper">Store Keeper</option>
+            <option value="security">Security</option>
+            <option value="laundry">Laundry</option>
+          </select>
+        </div>
+        
+        <button type="submit" id="s-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2">Create Account</button>
+      </form>
+      <p id="s-msg" class="mt-2 text-center text-sm font-bold"></p>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+
+    async function init() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+
+      loadMetrics();
+      loadHousekeepingFeed();
+      loadMaintenanceFeed();
+    }
+
+    async function loadMetrics() {
+      // 1. Rooms Occupied / Dirty
+      const { data: rooms } = await db.from('rooms').select('status');
+      let occupied = 0, dirty = 0;
+      if (rooms) rooms.forEach(r => { if(r.status === 'Occupied') occupied++; if(r.status === 'Dirty') dirty++; });
+      document.getElementById('stat-occupied').textContent = occupied;
+      document.getElementById('stat-dirty').textContent = dirty;
+
+      // 2. Staff on Duty
+      const { count: staffCount } = await db.from('shifts').select('*', { count: 'exact', head: true }).eq('status', 'Active');
+      document.getElementById('stat-staff').textContent = staffCount || 0;
+
+      // 3. Open Maintenance Tickets
+      const { count: ticketCount } = await db.from('maintenance_tickets').select('*', { count: 'exact', head: true }).eq('status', 'Pending');
+      document.getElementById('stat-tickets').textContent = ticketCount || 0;
+    }
+
+    async function loadHousekeepingFeed() {
+      const list = document.getElementById('housekeeping-feed');
+      // Fetch pending guest requests
+      const { data: reqs } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending').order('created_at', { ascending: false }).limit(5);
+      
+      if (!reqs || reqs.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending housekeeping requests.</p>';
+      } else {
+        list.innerHTML = reqs.map(r => `
+          <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
+            <div>
+              <p class="font-bold text-gray-800 text-sm">Room ${r.room_number}</p>
+              <p class="text-xs text-gray-500">${new Date(r.created_at).toLocaleTimeString()}</p>
+            </div>
+            <span class="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded">Pending</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    async function loadMaintenanceFeed() {
+      const list = document.getElementById('maintenance-feed');
+      const { data: tickets } = await db.from('maintenance_tickets').select('*, rooms(room_number)').eq('status', 'Pending').order('created_at', { ascending: false }).limit(5);
+
+      if (!tickets || tickets.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No open maintenance tickets.</p>';
+        return;
+      }
+
+      list.innerHTML = tickets.map(t => `
+        <div class="flex flex-col bg-red-50 p-3 rounded-xl border border-red-100">
+          <div class="flex justify-between items-center mb-1">
+            <p class="font-bold text-red-800 text-sm">Room ${t.rooms?.room_number || 'N/A'}</p>
+            <span class="text-[10px] font-bold text-red-600 bg-red-200 px-2 py-0.5 rounded uppercase">${t.priority}</span>
+          </div>
+          <p class="text-xs text-red-700">${t.issue_description}</p>
+        </div>
+      `).join('');
+    }
+
+    // --- CREATE STAFF LOGIC ---
+    document.getElementById('create-staff-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('s-btn');
+      const msg = document.getElementById('s-msg');
+      
+      btn.innerText = "Creating...";
+      btn.disabled = true;
+      msg.textContent = '';
+
+      try {
+        const email = document.getElementById('s-email').value;
+        const password = document.getElementById('s-password').value;
+        const full_name = document.getElementById('s-name').value;
+        const role = document.getElementById('s-role').value;
+
+        // Call the Edge Function we saw in the Supabase folder
+        const { data, error } = await db.functions.invoke('create-staff', {
+          body: { email, password, full_name, role }
+        });
+
+        if (error) throw new Error(error.message || 'Failed to create staff');
+
+        msg.textContent = "✅ Staff created successfully!";
+        msg.className = "mt-2 text-center text-sm font-bold text-emerald-500";
+        document.getElementById('create-staff-form').reset();
+        
+        setTimeout(() => { 
+          document.getElementById('create-staff-modal').classList.add('hidden');
+          msg.textContent = '';
+        }, 2000);
+
+      } catch (err) {
+        msg.textContent = "Error: " + err.message;
+        msg.className = "mt-2 text-center text-sm font-bold text-red-500";
+      } finally {
+        btn.innerText = "Create Account";
+        btn.disabled = false;
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
