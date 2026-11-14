@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vicnos - Expense Reports</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+    
+    /* PRINT STYLES */
+    @media print {
+      body { background: white; color: black; }
+      .no-print { display: none !important; }
+      .print-full { box-shadow: none !important; border: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-10">
+
+  <nav class="bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm no-print">
+    <div class="flex items-center gap-3">
+      <a href="manager.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Expense Reports</h1><p class="text-[10px] text-indigo-600 uppercase tracking-widest font-bold">Management</p></div>
+    </div>
+    <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white p-2 rounded-xl shadow-md transition flex items-center gap-2 text-sm font-bold">
+      <i data-lucide="printer" class="w-4 h-4"></i> Save PDF
+    </button>
+  </nav>
+
+  <main class="p-4 max-w-4xl mx-auto mt-4 space-y-6">
+    
+    <!-- Filter Controls -->
+    <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+      <div class="w-full md:w-auto">
+        <label class="block text-[10px] text-gray-500 font-bold uppercase mb-1">Select Month</label>
+        <input type="month" id="report-month" onchange="loadExpenseReport()" class="bg-gray-50 border border-gray-300 p-2 rounded-lg text-gray-800 outline-none text-sm w-full font-bold">
+      </div>
+      <button onclick="loadExpenseReport()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 px-4 rounded-lg text-sm transition w-full md:w-auto flex items-center justify-center gap-2">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Generate Report
+      </button>
+    </div>
+
+    <!-- The Printable Report -->
+    <div id="print-area" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm print-full">
+      
+      <!-- Report Header -->
+      <div class="text-center mb-8 border-b-2 border-gray-900 pb-4">
+        <h1 class="text-3xl font-black text-gray-900 uppercase">Vicnos Hotel</h1>
+        <p class="text-sm font-bold text-gray-600 mt-1">Monthly Expense Report</p>
+        <p id="print-month" class="text-lg font-bold text-indigo-600 mt-2">Loading Month...</p>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Total Expenses</p>
+          <p id="print-total" class="text-2xl font-black text-rose-600">₦0</p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Total Transactions</p>
+          <p id="print-count" class="text-2xl font-black text-gray-800">0</p>
+        </div>
+      </div>
+
+      <!-- Breakdown by Category -->
+      <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Breakdown by Category</h2>
+      <div id="print-categories" class="space-y-3 mb-8">
+        <p class="text-gray-500 text-sm">Loading...</p>
+      </div>
+
+      <!-- Detailed Ledger -->
+      <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Detailed Ledger</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wider">
+              <th class="p-3 border-b">Date</th>
+              <th class="p-3 border-b">Description</th>
+              <th class="p-3 border-b">Category</th>
+              <th class="p-3 border-b">Dept</th>
+              <th class="p-3 border-b text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="print-ledger" class="text-sm">
+            <tr><td colspan="5" class="p-3 text-center text-gray-500">Loading ledger...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div class="mt-12 pt-4 border-t border-gray-300 text-center text-xs text-gray-500">
+        <p>Generated by Vicnos HotelStack on <span id="print-date"></span></p>
+        <p class="font-bold mt-1">Powered by DEKY</p>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    async function loadExpenseReport() {
+      const monthInput = document.getElementById('report-month');
+      if (!monthInput.value) {
+        const now = new Date();
+        monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      }
+
+      const [year, month] = monthInput.value.split('-');
+      const startDate = new Date(year, month - 1, 1).toISOString();
+      const endDate = new Date(year, month, 1).toISOString();
+
+      // Formatting for display
+      const monthName = new Date(year, month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      document.getElementById('print-month').textContent = monthName;
+      document.getElementById('print-date').textContent = new Date().toLocaleString();
+
+      // Fetch Data
+      const { data: expenses, error } = await db.from('expenses')
+        .select('*')
+        .gte('created_at', startDate)
+        .lt('created_at', endDate)
+        .order('created_at', { ascending: true });
+
+      const ledger = document.getElementById('print-ledger');
+      const catList = document.getElementById('print-categories');
+      const totalEl = document.getElementById('print-total');
+      const countEl = document.getElementById('print-count');
+
+      if (error || !expenses || expenses.length === 0) {
+        ledger.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No expenses recorded for this month.</td></tr>';
+        catList.innerHTML = '<p class="text-gray-500 text-sm">No data.</p>';
+        totalEl.textContent = '₦0';
+        countEl.textContent = '0';
+        return;
+      }
+
+      let total = 0;
+      let categories = {};
+
+      // 1. Build Ledger & Calculate Totals
+      ledger.innerHTML = expenses.map(e => {
+        total += Number(e.amount);
+        
+        // Group by category
+        if (!categories[e.category]) categories[e.category] = 0;
+        categories[e.category] += Number(e.amount);
+
+        return `
+          <tr class="border-b border-gray-100 hover:bg-gray-50">
+            <td class="p-3 text-gray-500">${new Date(e.created_at).toLocaleDateString()}</td>
+            <td class="p-3 font-bold text-gray-800">${e.description}</td>
+            <td class="p-3 text-gray-600">${e.category}</td>
+            <td class="p-3 text-gray-500 text-xs uppercase">${e.department}</td>
+            <td class="p-3 text-right font-bold text-rose-600">₦${Number(e.amount).toLocaleString()}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // 2. Render Summary
+      totalEl.textContent = `₦${total.toLocaleString()}`;
+      countEl.textContent = expenses.length;
+
+      // 3. Render Categories
+      catList.innerHTML = Object.keys(categories).map(cat => `
+        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+          <span class="font-bold text-gray-700">${cat}</span>
+          <span class="font-bold text-gray-900">₦${categories[cat].toLocaleString()}</span>
+        </div>
+      `).join('');
+    }
+
+    loadExpenseReport();
+  </script>
+</body>
+</html>
