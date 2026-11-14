@@ -316,7 +316,9 @@
                 fridge_status: fridgeStatus,
                 heater_status: heaterStatus,
                 fan_status: fanStatus,
-                tv_status: tvStatus
+                tv_status: tvStatus,
+                cleaned_by: staffName,
+                last_cleaned_at: new Date().toISOString()
             }).eq('id', selectedRoomId);
 
             // 2. Handle Maintenance Ticket & Photo

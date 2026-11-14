@@ -28,6 +28,14 @@
     .hide-scroll::-webkit-scrollbar { display: none; }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* Sliding Ticker Animation */
+    @keyframes ticker {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    .ticker-wrap { overflow: hidden; white-space: nowrap; }
+    .ticker-move { display: inline-block; animation: ticker 15s linear infinite; }
   </style>
 </head>
 <body class="min-h-screen pb-10">
@@ -45,26 +53,38 @@
   <main class="p-4 max-w-6xl mx-auto mt-4 space-y-6">
     
     <!-- TOP METRICS -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Rooms Occupied</p>
+        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Occupied</p>
         <p id="stat-occupied" class="text-2xl font-black text-blue-600">0</p>
       </div>
       <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Rooms Dirty</p>
+        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Available</p>
+        <p id="stat-available" class="text-2xl font-black text-emerald-600">0</p>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Reserved</p>
+        <p id="stat-reserved" class="text-2xl font-black text-purple-600">0</p>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Dirty</p>
         <p id="stat-dirty" class="text-2xl font-black text-amber-500">0</p>
-      </div>
-      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Staff On Duty</p>
-        <p id="stat-staff" class="text-2xl font-black text-emerald-600">0</p>
-      </div>
-      <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Open Tickets</p>
-        <p id="stat-tickets" class="text-2xl font-black text-red-600">0</p>
       </div>
     </div>
 
-    <!-- MANAGEMENT CONTROLS (The Grid) -->
+    <!-- ACTIVE GUEST FOLIOS BUTTON -->
+    <a href="finance.html#folios" class="w-full bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg transition">
+      <div class="flex items-center gap-3">
+        <div class="bg-white/10 p-2 rounded-lg"><i data-lucide="door-open" class="w-6 h-6 text-orange-400"></i></div>
+        <div>
+          <p class="font-bold text-sm">Active Guest Folios</p>
+          <p class="text-[10px] text-slate-400">View and manage live room bills</p>
+        </div>
+      </div>
+      <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
+    </a>
+
+    <!-- MANAGEMENT CONTROLS -->
     <h2 class="text-lg font-bold text-gray-800 mt-6 mb-2">Management Controls</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <a href="admin-menu.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
@@ -107,11 +127,22 @@
       <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
           <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-emerald-500"></i> Housekeeping Live Feed</h2>
-          <a href="housekeeping.html" class="text-xs text-indigo-600 font-bold">View Full</a>
         </div>
-        <div id="housekeeping-feed" class="space-y-3 max-h-80 overflow-y-auto hide-scroll">
+        
+        <!-- Ticker -->
+        <div class="ticker-wrap bg-emerald-50 border border-emerald-100 rounded-lg p-2 mb-4">
+          <div class="ticker-move text-xs font-bold text-emerald-700" id="hk-ticker">
+            Loading latest cleaning activity...
+          </div>
+        </div>
+
+        <div id="housekeeping-feed" class="space-y-3 max-h-48 overflow-y-auto hide-scroll">
           <p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>
         </div>
+        
+        <button onclick="document.getElementById('cleaning-log-modal').classList.remove('hidden')" class="w-full mt-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-sm transition">
+          View Room Cleaning Logs & Facilities
+        </button>
       </div>
 
       <!-- MAINTENANCE TICKETS -->
@@ -128,6 +159,19 @@
     </div>
 
   </main>
+
+  <!-- CLEANING LOG MODAL -->
+  <div id="cleaning-log-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
+      <div class="flex justify-between items-center mb-4 border-b pb-2">
+        <h2 class="text-xl font-bold text-gray-900">Room Cleaning Logs</h2>
+        <button onclick="document.getElementById('cleaning-log-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      <div id="cleaning-logs-list" class="space-y-3">
+        <p class="text-center text-gray-500 text-sm animate-pulse">Loading logs...</p>
+      </div>
+    </div>
+  </div>
 
   <!-- CREATE STAFF MODAL -->
   <div id="create-staff-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
@@ -182,27 +226,28 @@
       loadMetrics();
       loadHousekeepingFeed();
       loadMaintenanceFeed();
+      loadCleaningLogs();
     }
 
     async function loadMetrics() {
-      // 1. Rooms Occupied / Dirty
       const { data: rooms } = await db.from('rooms').select('status');
-      let occupied = 0, dirty = 0;
-      if (rooms) rooms.forEach(r => { if(r.status === 'Occupied') occupied++; if(r.status === 'Dirty') dirty++; });
+      let occupied = 0, available = 0, reserved = 0, dirty = 0;
+      if (rooms) rooms.forEach(r => { 
+        if(r.status === 'Occupied') occupied++; 
+        if(r.status === 'Available') available++;
+        if(r.status === 'Reserved') reserved++;
+        if(r.status === 'Dirty') dirty++; 
+      });
       document.getElementById('stat-occupied').textContent = occupied;
+      document.getElementById('stat-available').textContent = available;
+      document.getElementById('stat-reserved').textContent = reserved;
       document.getElementById('stat-dirty').textContent = dirty;
-
-      // 2. Staff on Duty
-      const { count: staffCount } = await db.from('shifts').select('*', { count: 'exact', head: true }).eq('status', 'Active');
-      document.getElementById('stat-staff').textContent = staffCount || 0;
-
-      // 3. Open Maintenance Tickets
-      const { count: ticketCount } = await db.from('maintenance_tickets').select('*', { count: 'exact', head: true }).eq('status', 'Pending');
-      document.getElementById('stat-tickets').textContent = ticketCount || 0;
     }
 
     async function loadHousekeepingFeed() {
       const list = document.getElementById('housekeeping-feed');
+      const ticker = document.getElementById('hk-ticker');
+      
       // Fetch pending guest requests
       const { data: reqs } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending').order('created_at', { ascending: false }).limit(5);
       
@@ -210,14 +255,24 @@
         list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending housekeeping requests.</p>';
       } else {
         list.innerHTML = reqs.map(r => `
-          <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
+          <div class="flex justify-between items-center bg-orange-50 p-3 rounded-xl border border-orange-100">
             <div>
               <p class="font-bold text-gray-800 text-sm">Room ${r.room_number}</p>
               <p class="text-xs text-gray-500">${new Date(r.created_at).toLocaleTimeString()}</p>
             </div>
-            <span class="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded">Pending</span>
+            <span class="text-xs font-bold text-orange-600 bg-orange-200 px-2 py-1 rounded">Pending</span>
           </div>
         `).join('');
+      }
+
+      // Ticker Logic: Fetch recently cleaned rooms
+      const { data: recentlyCleaned } = await db.from('rooms').select('*').not('cleaned_by', 'is', null).order('last_cleaned_at', { ascending: false }).limit(5);
+      
+      if (recentlyCleaned && recentlyCleaned.length > 0) {
+        const tickerText = recentlyCleaned.map(r => `Room ${r.room_number} cleaned by ${r.cleaned_by} at ${new Date(r.last_cleaned_at).toLocaleTimeString()}`).join('  •  ');
+        ticker.textContent = tickerText;
+      } else {
+        ticker.textContent = "No recent cleaning activity.";
       }
     }
 
@@ -239,6 +294,41 @@
           <p class="text-xs text-red-700">${t.issue_description}</p>
         </div>
       `).join('');
+    }
+
+    async function loadCleaningLogs() {
+      const list = document.getElementById('cleaning-logs-list');
+      const { data: rooms } = await db.from('rooms').select('*').not('cleaned_by', 'is', null).order('last_cleaned_at', { ascending: false });
+
+      if (!rooms || rooms.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No cleaning logs available yet.</p>';
+        return;
+      }
+
+      list.innerHTML = rooms.map(r => {
+        // Toggle badge helper
+        const badge = (label, status) => `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${status ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${label}: ${status ? 'ON' : 'OFF'}</span>`;
+
+        return `
+          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div class="flex justify-between items-start mb-2 border-b border-gray-200 pb-2">
+              <div>
+                <p class="font-bold text-gray-800 text-lg">Room ${r.room_number}</p>
+                <p class="text-xs text-gray-500">Cleaned by: <span class="font-bold text-indigo-600">${r.cleaned_by}</span></p>
+              </div>
+              <p class="text-[10px] text-gray-400">${new Date(r.last_cleaned_at).toLocaleString()}</p>
+            </div>
+            
+            <p class="text-[10px] font-bold uppercase text-gray-500 mb-1">Facility Check:</p>
+            <div class="flex flex-wrap gap-2">
+              ${badge('AC', r.ac_status)}
+              ${badge('Fridge', r.fridge_status)}
+              ${badge('Heater', r.heater_status)}
+              ${badge('Fan', r.fan_status)}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // --- CREATE STAFF LOGIC ---
