@@ -364,8 +364,8 @@
               loadLowStock();
           }, 10000);
         }
-        else if (currentRole === 'manager' || currentRole === 'md') {
-          // Route Managers and MDs to their dedicated dashboard
+        else if (currentRole === 'manager' || currentRole === 'md' || currentRole === 'admin') {
+          // Route Managers, MDs, and Admins to their dedicated dashboard
           window.location.href = 'manager.html';
         }
         else {
