@@ -42,12 +42,16 @@
 
   <nav class="bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
     <div class="flex items-center gap-3">
-      <a href="dashboard.html" class="bg-gray-50 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <!-- Removed back arrow, replaced with hotel icon -->
+      <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
       <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Manager Dashboard</h1><p class="text-[10px] text-indigo-600 uppercase tracking-widest font-bold">Operations</p></div>
     </div>
-    <button onclick="document.getElementById('create-staff-modal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl shadow-md transition flex items-center gap-2 text-sm font-bold">
-      <i data-lucide="user-plus" class="w-4 h-4"></i> Add Staff
-    </button>
+    <div class="flex items-center gap-3">
+      <button onclick="document.getElementById('create-staff-modal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl shadow-md transition flex items-center gap-2 text-sm font-bold">
+        <i data-lucide="user-plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Staff</span>
+      </button>
+      <button onclick="logout()" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-red-100 hover:text-red-600 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+    </div>
   </nav>
 
   <!-- GLOBAL LIVE TICKER -->
@@ -116,7 +120,7 @@
         <span class="font-bold text-sm text-gray-800 text-center">Manage Rooms</span>
       </a>
       
-      <!-- ADDED ROOMS BUTTON HERE -->
+      <!-- ROOMS BUTTON -->
       <a href="rooms.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
         <div class="bg-blue-100 p-3 rounded-full text-blue-600"><i data-lucide="door-closed" class="w-6 h-6"></i></div>
         <span class="font-bold text-sm text-gray-800 text-center">Rooms Status</span>
@@ -442,6 +446,12 @@
         btn.disabled = false;
       }
     });
+
+    async function logout() {
+        localStorage.clear();
+        await db.auth.signOut();
+        window.location.replace('index.html');
+    }
 
     init();
   </script>
