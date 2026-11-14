@@ -190,6 +190,33 @@
         <!-- Premium Gold Badge -->
         <span id="std-role-badge" class="relative z-10 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-1.5 rounded-lg tracking-wide shadow-sm">ROLE</span>
       </div>
+
+      <!-- NEW: ACCOUNTANT QUICK VIEW (LIVE ROOMS & AUDIT SEARCH) -->
+      <div id="accountant-quick-view" class="hidden mb-8 space-y-6">
+        
+        <!-- Live Room State -->
+        <div class="bg-slate-800/40 backdrop-blur-md p-5 rounded-3xl border border-slate-700/50">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+              <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="door-open" class="w-5 h-5 text-orange-400"></i> Live Room State (Front Desk Oversight)</h2>
+              <button onclick="loadLiveRoomsDash()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg"><i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Refresh</button>
+            </div>
+            <div id="dash-live-rooms-list" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <p class="col-span-full text-center text-slate-500 text-sm animate-pulse">Loading live room data...</p>
+            </div>
+        </div>
+
+        <!-- Night Audit Search -->
+        <div class="bg-slate-800/40 backdrop-blur-md p-5 rounded-3xl border border-slate-700/50">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-slate-700 pb-2 gap-2">
+              <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="search" class="w-5 h-5 text-indigo-400"></i> Search Night Audits</h2>
+              <input type="date" id="dash-audit-search-date" onchange="loadSpecificAuditDash()" class="bg-slate-900 border border-slate-600 p-2 rounded-lg text-white outline-none text-sm">
+            </div>
+            <div id="dash-specific-audit-result" class="space-y-4">
+              <p class="text-center text-slate-500 text-sm py-4">Select a date above to pull the Manager's closed report.</p>
+            </div>
+        </div>
+
+      </div>
       
       <!-- PREMIUM GRID -->
       <div id="std-operations-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 pb-8"></div>
@@ -344,11 +371,93 @@
           document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
           document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
           document.getElementById('duty-title').textContent = profile.role + ' Portal';
+          
+          if (currentRole === 'accountant') {
+              document.getElementById('accountant-quick-view').classList.remove('hidden');
+              loadLiveRoomsDash();
+          }
+
           renderStandardOperations(profile.role);
         }
       } catch (err) {
         console.error(err);
       }
+    }
+
+    // ==========================================
+    // ACCOUNTANT QUICK VIEW LOGIC
+    // ==========================================
+    async function loadLiveRoomsDash() {
+      const list = document.getElementById('dash-live-rooms-list');
+      const { data: bookings } = await db.from('bookings').select(`id, status, rooms(room_number), guests(full_name)`).eq('status', 'Checked In');
+      const { data: charges } = await db.from('folio_charges').select('booking_id, amount');
+      
+      if (!bookings || bookings.length === 0) {
+        list.innerHTML = '<p class="col-span-full text-center text-slate-500 py-4">No guests are currently checked in.</p>';
+        return;
+      }
+
+      list.innerHTML = bookings.map(b => {
+        const roomCharges = charges ? charges.filter(c => c.booking_id === b.id) : [];
+        const total = roomCharges.reduce((sum, c) => sum + Number(c.amount), 0);
+        
+        return `
+          <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-sm">
+            <p class="text-[10px] text-slate-500 uppercase font-bold">Room</p>
+            <p class="text-lg font-black text-white">${b.rooms.room_number}</p>
+            <p class="text-xs text-slate-300 mt-1 truncate">${b.guests.full_name}</p>
+            <div class="mt-2 pt-2 border-t border-slate-800 flex justify-between items-center">
+              <span class="text-[10px] text-orange-400 font-bold uppercase">Bill</span>
+              <span class="font-bold text-orange-400">₦${total.toLocaleString()}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    async function loadSpecificAuditDash() {
+      const dateInput = document.getElementById('dash-audit-search-date');
+      if (!dateInput.value) return;
+      
+      const list = document.getElementById('dash-specific-audit-result');
+      list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Searching records...</p>';
+      
+      const { data: audit, error } = await db.from('night_audits').select('*, profiles(full_name)').eq('audit_date', dateInput.value).single();
+
+      if (error || !audit) {
+        list.innerHTML = `<p class="text-center text-amber-500 py-4 bg-amber-500/10 rounded-xl border border-amber-500/30">No Night Audit was found for ${new Date(dateInput.value).toLocaleDateString()}.</p>`;
+        return;
+      }
+
+      list.innerHTML = `
+        <div class="bg-slate-900 p-5 rounded-xl border border-slate-700">
+          <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+            <h3 class="font-bold text-white">Audit Report: ${new Date(audit.audit_date).toLocaleDateString()}</h3>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30 uppercase font-bold">Closed by ${audit.profiles?.full_name || 'Manager'}</span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="bg-slate-800 p-3 rounded-lg">
+              <p class="text-[10px] text-slate-400 font-bold uppercase">Total Revenue</p>
+              <p class="text-xl font-black text-emerald-400">₦${Number(audit.total_revenue).toLocaleString()}</p>
+            </div>
+            <div class="bg-slate-800 p-3 rounded-lg">
+              <p class="text-[10px] text-slate-400 font-bold uppercase">Total Cash Remitted</p>
+              <p class="text-xl font-black text-white">₦${Number(audit.total_cash_collected).toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-sm">
+             <div class="flex justify-between text-slate-300"><span>Bar Sales:</span> <span>₦${Number(audit.total_bar_revenue).toLocaleString()}</span></div>
+             <div class="flex justify-between text-slate-300"><span>Kitchen Sales:</span> <span>₦${Number(audit.total_kitchen_revenue).toLocaleString()}</span></div>
+             <div class="flex justify-between text-slate-300"><span>Minimart Sales:</span> <span>₦${Number(audit.total_minimart_revenue).toLocaleString()}</span></div>
+             <div class="flex justify-between text-slate-300"><span>Room Revenue:</span> <span>₦${Number(audit.total_room_revenue).toLocaleString()}</span></div>
+             <div class="flex justify-between text-amber-400 font-bold pt-2 border-t border-slate-700 mt-2"><span>Room Credits (Unpaid):</span> <span>₦${Number(audit.total_room_credits).toLocaleString()}</span></div>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
     }
 
     // ==========================================
@@ -825,7 +934,7 @@
     // STANDARD VIEW (PREMIUM HILTON-STYLE DESIGN)
     // ==========================================
     function renderStandardOperations(role) {
-      const grid = document.getElementById('std-operations-grid'); 
+      const grid = document.getElementById('std-operations-grid');
       let buttons = '';
 
       // Premium Glassmorphism Button Template (Gold/Champagne accents)
