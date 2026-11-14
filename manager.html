@@ -35,7 +35,7 @@
       100% { transform: translateX(-100%); }
     }
     .ticker-wrap { overflow: hidden; white-space: nowrap; }
-    .ticker-move { display: inline-block; animation: ticker 15s linear infinite; }
+    .ticker-move { display: inline-block; animation: ticker 25s linear infinite; }
   </style>
 </head>
 <body class="min-h-screen pb-10">
@@ -49,6 +49,13 @@
       <i data-lucide="user-plus" class="w-4 h-4"></i> Add Staff
     </button>
   </nav>
+
+  <!-- GLOBAL LIVE TICKER -->
+  <div class="bg-indigo-900 text-indigo-200 text-xs font-bold py-1.5 ticker-wrap shadow-inner">
+    <div class="ticker-move" id="global-ticker">
+      <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> Loading live hotel activity...
+    </div>
+  </div>
 
   <main class="p-4 max-w-6xl mx-auto mt-4 space-y-6">
     
@@ -129,13 +136,6 @@
           <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-emerald-500"></i> Housekeeping Live Feed</h2>
         </div>
         
-        <!-- Ticker -->
-        <div class="ticker-wrap bg-emerald-50 border border-emerald-100 rounded-lg p-2 mb-4">
-          <div class="ticker-move text-xs font-bold text-emerald-700" id="hk-ticker">
-            Loading latest cleaning activity...
-          </div>
-        </div>
-
         <div id="housekeeping-feed" class="space-y-3 max-h-48 overflow-y-auto hide-scroll">
           <p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>
         </div>
@@ -227,6 +227,13 @@
       loadHousekeepingFeed();
       loadMaintenanceFeed();
       loadCleaningLogs();
+      loadGlobalTicker();
+
+      // Auto refresh ticker and metrics every 15 seconds
+      setInterval(() => {
+        loadMetrics();
+        loadGlobalTicker();
+      }, 15000);
     }
 
     async function loadMetrics() {
@@ -244,11 +251,67 @@
       document.getElementById('stat-dirty').textContent = dirty;
     }
 
+    async function loadGlobalTicker() {
+      const ticker = document.getElementById('global-ticker');
+      let updates = [];
+
+      try {
+        // 1. Fetch recent POS Sales (Bar, Waitress, Minimart)
+        const { data: sales } = await db.from('pos_orders')
+          .select('department, total_amount, created_at, pos_order_items(item_name, quantity)')
+          .order('created_at', { ascending: false }).limit(10);
+
+        if (sales) {
+          sales.forEach(s => {
+            let itemsStr = "Sale";
+            if (s.pos_order_items && s.pos_order_items.length > 0) {
+              itemsStr = s.pos_order_items.map(i => `${i.quantity}x ${i.item_name}`).join(', ');
+            }
+            updates.push(`${s.department} sold ${itemsStr} for ₦${Number(s.total_amount).toLocaleString()}`);
+          });
+        }
+
+        // 2. Fetch recent Bookings (Front Desk)
+        const { data: bookings } = await db.from('bookings')
+          .select('status, created_at, guests(full_name), rooms(room_number)')
+          .order('created_at', { ascending: false }).limit(5);
+
+        if (bookings) {
+          bookings.forEach(b => {
+            if (b.guests && b.rooms) {
+              if (b.status === 'Checked In') updates.push(`Front Desk: ${b.guests.full_name} checked into Room ${b.rooms.room_number}`);
+              if (b.status === 'Reserved') updates.push(`Front Desk: Room ${b.rooms.room_number} reserved for ${b.guests.full_name}`);
+            }
+          });
+        }
+
+        // 3. Fetch recent Cleaning Logs
+        const { data: rooms } = await db.from('rooms')
+          .select('room_number, cleaned_by, last_cleaned_at')
+          .not('cleaned_by', 'is', null)
+          .order('last_cleaned_at', { ascending: false }).limit(5);
+
+        if (rooms) {
+          rooms.forEach(r => {
+            updates.push(`Housekeeping: Room ${r.room_number} cleaned by ${r.cleaned_by}`);
+          });
+        }
+
+        // Join all updates with a bullet point and loop
+        if (updates.length > 0) {
+          ticker.innerHTML = updates.join(' &nbsp; • &nbsp; ');
+        } else {
+          ticker.textContent = "No recent hotel activity.";
+        }
+
+      } catch (err) {
+        console.error("Ticker Error:", err);
+        ticker.textContent = "Live feed updating...";
+      }
+    }
+
     async function loadHousekeepingFeed() {
       const list = document.getElementById('housekeeping-feed');
-      const ticker = document.getElementById('hk-ticker');
-      
-      // Fetch pending guest requests
       const { data: reqs } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending').order('created_at', { ascending: false }).limit(5);
       
       if (!reqs || reqs.length === 0) {
@@ -263,16 +326,6 @@
             <span class="text-xs font-bold text-orange-600 bg-orange-200 px-2 py-1 rounded">Pending</span>
           </div>
         `).join('');
-      }
-
-      // Ticker Logic: Fetch recently cleaned rooms
-      const { data: recentlyCleaned } = await db.from('rooms').select('*').not('cleaned_by', 'is', null).order('last_cleaned_at', { ascending: false }).limit(5);
-      
-      if (recentlyCleaned && recentlyCleaned.length > 0) {
-        const tickerText = recentlyCleaned.map(r => `Room ${r.room_number} cleaned by ${r.cleaned_by} at ${new Date(r.last_cleaned_at).toLocaleTimeString()}`).join('  •  ');
-        ticker.textContent = tickerText;
-      } else {
-        ticker.textContent = "No recent cleaning activity.";
       }
     }
 
@@ -306,7 +359,6 @@
       }
 
       list.innerHTML = rooms.map(r => {
-        // Toggle badge helper
         const badge = (label, status) => `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${status ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${label}: ${status ? 'ON' : 'OFF'}</span>`;
 
         return `
@@ -347,7 +399,6 @@
         const full_name = document.getElementById('s-name').value;
         const role = document.getElementById('s-role').value;
 
-        // Call the Edge Function we saw in the Supabase folder
         const { data, error } = await db.functions.invoke('create-staff', {
           body: { email, password, full_name, role }
         });
