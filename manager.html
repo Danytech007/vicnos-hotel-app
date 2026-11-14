@@ -79,21 +79,34 @@
       </div>
     </div>
 
-    <!-- ACTIVE GUEST FOLIOS BUTTON -->
-    <a href="finance.html#folios" class="w-full bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg transition">
-      <div class="flex items-center gap-3">
-        <div class="bg-white/10 p-2 rounded-lg"><i data-lucide="door-open" class="w-6 h-6 text-orange-400"></i></div>
-        <div>
-          <p class="font-bold text-sm">Active Guest Folios</p>
-          <p class="text-[10px] text-slate-400">View and manage live room bills</p>
+    <!-- MAIN ACTIONS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <a href="finance.html#folios" class="bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg transition">
+        <div class="flex items-center gap-3">
+          <div class="bg-white/10 p-2 rounded-lg"><i data-lucide="door-open" class="w-6 h-6 text-orange-400"></i></div>
+          <div>
+            <p class="font-bold text-sm">Active Guest Folios</p>
+            <p class="text-[10px] text-slate-400">View live room bills</p>
+          </div>
         </div>
-      </div>
-      <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
-    </a>
+        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
+      </a>
+
+      <a href="finance.html#reports" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex items-center justify-between shadow-sm transition">
+        <div class="flex items-center gap-3">
+          <div class="bg-indigo-100 p-2 rounded-lg"><i data-lucide="bar-chart-2" class="w-6 h-6 text-indigo-600"></i></div>
+          <div>
+            <p class="font-bold text-sm">Sales Reports & RevPAR</p>
+            <p class="text-[10px] text-gray-500">Sales by Department & Revenue</p>
+          </div>
+        </div>
+        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+      </a>
+    </div>
 
     <!-- MANAGEMENT CONTROLS -->
     <h2 class="text-lg font-bold text-gray-800 mt-6 mb-2">Management Controls</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
       <a href="admin-menu.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
         <div class="bg-amber-100 p-3 rounded-full text-amber-600"><i data-lucide="coffee" class="w-6 h-6"></i></div>
         <span class="font-bold text-sm text-gray-800 text-center">Menu Manager</span>
@@ -113,6 +126,10 @@
       <a href="night-audit.html" class="bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-lg transition">
         <i data-lucide="moon" class="w-6 h-6 text-indigo-400"></i>
         <span class="font-bold text-sm">Run Night Audit</span>
+      </a>
+      <a href="finance.html#expenses" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
+        <i data-lucide="shopping-bag" class="w-6 h-6 text-rose-500"></i>
+        <span class="font-bold text-sm">Log Expenses (Fuel etc.)</span>
       </a>
       <a href="staff.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
         <i data-lucide="users" class="w-6 h-6 text-indigo-500"></i>
@@ -145,14 +162,14 @@
         </button>
       </div>
 
-      <!-- MAINTENANCE TICKETS -->
+      <!-- REPORT TO MD (Replaces Open Maintenance) -->
       <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="wrench" class="w-5 h-5 text-red-500"></i> Open Maintenance</h2>
-          <a href="maintenance.html" class="text-xs text-indigo-600 font-bold">View All</a>
+          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="file-text" class="w-5 h-5 text-cyan-500"></i> Report to MD</h2>
+          <a href="finance.html#md_report" class="text-xs text-indigo-600 font-bold">Write Report</a>
         </div>
-        <div id="maintenance-feed" class="space-y-3 max-h-80 overflow-y-auto hide-scroll">
-          <p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>
+        <div id="md-report-feed" class="space-y-3 max-h-80 overflow-y-auto hide-scroll">
+          <p class="text-center text-gray-500 text-sm animate-pulse">Loading reports...</p>
         </div>
       </div>
 
@@ -225,11 +242,10 @@
 
       loadMetrics();
       loadHousekeepingFeed();
-      loadMaintenanceFeed();
+      loadMDReports();
       loadCleaningLogs();
       loadGlobalTicker();
 
-      // Auto refresh ticker and metrics every 15 seconds
       setInterval(() => {
         loadMetrics();
         loadGlobalTicker();
@@ -256,7 +272,6 @@
       let updates = [];
 
       try {
-        // 1. Fetch recent POS Sales (Bar, Waitress, Minimart)
         const { data: sales } = await db.from('pos_orders')
           .select('department, total_amount, created_at, pos_order_items(item_name, quantity)')
           .order('created_at', { ascending: false }).limit(10);
@@ -271,7 +286,6 @@
           });
         }
 
-        // 2. Fetch recent Bookings (Front Desk)
         const { data: bookings } = await db.from('bookings')
           .select('status, created_at, guests(full_name), rooms(room_number)')
           .order('created_at', { ascending: false }).limit(5);
@@ -285,7 +299,6 @@
           });
         }
 
-        // 3. Fetch recent Cleaning Logs
         const { data: rooms } = await db.from('rooms')
           .select('room_number, cleaned_by, last_cleaned_at')
           .not('cleaned_by', 'is', null)
@@ -297,7 +310,6 @@
           });
         }
 
-        // Join all updates with a bullet point and loop
         if (updates.length > 0) {
           ticker.innerHTML = updates.join(' &nbsp; • &nbsp; ');
         } else {
@@ -329,22 +341,23 @@
       }
     }
 
-    async function loadMaintenanceFeed() {
-      const list = document.getElementById('maintenance-feed');
-      const { data: tickets } = await db.from('maintenance_tickets').select('*, rooms(room_number)').eq('status', 'Pending').order('created_at', { ascending: false }).limit(5);
+    async function loadMDReports() {
+      const list = document.getElementById('md-report-feed');
+      const { data: reports } = await db.from('manager_reports').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(3);
 
-      if (!tickets || tickets.length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No open maintenance tickets.</p>';
+      if (!reports || reports.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No reports submitted to MD yet.</p>';
         return;
       }
 
-      list.innerHTML = tickets.map(t => `
-        <div class="flex flex-col bg-red-50 p-3 rounded-xl border border-red-100">
-          <div class="flex justify-between items-center mb-1">
-            <p class="font-bold text-red-800 text-sm">Room ${t.rooms?.room_number || 'N/A'}</p>
-            <span class="text-[10px] font-bold text-red-600 bg-red-200 px-2 py-0.5 rounded uppercase">${t.priority}</span>
+      list.innerHTML = reports.map(r => `
+        <div class="bg-cyan-50 p-3 rounded-xl border border-cyan-100">
+          <div class="flex justify-between items-start mb-1">
+            <p class="font-bold text-cyan-800 text-sm">${r.report_type} Report</p>
+            <span class="text-[10px] text-gray-500">${new Date(r.created_at).toLocaleDateString()}</span>
           </div>
-          <p class="text-xs text-red-700">${t.issue_description}</p>
+          <p class="text-xs text-cyan-900 line-clamp-2">${r.content}</p>
+          <p class="text-[9px] text-cyan-600 font-bold mt-1 uppercase">By: ${r.profiles?.full_name || 'Staff'}</p>
         </div>
       `).join('');
     }
