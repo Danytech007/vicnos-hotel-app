@@ -64,7 +64,44 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- MANAGEMENT CONTROLS (The Grid) -->
+    <h2 class="text-lg font-bold text-gray-800 mt-6 mb-2">Management Controls</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <a href="admin-menu.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
+        <div class="bg-amber-100 p-3 rounded-full text-amber-600"><i data-lucide="coffee" class="w-6 h-6"></i></div>
+        <span class="font-bold text-sm text-gray-800 text-center">Menu Manager</span>
+      </a>
+      <a href="manager-settings.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
+        <div class="bg-purple-100 p-3 rounded-full text-purple-600"><i data-lucide="settings" class="w-6 h-6"></i></div>
+        <span class="font-bold text-sm text-gray-800 text-center">Manage Rooms</span>
+      </a>
+      <a href="manage-highlights.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
+        <div class="bg-rose-100 p-3 rounded-full text-rose-600"><i data-lucide="image" class="w-6 h-6"></i></div>
+        <span class="font-bold text-sm text-gray-800 text-center">Manage Highlights</span>
+      </a>
+      <a href="attendance-report.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
+        <div class="bg-blue-100 p-3 rounded-full text-blue-600"><i data-lucide="clipboard-list" class="w-6 h-6"></i></div>
+        <span class="font-bold text-sm text-gray-800 text-center">Attendance</span>
+      </a>
+      <a href="night-audit.html" class="bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-lg transition">
+        <i data-lucide="moon" class="w-6 h-6 text-indigo-400"></i>
+        <span class="font-bold text-sm">Run Night Audit</span>
+      </a>
+      <a href="staff.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
+        <i data-lucide="users" class="w-6 h-6 text-indigo-500"></i>
+        <span class="font-bold text-sm">Staff Directory</span>
+      </a>
+      <a href="stock-manager.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
+        <i data-lucide="package" class="w-6 h-6 text-amber-500"></i>
+        <span class="font-bold text-sm">Stock Manager</span>
+      </a>
+      <a href="internal-chat.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
+        <i data-lucide="message-square" class="w-6 h-6 text-purple-500"></i>
+        <span class="font-bold text-sm">Staff Chat</span>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
       
       <!-- HOUSEEKEEPING OVERSIGHT -->
       <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
@@ -88,26 +125,6 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- ACTION BUTTONS -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <a href="night-audit.html" class="bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-lg transition">
-        <i data-lucide="moon" class="w-6 h-6 text-indigo-400"></i>
-        <span class="font-bold text-sm">Run Night Audit</span>
-      </a>
-      <a href="staff.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
-        <i data-lucide="users" class="w-6 h-6 text-indigo-500"></i>
-        <span class="font-bold text-sm">Staff Directory</span>
-      </a>
-      <a href="finance.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
-        <i data-lucide="bar-chart-2" class="w-6 h-6 text-emerald-500"></i>
-        <span class="font-bold text-sm">Audit & Finance</span>
-      </a>
-      <a href="internal-chat.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
-        <i data-lucide="message-square" class="w-6 h-6 text-purple-500"></i>
-        <span class="font-bold text-sm">Staff Chat</span>
-      </a>
     </div>
 
   </main>
