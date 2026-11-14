@@ -39,6 +39,15 @@
 
   <main class="p-4 max-w-4xl mx-auto space-y-6 mt-4">
     
+    <!-- ACTIVE SHIFT WARNING BANNER -->
+    <div id="active-shift-warning" class="hidden bg-red-600 text-white p-4 rounded-xl shadow-lg flex items-start gap-3 border-l-4 border-red-900 animate-pulse">
+      <i data-lucide="alert-triangle" class="w-6 h-6 mt-0.5"></i>
+      <div>
+        <h3 class="font-bold">Active Staff Detected!</h3>
+        <p id="active-shift-text" class="text-xs mt-1 text-red-100">Some staff members haven't ended their shifts yet. If you run the audit now, their sales will roll over to tomorrow's audit.</p>
+      </div>
+    </div>
+
     <div class="text-center mb-8">
       <h2 class="text-2xl font-bold text-white mb-1">Daily Sales Summary</h2>
       <p id="audit-date" class="text-sm text-slate-400 font-medium">Loading date...</p>
@@ -68,30 +77,49 @@
 
     <!-- BREAKDOWN -->
     <div class="glass-card p-6 rounded-2xl mt-6">
-      <h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">Revenue Breakdown</h3>
+      <h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">Full Financial Breakdown</h3>
       
       <div class="space-y-4 text-sm">
         <div class="flex justify-between items-center">
-          <span class="text-slate-300">Total Cash Collected</span>
+          <span class="text-slate-300">Total Cash Collected (Physical)</span>
           <span id="total-cash" class="font-bold text-emerald-400 text-lg">₦0</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-300">Total POS / Card Payments</span>
+          <span id="total-pos" class="font-bold text-blue-400 text-lg">₦0</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-300">Total Bank Transfers</span>
+          <span id="total-transfer" class="font-bold text-purple-400 text-lg">₦0</span>
         </div>
         <div class="flex justify-between items-center">
           <span class="text-slate-300">Total Charged to Rooms (Credits)</span>
           <span id="total-credit" class="font-bold text-amber-400 text-lg">₦0</span>
         </div>
+      </div>
+    </div>
+
+    <div class="glass-card p-6 rounded-2xl mt-4">
+      <h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">Department Breakdown</h3>
+      
+      <div class="space-y-4 text-sm">
         <div class="flex justify-between items-center">
-          <span class="text-slate-300">Bar Sales Breakdown</span>
+          <span class="text-slate-300">Bar Sales</span>
           <span id="bar-sales" class="font-bold text-slate-200">₦0</span>
         </div>
         <div class="flex justify-between items-center">
-          <span class="text-slate-300">Kitchen Sales Breakdown</span>
+          <span class="text-slate-300">Kitchen Sales</span>
           <span id="kitchen-sales" class="font-bold text-slate-200">₦0</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-300">Minimart Sales</span>
+          <span id="minimart-sales" class="font-bold text-slate-200">₦0</span>
         </div>
       </div>
     </div>
 
     <!-- ACTION BUTTON -->
-    <div class="mt-8">
+    <div class="mt-8" id="audit-action-container">
       <button onclick="runNightAudit()" id="audit-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2 text-lg">
         <i data-lucide="check-circle" class="w-6 h-6"></i> Run Night Audit & Close Day
       </button>
@@ -110,9 +138,10 @@
     lucide.createIcons();
 
     let currentUser = null;
+    let currentRole = null;
     let auditData = {
         roomRevenue: 0, barRevenue: 0, kitchenRevenue: 0, minimartRevenue: 0,
-        cashTotal: 0, creditTotal: 0, totalRevenue: 0
+        cashTotal: 0, posTotal: 0, transferTotal: 0, creditTotal: 0, totalRevenue: 0
     };
 
     async function init() {
@@ -120,10 +149,35 @@
         if (!user) { window.location.href = 'index.html'; return; }
         currentUser = user;
 
+        const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single();
+        if(profile) currentRole = profile.role;
+
+        // Only MD, Manager, Admin, or Receptionist can RUN the audit. 
+        // Accountant can view but not run it.
+        const allowedRoles = ['md', 'admin', 'manager', 'receptionist', 'super_admin'];
+        if (!allowedRoles.includes(currentRole)) {
+            document.getElementById('audit-action-container').innerHTML = '<p class="text-center text-amber-500 font-bold py-4 bg-amber-500/10 rounded-xl border border-amber-500/30">🔒 Only a Manager or Receptionist can run the Night Audit.</p>';
+        }
+
         const today = new Date();
         document.getElementById('audit-date').textContent = today.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         
+        await checkActiveShifts();
         await calculateTotals();
+    }
+
+    async function checkActiveShifts() {
+        // Check if any staff are currently on 'Active' shift
+        const { data: activeShifts, error } = await db.from('shifts').select('department, profiles(full_name)').eq('status', 'Active');
+        
+        if (activeShifts && activeShifts.length > 0) {
+            const warningBanner = document.getElementById('active-shift-warning');
+            const warningText = document.getElementById('active-shift-text');
+            
+            const names = activeShifts.map(s => `${s.profiles?.full_name || 'Unknown'} (${s.department})`).join(', ');
+            warningText.textContent = `Staff still on active shift: ${names}. Their sales will roll over if not closed.`;
+            warningBanner.classList.remove('hidden');
+        }
     }
 
     async function calculateTotals() {
@@ -152,16 +206,21 @@
         if (posOrders) {
             posOrders.forEach(order => {
                 const amt = Number(order.total_amount);
-                auditData.totalRevenue += amt; // Add to total
+                auditData.totalRevenue += amt;
 
                 if (order.department === 'Bar') auditData.barRevenue += amt;
                 if (order.department === 'Kitchen') auditData.kitchenRevenue += amt;
                 if (order.department === 'Minimart') auditData.minimartRevenue += amt;
 
+                // Payment Method Splits
                 if (order.payment_method === 'Charge_to_Room') {
                     auditData.creditTotal += amt;
+                } else if (order.payment_method === 'POS') {
+                    auditData.posTotal += amt;
+                } else if (order.payment_method === 'Transfer') {
+                    auditData.transferTotal += amt;
                 } else {
-                    auditData.cashTotal += amt;
+                    auditData.cashTotal += amt; // Default to Cash
                 }
             });
         }
@@ -176,10 +235,13 @@
         document.getElementById('total-revenue').textContent = `₦${auditData.totalRevenue.toLocaleString()}`;
         
         document.getElementById('total-cash').textContent = `₦${auditData.cashTotal.toLocaleString()}`;
+        document.getElementById('total-pos').textContent = `₦${auditData.posTotal.toLocaleString()}`;
+        document.getElementById('total-transfer').textContent = `₦${auditData.transferTotal.toLocaleString()}`;
         document.getElementById('total-credit').textContent = `₦${auditData.creditTotal.toLocaleString()}`;
         
         document.getElementById('bar-sales').textContent = `₦${auditData.barRevenue.toLocaleString()}`;
         document.getElementById('kitchen-sales').textContent = `₦${auditData.kitchenRevenue.toLocaleString()}`;
+        document.getElementById('minimart-sales').textContent = `₦${auditData.minimartRevenue.toLocaleString()}`;
     }
 
     async function runNightAudit() {
@@ -200,6 +262,8 @@
                 total_kitchen_revenue: auditData.kitchenRevenue,
                 total_minimart_revenue: auditData.minimartRevenue,
                 total_cash_collected: auditData.cashTotal,
+                total_pos_collected: auditData.posTotal,
+                total_transfer_collected: auditData.transferTotal,
                 total_room_credits: auditData.creditTotal,
                 total_revenue: auditData.totalRevenue,
                 audited_by: currentUser.id
