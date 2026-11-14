@@ -81,28 +81,66 @@
       </div>
     </div>
 
-    <!-- 2. FRONT DESK ACTIONS (Arrivals, Departures, OOO) -->
+    <!-- 2. FRONT DESK ACTIONS -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <a href="dashboard.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
+      <a href="dashboard.html" onclick="alert('Redirecting to Front Desk Dashboard for Arrivals List...')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
+        <i data-lucide="plane-landing" class="w-5 h-5 text-indigo-500 mb-1"></i>
         <p class="text-[10px] text-gray-500 font-bold uppercase">Arrivals</p>
         <p id="fd-arrivals" class="text-2xl font-black text-indigo-600">0</p>
       </a>
-      <a href="dashboard.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition relative">
+      <a href="dashboard.html" onclick="alert('Redirecting to Front Desk Dashboard for Departures List...')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition relative">
+        <i data-lucide="plane-takeoff" class="w-5 h-5 text-orange-500 mb-1"></i>
         <p class="text-[10px] text-gray-500 font-bold uppercase">Departures</p>
         <p id="fd-departures" class="text-2xl font-black text-orange-600">0</p>
         <span id="fd-overdue-badge" class="hidden absolute top-2 right-2 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">LATE</span>
       </a>
       <a href="rooms.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
+        <i data-lucide="bed" class="w-5 h-5 text-blue-500 mb-1"></i>
         <p class="text-[10px] text-gray-500 font-bold uppercase">Occupied</p>
         <p id="fd-occupied" class="text-2xl font-black text-blue-600">0</p>
       </a>
       <a href="rooms.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
-        <p class="text-[10px] text-gray-500 font-bold uppercase">OOO</p>
+        <i data-lucide="wrench" class="w-5 h-5 text-red-500 mb-1"></i>
+        <p class="text-[10px] text-gray-500 font-bold uppercase">Maintenance</p>
         <p id="fd-ooo" class="text-2xl font-black text-red-600">0</p>
       </a>
     </div>
 
-    <!-- 3. MANAGER APPROVALS WIDGET (Voids/Discounts) -->
+    <!-- 3. LIVE ROOM STATES (Specific Room Numbers) -->
+    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+      <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-indigo-500"></i> Live Room States</h2>
+        <a href="rooms.html" class="text-xs text-indigo-600 font-bold hover:underline">Manage Rooms →</a>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Available -->
+        <div class="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100">
+          <h3 class="text-xs font-bold text-emerald-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Available</h3>
+          <div id="list-available" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700">
+            <span class="text-gray-400 font-normal text-xs">Loading...</span>
+          </div>
+        </div>
+
+        <!-- Reserved -->
+        <div class="bg-purple-50/50 rounded-xl p-3 border border-purple-100">
+          <h3 class="text-xs font-bold text-purple-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-purple-500"></div> Reserved</h3>
+          <div id="list-reserved" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700">
+            <span class="text-gray-400 font-normal text-xs">Loading...</span>
+          </div>
+        </div>
+
+        <!-- Dirty -->
+        <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-100">
+          <h3 class="text-xs font-bold text-amber-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-amber-500"></div> Dirty</h3>
+          <div id="list-dirty" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700">
+            <span class="text-gray-400 font-normal text-xs">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. MANAGER APPROVALS WIDGET -->
     <div id="approvals-widget" class="hidden bg-red-50 border-2 border-red-500 p-4 rounded-2xl shadow-lg fade-in relative">
       <div class="flex items-start gap-3">
         <div class="bg-red-200 p-2 rounded-full text-red-700 animate-pulse"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
@@ -126,7 +164,6 @@
         </div>
         <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
       </a>
-
       <a href="finance.html#reports" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex items-center justify-between shadow-sm transition">
         <div class="flex items-center gap-3">
           <div class="bg-indigo-100 p-2 rounded-lg"><i data-lucide="bar-chart-2" class="w-6 h-6 text-indigo-600"></i></div>
@@ -294,6 +331,7 @@
 
       loadKPIs();
       loadFrontDeskActions();
+      loadLiveRoomStates();
       checkApprovals();
       loadHousekeepingFeed();
       loadMDReports();
@@ -303,6 +341,7 @@
       setInterval(() => {
         loadKPIs();
         loadFrontDeskActions();
+        loadLiveRoomStates();
         checkApprovals();
         loadGlobalTicker();
       }, 15000);
@@ -314,7 +353,6 @@
       const startOfDay = new Date().toISOString();
       const endOfDay = new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString();
 
-      // Revenue Today (POS + Rooms)
       const { data: pos } = await db.from('pos_orders').select('total_amount').gte('created_at', startOfDay).lt('created_at', endOfDay);
       const { data: rooms } = await db.from('bookings').select('rooms(price_per_night)').eq('status', 'Checked In');
       
@@ -327,7 +365,6 @@
       const totalRev = posRevenue + roomRevenue;
       document.getElementById('kpi-revenue').textContent = `₦${totalRev.toLocaleString()}`;
 
-      // Occupancy, ADR, RevPAR
       const { count: totalRooms } = await db.from('rooms').select('*', { count: 'exact', head: true });
       const { count: occupiedRooms } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'Checked In');
       
@@ -344,29 +381,48 @@
     async function loadFrontDeskActions() {
       const today = new Date().toISOString().split('T')[0];
 
-      // Arrivals (Expected Today)
       const { count: arrivals } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('check_in_date', today).eq('status', 'Reserved');
       document.getElementById('fd-arrivals').textContent = arrivals || 0;
 
-      // Departures (Due Today)
       const { count: departures } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('expected_check_out', today).eq('status', 'Checked In');
       document.getElementById('fd-departures').textContent = departures || 0;
 
-      // Overdue Departures
       const { count: overdue } = await db.from('bookings').select('*', { count: 'exact', head: true }).lt('expected_check_out', today).eq('status', 'Checked In');
       const badge = document.getElementById('fd-overdue-badge');
       if (overdue > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden');
 
-      // Occupied
       const { count: occupied } = await db.from('rooms').select('*', { count: 'exact', head: true }).eq('status', 'Occupied');
       document.getElementById('fd-occupied').textContent = occupied || 0;
 
-      // OOO
-      const { count: ooo } = await db.from('rooms').select('*', { count: 'exact', head: true }).eq('status', 'Out of Order');
+      const { count: ooo } = await db.from('rooms').select('*', { count: 'exact', head: true }).eq('status', 'Maintenance');
       document.getElementById('fd-ooo').textContent = ooo || 0;
     }
 
-    // 3. MANAGER APPROVALS
+    // 3. LIVE ROOM STATES (Specific Room Numbers)
+    async function loadLiveRoomStates() {
+      const { data: rooms } = await db.from('rooms').select('room_number, status').order('room_number');
+      
+      const listAvailable = document.getElementById('list-available');
+      const listReserved = document.getElementById('list-reserved');
+      const listDirty = document.getElementById('list-dirty');
+
+      let availableHtml = '', reservedHtml = '', dirtyHtml = '';
+
+      if (rooms) {
+        rooms.forEach(r => {
+          const badge = `<a href="rooms.html" class="bg-white border border-gray-200 px-2.5 py-1 rounded-md shadow-sm text-sm hover:bg-gray-50 transition">${r.room_number}</a>`;
+          if (r.status === 'Available') availableHtml += badge;
+          if (r.status === 'Reserved') reservedHtml += badge;
+          if (r.status === 'Dirty') dirtyHtml += badge;
+        });
+      }
+
+      listAvailable.innerHTML = availableHtml || '<span class="text-gray-400 font-normal text-xs">None</span>';
+      listReserved.innerHTML = reservedHtml || '<span class="text-gray-400 font-normal text-xs">None</span>';
+      listDirty.innerHTML = dirtyHtml || '<span class="text-gray-400 font-normal text-xs">None</span>';
+    }
+
+    // 4. MANAGER APPROVALS
     async function checkApprovals() {
       const { count: reqs } = await db.from('pos_orders').select('*', { count: 'exact', head: true }).eq('requires_approval', true);
       const widget = document.getElementById('approvals-widget');
