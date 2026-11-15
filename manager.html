@@ -23,12 +23,15 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; color: #0f172a; }
     .hide-scroll::-webkit-scrollbar { display: none; }
-    .fade-in { animation: fadeIn 0.3s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     
+    /* Bank App Style Soft Shadows */
+    .bank-card { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid rgba(0,0,0,0.02); }
+
     @keyframes ticker {
       0% { transform: translateX(100%); }
       100% { transform: translateX(-100%); }
@@ -37,224 +40,225 @@
     .ticker-move { display: inline-block; animation: ticker 25s linear infinite; }
   </style>
 </head>
-<body class="min-h-screen pb-10">
+<body class="min-h-screen pb-12">
 
-  <nav class="bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+  <!-- CLEANER HEADER -->
+  <nav class="bg-[#f4f7f9] px-5 pt-6 pb-4 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center gap-3">
-      <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-500/20"><i data-lucide="hotel" class="w-5 h-5"></i></div>
-      <div><h1 class="font-bold text-gray-900 text-lg leading-tight">Manager Dashboard</h1><p class="text-[10px] text-indigo-600 uppercase tracking-widest font-bold">Operations</p></div>
+      <div class="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-lg shadow-indigo-600/30"><i data-lucide="hotel" class="w-5 h-5"></i></div>
+      <div><h1 class="font-extrabold text-gray-900 text-xl tracking-tight leading-tight">Manager</h1><p class="text-[10px] text-indigo-600 uppercase tracking-widest font-bold">Operations</p></div>
     </div>
-    <div class="flex items-center gap-3">
-      <button onclick="document.getElementById('create-staff-modal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl shadow-md transition flex items-center gap-2 text-sm font-bold">
-        <i data-lucide="user-plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Staff</span>
+    <div class="flex items-center gap-2">
+      <button onclick="document.getElementById('create-staff-modal').classList.remove('hidden')" class="bg-white p-3 rounded-2xl shadow-sm text-indigo-600 hover:bg-gray-50 transition">
+        <i data-lucide="user-plus" class="w-5 h-5"></i>
       </button>
-      <button onclick="logout()" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-red-100 hover:text-red-600 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+      <button onclick="logout()" class="bg-white p-3 rounded-2xl shadow-sm text-red-500 hover:bg-red-50 transition">
+        <i data-lucide="log-out" class="w-5 h-5"></i>
+      </button>
     </div>
   </nav>
 
   <!-- GLOBAL LIVE TICKER -->
-  <div class="bg-indigo-900 text-indigo-200 text-xs font-bold py-1.5 ticker-wrap shadow-inner">
+  <div class="mx-4 mb-2 bg-indigo-900 text-indigo-200 text-xs font-bold py-2 px-4 rounded-xl ticker-wrap shadow-sm">
     <div class="ticker-move" id="global-ticker">
-      <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> Loading live hotel activity...
+      <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> Loading live activity...
     </div>
   </div>
 
-  <main class="p-4 max-w-6xl mx-auto mt-4 space-y-6">
+  <main class="px-4 max-w-6xl mx-auto mt-2 space-y-6 fade-in">
     
-    <!-- 1. EXECUTIVE KPIs -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="bg-white p-4 rounded-2xl border-l-4 border-emerald-500 shadow-sm">
-        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Today's Revenue</p>
-        <p id="kpi-revenue" class="text-2xl font-black text-emerald-600">₦0</p>
+    <!-- 1. EXECUTIVE KPIs (Bank App Grid Style) -->
+    <div class="grid grid-cols-2 gap-3 md:gap-4">
+      <div class="bg-white p-5 rounded-3xl bank-card relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-10"></div>
+        <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1">Today's Revenue</p>
+        <p id="kpi-revenue" class="text-2xl md:text-3xl font-extrabold text-emerald-600">₦0</p>
       </div>
-      <div class="bg-white p-4 rounded-2xl border-l-4 border-blue-500 shadow-sm">
-        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Occupancy</p>
-        <p id="kpi-occupancy" class="text-2xl font-black text-blue-600">0%</p>
+      <div class="bg-white p-5 rounded-3xl bank-card relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-bl-full -z-10"></div>
+        <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1">Occupancy</p>
+        <p id="kpi-occupancy" class="text-2xl md:text-3xl font-extrabold text-blue-600">0%</p>
       </div>
-      <div class="bg-white p-4 rounded-2xl border-l-4 border-amber-500 shadow-sm">
-        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">ADR</p>
-        <p id="kpi-adr" class="text-2xl font-black text-amber-600">₦0</p>
+      <div class="bg-white p-5 rounded-3xl bank-card">
+        <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1">ADR</p>
+        <p id="kpi-adr" class="text-xl md:text-2xl font-extrabold text-gray-800">₦0</p>
       </div>
-      <div class="bg-white p-4 rounded-2xl border-l-4 border-purple-500 shadow-sm">
-        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">RevPAR</p>
-        <p id="kpi-revpar" class="text-2xl font-black text-purple-600">₦0</p>
+      <div class="bg-white p-5 rounded-3xl bank-card">
+        <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1">RevPAR</p>
+        <p id="kpi-revpar" class="text-xl md:text-2xl font-extrabold text-gray-800">₦0</p>
       </div>
     </div>
 
-    <!-- 2. FRONT DESK ACTIONS -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <!-- Arrivals -->
-      <div onclick="loadGuestsModal('arrivals')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition cursor-pointer">
-        <i data-lucide="log-in" class="w-5 h-5 text-indigo-500 mb-1"></i>
-        <p class="text-[10px] text-gray-500 font-bold uppercase text-center">Checked In Today</p>
-        <p id="fd-arrivals" class="text-2xl font-black text-indigo-600">0</p>
+    <!-- 2. FRONT DESK ACTIONS (Mini Cards) -->
+    <div class="grid grid-cols-4 gap-2">
+      <div onclick="loadGuestsModal('arrivals')" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-gray-50 transition">
+        <i data-lucide="log-in" class="w-5 h-5 text-indigo-500"></i>
+        <p class="text-[9px] text-gray-500 font-bold uppercase text-center leading-tight mt-1">Checked In</p>
+        <p id="fd-arrivals" class="text-lg font-extrabold text-gray-800">0</p>
       </div>
-      <!-- Departures -->
-      <div onclick="loadGuestsModal('departures')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition relative cursor-pointer">
-        <i data-lucide="log-out" class="w-5 h-5 text-orange-500 mb-1"></i>
-        <p class="text-[10px] text-gray-500 font-bold uppercase text-center">Leaving Today</p>
-        <p id="fd-departures" class="text-2xl font-black text-orange-600">0</p>
-        <span id="fd-overdue-badge" class="hidden absolute top-2 right-2 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">LATE</span>
+      <div onclick="loadGuestsModal('departures')" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-gray-50 transition relative">
+        <i data-lucide="log-out" class="w-5 h-5 text-orange-500"></i>
+        <p class="text-[9px] text-gray-500 font-bold uppercase text-center leading-tight mt-1">Leaving</p>
+        <p id="fd-departures" class="text-lg font-extrabold text-gray-800">0</p>
+        <span id="fd-overdue-badge" class="hidden absolute top-2 right-2 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">LATE</span>
       </div>
-      <a href="rooms.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
-        <i data-lucide="bed" class="w-5 h-5 text-blue-500 mb-1"></i>
-        <p class="text-[10px] text-gray-500 font-bold uppercase text-center">Occupied</p>
-        <p id="fd-occupied" class="text-2xl font-black text-blue-600">0</p>
+      <a href="rooms.html" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
+        <i data-lucide="bed" class="w-5 h-5 text-blue-500"></i>
+        <p class="text-[9px] text-gray-500 font-bold uppercase text-center leading-tight mt-1">Occupied</p>
+        <p id="fd-occupied" class="text-lg font-extrabold text-gray-800">0</p>
       </a>
-      <a href="rooms.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
-        <i data-lucide="wrench" class="w-5 h-5 text-red-500 mb-1"></i>
-        <p class="text-[10px] text-gray-500 font-bold uppercase text-center">Maintenance</p>
-        <p id="fd-ooo" class="text-2xl font-black text-red-600">0</p>
+      <a href="rooms.html" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
+        <i data-lucide="wrench" class="w-5 h-5 text-red-500"></i>
+        <p class="text-[9px] text-gray-500 font-bold uppercase text-center leading-tight mt-1">Repairs</p>
+        <p id="fd-ooo" class="text-lg font-extrabold text-gray-800">0</p>
       </a>
     </div>
 
-    <!-- 3. IN-HOUSE GUESTS (New) -->
-    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-      <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-indigo-500"></i> Current In-House Guests</h2>
-        <a href="finance.html#folios" class="text-xs text-indigo-600 font-bold hover:underline">View All Folios →</a>
+    <!-- 3. IN-HOUSE GUESTS (Recent Transactions Style) -->
+    <div class="bg-white rounded-3xl bank-card overflow-hidden">
+      <div class="flex justify-between items-center p-5 border-b border-gray-100">
+        <h2 class="font-bold text-gray-900 text-sm">Current In-House Guests</h2>
+        <a href="finance.html#folios" class="text-xs text-indigo-600 font-bold">View Folios →</a>
       </div>
-      <div id="in-house-list" class="space-y-3 max-h-64 overflow-y-auto hide-scroll">
-        <p class="text-center text-gray-500 text-sm animate-pulse">Loading guest list...</p>
+      <div id="in-house-list" class="divide-y divide-gray-50 max-h-72 overflow-y-auto hide-scroll">
+        <p class="text-center text-gray-400 text-sm py-6">Loading guest list...</p>
       </div>
     </div>
 
     <!-- 4. LIVE ROOM STATES -->
-    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-      <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-indigo-500"></i> Live Room States</h2>
-        <a href="rooms.html" class="text-xs text-indigo-600 font-bold hover:underline">Manage Rooms →</a>
+    <div class="bg-white p-5 rounded-3xl bank-card">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-bold text-gray-900 text-sm">Live Room States</h2>
+        <a href="rooms.html" class="text-xs text-indigo-600 font-bold">Manage →</a>
       </div>
-      
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100">
-          <h3 class="text-xs font-bold text-emerald-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Available</h3>
+        <div class="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
+          <h3 class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-3 flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Available</h3>
           <div id="list-available" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700"><span class="text-gray-400 font-normal text-xs">Loading...</span></div>
         </div>
-        <div class="bg-purple-50/50 rounded-xl p-3 border border-purple-100">
-          <h3 class="text-xs font-bold text-purple-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-purple-500"></div> Reserved</h3>
+        <div class="bg-purple-50/50 rounded-2xl p-4 border border-purple-100/50">
+          <h3 class="text-[10px] font-bold text-purple-700 uppercase tracking-wider mb-3 flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-purple-500"></div> Reserved</h3>
           <div id="list-reserved" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700"><span class="text-gray-400 font-normal text-xs">Loading...</span></div>
         </div>
-        <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-100">
-          <h3 class="text-xs font-bold text-amber-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-amber-500"></div> Dirty</h3>
+        <div class="bg-amber-50/50 rounded-2xl p-4 border border-amber-100/50">
+          <h3 class="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-amber-500"></div> Dirty</h3>
           <div id="list-dirty" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700"><span class="text-gray-400 font-normal text-xs">Loading...</span></div>
         </div>
       </div>
     </div>
 
     <!-- 5. MANAGER APPROVALS WIDGET -->
-    <div id="approvals-widget" class="hidden bg-red-50 border-2 border-red-500 p-4 rounded-2xl shadow-lg fade-in relative">
-      <div class="flex items-start gap-3">
-        <div class="bg-red-200 p-2 rounded-full text-red-700 animate-pulse"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
+    <div id="approvals-widget" class="hidden bg-red-50 border border-red-200 p-5 rounded-3xl shadow-sm fade-in relative">
+      <div class="flex items-start gap-4">
+        <div class="bg-red-100 p-3 rounded-2xl text-red-600 animate-pulse"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
         <div class="flex-1">
-          <h3 class="font-black text-red-800 text-sm uppercase tracking-wide">Action Required: Approvals Pending</h3>
+          <h3 class="font-bold text-red-900 text-sm">Approvals Pending</h3>
           <p class="text-xs text-red-700 mt-1" id="approvals-text">Staff have requested voids or discounts.</p>
-          <button onclick="loadApprovalsModal()" class="mt-3 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg text-xs shadow-md transition">Review Requests</button>
+          <button onclick="loadApprovalsModal()" class="mt-3 bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-md transition w-full sm:w-auto">Review Requests</button>
         </div>
       </div>
     </div>
 
-    <!-- MAIN ACTIONS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <a href="finance.html#folios" class="bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg transition">
-        <div class="flex items-center gap-3">
-          <div class="bg-white/10 p-2 rounded-lg"><i data-lucide="door-open" class="w-6 h-6 text-orange-400"></i></div>
+    <!-- MAIN ACTIONS (Bank App Dark Mode Card Style) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <a href="finance.html#folios" class="bg-[#0f172a] hover:bg-slate-800 text-white p-5 rounded-3xl flex items-center justify-between shadow-lg transition">
+        <div class="flex items-center gap-4">
+          <div class="bg-white/10 p-3 rounded-2xl"><i data-lucide="door-open" class="w-6 h-6 text-orange-400"></i></div>
           <div>
             <p class="font-bold text-sm">Active Guest Folios</p>
-            <p class="text-[10px] text-slate-400">View live room bills</p>
+            <p class="text-[11px] text-slate-400">View live room bills</p>
           </div>
         </div>
-        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
+        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i>
       </a>
-      <a href="finance.html#reports" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex items-center justify-between shadow-sm transition">
-        <div class="flex items-center gap-3">
-          <div class="bg-indigo-100 p-2 rounded-lg"><i data-lucide="bar-chart-2" class="w-6 h-6 text-indigo-600"></i></div>
+      <a href="finance.html#reports" class="bg-white border border-gray-100 hover:bg-gray-50 text-gray-800 p-5 rounded-3xl flex items-center justify-between shadow-sm transition">
+        <div class="flex items-center gap-4">
+          <div class="bg-indigo-50 p-3 rounded-2xl"><i data-lucide="bar-chart-2" class="w-6 h-6 text-indigo-600"></i></div>
           <div>
-            <p class="font-bold text-sm">Sales Reports & RevPAR</p>
-            <p class="text-[10px] text-gray-500">Sales by Department & Revenue</p>
+            <p class="font-bold text-sm">Sales & RevPAR</p>
+            <p class="text-[11px] text-gray-500">Department Revenue</p>
           </div>
         </div>
         <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
       </a>
     </div>
 
-    <!-- MANAGEMENT CONTROLS -->
-    <h2 class="text-lg font-bold text-gray-800 mt-6 mb-2">Management Controls</h2>
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-      
-      <!-- NEW LOG EXPENSE BUTTON -->
-      <button onclick="document.getElementById('expense-modal').classList.remove('hidden')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
-        <div class="bg-teal-100 p-3 rounded-full text-teal-600"><i data-lucide="receipt" class="w-6 h-6"></i></div>
-        <span class="font-bold text-sm text-gray-800 text-center">Log Expense</span>
-      </button>
+    <!-- MANAGEMENT CONTROLS (OPay Services Grid Style) -->
+    <div>
+      <h2 class="text-sm font-bold text-gray-900 px-2 mb-3">Management Services</h2>
+      <div class="grid grid-cols-3 md:grid-cols-4 gap-3">
+        
+        <button onclick="document.getElementById('expense-modal').classList.remove('hidden')" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-teal-50 p-3.5 rounded-2xl text-teal-600"><i data-lucide="receipt" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Log Expense</span>
+        </button>
 
-      <a href="admin-menu.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
-        <div class="bg-amber-100 p-3 rounded-full text-amber-600"><i data-lucide="coffee" class="w-6 h-6"></i></div>
-        <span class="font-bold text-sm text-gray-800 text-center">Menu Manager</span>
-      </a>
-      <a href="manager-settings.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
-        <div class="bg-purple-100 p-3 rounded-full text-purple-600"><i data-lucide="settings" class="w-6 h-6"></i></div>
-        <span class="font-bold text-sm text-gray-800 text-center">Manage Rooms</span>
-      </a>
-      <a href="rooms.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
-        <div class="bg-blue-100 p-3 rounded-full text-blue-600"><i data-lucide="door-closed" class="w-6 h-6"></i></div>
-        <span class="font-bold text-sm text-gray-800 text-center">Rooms Status</span>
-      </a>
-      <a href="manage-highlights.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
-        <div class="bg-rose-100 p-3 rounded-full text-rose-600"><i data-lucide="image" class="w-6 h-6"></i></div>
-        <span class="font-bold text-sm text-gray-800 text-center">Manage Highlights</span>
-      </a>
-      <a href="attendance-report.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
-        <div class="bg-blue-100 p-3 rounded-full text-blue-600"><i data-lucide="clipboard-list" class="w-6 h-6"></i></div>
-        <span class="font-bold text-sm text-gray-800 text-center">Attendance</span>
-      </a>
-      <a href="night-audit.html" class="bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-lg transition">
-        <i data-lucide="moon" class="w-6 h-6 text-indigo-400"></i>
-        <span class="font-bold text-sm">Run Night Audit</span>
-      </a>
-      <a href="expenses-report.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
-        <i data-lucide="file-text" class="w-6 h-6 text-rose-500"></i>
-        <span class="font-bold text-sm text-center">Expense Reports</span>
-      </a>
-      <a href="staff.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
-        <i data-lucide="users" class="w-6 h-6 text-indigo-500"></i>
-        <span class="font-bold text-sm">Staff Directory</span>
-      </a>
-      <a href="stock-manager.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
-        <i data-lucide="package" class="w-6 h-6 text-amber-500"></i>
-        <span class="font-bold text-sm">Stock Manager</span>
-      </a>
-      <a href="internal-chat.html" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
-        <i data-lucide="message-square" class="w-6 h-6 text-purple-500"></i>
-        <span class="font-bold text-sm">Staff Chat</span>
-      </a>
+        <a href="admin-menu.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-amber-50 p-3.5 rounded-2xl text-amber-600"><i data-lucide="coffee" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Menu<br>Manager</span>
+        </a>
+        <a href="manager-settings.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-purple-50 p-3.5 rounded-2xl text-purple-600"><i data-lucide="settings" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Manage<br>Rooms</span>
+        </a>
+        <a href="rooms.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-blue-50 p-3.5 rounded-2xl text-blue-600"><i data-lucide="door-closed" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Rooms<br>Status</span>
+        </a>
+        <a href="manage-highlights.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-rose-50 p-3.5 rounded-2xl text-rose-600"><i data-lucide="image" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Highlights</span>
+        </a>
+        <a href="attendance-report.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-indigo-50 p-3.5 rounded-2xl text-indigo-600"><i data-lucide="clipboard-list" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Attendance</span>
+        </a>
+        <a href="night-audit.html" class="bg-[#0f172a] p-4 rounded-3xl shadow-lg flex flex-col items-center justify-center gap-3 active:scale-95 transition">
+          <div class="bg-white/10 p-3.5 rounded-2xl text-indigo-300"><i data-lucide="moon" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-white text-center leading-tight">Run Night<br>Audit</span>
+        </a>
+        <a href="expenses-report.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-red-50 p-3.5 rounded-2xl text-red-500"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Expense<br>Report</span>
+        </a>
+        <a href="staff.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-cyan-50 p-3.5 rounded-2xl text-cyan-600"><i data-lucide="users" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Staff<br>Directory</span>
+        </a>
+        <a href="stock-manager.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-orange-50 p-3.5 rounded-2xl text-orange-500"><i data-lucide="package" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Stock<br>Manager</span>
+        </a>
+        <a href="internal-chat.html" class="bg-white p-4 rounded-3xl bank-card flex flex-col items-center justify-center gap-3 hover:bg-gray-50 active:scale-95 transition">
+          <div class="bg-violet-50 p-3.5 rounded-2xl text-violet-600"><i data-lucide="message-square" class="w-6 h-6"></i></div>
+          <span class="font-bold text-[11px] text-gray-800 text-center leading-tight">Staff<br>Chat</span>
+        </a>
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
       
       <!-- HOUSEEKEEPING OVERSIGHT -->
-      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-        <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-emerald-500"></i> Housekeeping Live Feed</h2>
+      <div class="bg-white p-5 rounded-3xl bank-card">
+        <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+          <h2 class="font-bold text-gray-900 text-sm flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-emerald-500"></i> Housekeeping</h2>
         </div>
-        
         <div id="housekeeping-feed" class="space-y-3 max-h-48 overflow-y-auto hide-scroll">
-          <p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>
+          <p class="text-center text-gray-400 text-sm py-4">Loading...</p>
         </div>
-        
-        <button onclick="document.getElementById('cleaning-log-modal').classList.remove('hidden')" class="w-full mt-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-sm transition">
-          View Room Cleaning Logs & Facilities
+        <button onclick="document.getElementById('cleaning-log-modal').classList.remove('hidden')" class="w-full mt-4 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-3 rounded-2xl text-xs transition border border-gray-100">
+          View Cleaning Logs
         </button>
       </div>
 
       <!-- REPORT TO MD -->
-      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-        <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-          <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="file-text" class="w-5 h-5 text-cyan-500"></i> Report to MD</h2>
-          <a href="finance.html#md_report" class="text-xs text-indigo-600 font-bold">Write Report</a>
+      <div class="bg-white p-5 rounded-3xl bank-card">
+        <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+          <h2 class="font-bold text-gray-900 text-sm flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 text-cyan-500"></i> Report to MD</h2>
+          <a href="finance.html#md_report" class="text-[11px] bg-cyan-50 text-cyan-700 font-bold px-3 py-1.5 rounded-lg">Write</a>
         </div>
         <div id="md-report-feed" class="space-y-3 max-h-80 overflow-y-auto hide-scroll">
-          <p class="text-center text-gray-500 text-sm animate-pulse">Loading reports...</p>
+          <p class="text-center text-gray-400 text-sm py-4">Loading reports...</p>
         </div>
       </div>
 
@@ -264,63 +268,63 @@
 
   <!-- CLEANING LOG MODAL -->
   <div id="cleaning-log-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
-      <div class="flex justify-between items-center mb-4 border-b pb-2">
-        <h2 class="text-xl font-bold text-gray-900">Room Cleaning Logs</h2>
-        <button onclick="document.getElementById('cleaning-log-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div class="bg-white w-full max-w-md rounded-[2rem] p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
+      <div class="flex justify-between items-center mb-4 border-b pb-3">
+        <h2 class="text-lg font-bold text-gray-900">Room Cleaning Logs</h2>
+        <button onclick="document.getElementById('cleaning-log-modal').classList.add('hidden')" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <div id="cleaning-logs-list" class="space-y-3">
-        <p class="text-center text-gray-500 text-sm animate-pulse">Loading logs...</p>
+        <p class="text-center text-gray-400 text-sm py-4">Loading logs...</p>
       </div>
     </div>
   </div>
 
   <!-- APPROVALS MODAL -->
   <div id="approvals-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
-      <div class="flex justify-between items-center mb-4 border-b pb-2">
-        <h2 class="text-xl font-bold text-red-600">Void / Discount Approvals</h2>
-        <button onclick="document.getElementById('approvals-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div class="bg-white w-full max-w-md rounded-[2rem] p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
+      <div class="flex justify-between items-center mb-4 border-b pb-3">
+        <h2 class="text-lg font-bold text-red-600">Void / Discount Approvals</h2>
+        <button onclick="document.getElementById('approvals-modal').classList.add('hidden')" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <div id="approvals-list" class="space-y-3">
-        <p class="text-center text-gray-500 text-sm animate-pulse">Loading requests...</p>
+        <p class="text-center text-gray-400 text-sm py-4">Loading requests...</p>
       </div>
     </div>
   </div>
 
   <!-- GUEST LIST MODAL (Arrivals / Departures) -->
   <div id="guest-list-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
-      <div class="flex justify-between items-center mb-4 border-b pb-2">
-        <h2 class="text-xl font-bold text-gray-900" id="guest-list-title">Guest List</h2>
-        <button onclick="document.getElementById('guest-list-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div class="bg-white w-full max-w-md rounded-[2rem] p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
+      <div class="flex justify-between items-center mb-4 border-b pb-3">
+        <h2 class="text-lg font-bold text-gray-900" id="guest-list-title">Guest List</h2>
+        <button onclick="document.getElementById('guest-list-modal').classList.add('hidden')" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <div id="guest-list-content" class="space-y-3">
-        <p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>
+        <p class="text-center text-gray-400 text-sm py-4">Loading...</p>
       </div>
     </div>
   </div>
 
-  <!-- LOG EXPENSE MODAL (RESTORED) -->
+  <!-- LOG EXPENSE MODAL -->
   <div id="expense-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-900">Log Expense</h2>
-        <button onclick="document.getElementById('expense-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div class="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-5">
+        <h2 class="text-lg font-bold text-gray-900">Log Expense</h2>
+        <button onclick="document.getElementById('expense-modal').classList.add('hidden')" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       
-      <form id="expense-form" class="space-y-3">
+      <form id="expense-form" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-gray-500 mb-1">Description</label>
-          <input type="text" id="exp-desc" required placeholder="e.g. Diesel for Generator" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
+          <input type="text" id="exp-desc" required placeholder="e.g. Diesel for Generator" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-sm">
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-500 mb-1">Amount (₦)</label>
-          <input type="number" id="exp-amount" required min="0" step="0.01" placeholder="0.00" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Amount (₦)</label>
+          <input type="number" id="exp-amount" required min="0" step="0.01" placeholder="0.00" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-sm font-bold text-gray-800">
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-500 mb-1">Category</label>
-          <select id="exp-cat" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Category</label>
+          <select id="exp-cat" required class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-sm appearance-none">
             <option value="Fuel/Diesel">Fuel / Diesel</option>
             <option value="Maintenance">Maintenance / Repairs</option>
             <option value="Utilities">Utilities (NEPA, Water)</option>
@@ -330,8 +334,8 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-500 mb-1">Department</label>
-          <select id="exp-dept" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Department</label>
+          <select id="exp-dept" required class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-sm appearance-none">
             <option value="General">General</option>
             <option value="Kitchen">Kitchen</option>
             <option value="Bar">Bar</option>
@@ -339,27 +343,27 @@
           </select>
         </div>
         
-        <button type="submit" id="exp-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2">Save Expense</button>
+        <button type="submit" id="exp-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition mt-2">Save Expense</button>
       </form>
-      <p id="exp-msg" class="mt-2 text-center text-sm font-bold"></p>
+      <p id="exp-msg" class="mt-3 text-center text-sm font-bold"></p>
     </div>
   </div>
 
   <!-- CREATE STAFF MODAL -->
   <div id="create-staff-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-900">Create New Staff</h2>
-        <button onclick="document.getElementById('create-staff-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div class="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-5">
+        <h2 class="text-lg font-bold text-gray-900">Create New Staff</h2>
+        <button onclick="document.getElementById('create-staff-modal').classList.add('hidden')" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       
-      <form id="create-staff-form" class="space-y-3">
-        <div><label class="block text-xs font-bold text-gray-500 mb-1">Full Name</label><input type="text" id="s-name" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500"></div>
-        <div><label class="block text-xs font-bold text-gray-500 mb-1">Email</label><input type="email" id="s-email" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500"></div>
-        <div><label class="block text-xs font-bold text-gray-500 mb-1">Temporary Password</label><input type="text" id="s-password" required minlength="6" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500" placeholder="Min 6 characters"></div>
+      <form id="create-staff-form" class="space-y-4">
+        <div><label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Full Name</label><input type="text" id="s-name" required class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-sm"></div>
+        <div><label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Email</label><input type="email" id="s-email" required class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-sm"></div>
+        <div><label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Temporary Password</label><input type="text" id="s-password" required minlength="6" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-sm" placeholder="Min 6 characters"></div>
         <div>
-          <label class="block text-xs font-bold text-gray-500 mb-1">Role</label>
-          <select id="s-role" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Role</label>
+          <select id="s-role" required class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-sm appearance-none">
             <option value="md">Managing Director (MD)</option>
             <option value="manager">Manager</option>
             <option value="accountant">Accountant</option>
@@ -374,9 +378,9 @@
           </select>
         </div>
         
-        <button type="submit" id="s-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2">Create Account</button>
+        <button type="submit" id="s-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition mt-2">Create Account</button>
       </form>
-      <p id="s-msg" class="mt-2 text-center text-sm font-bold"></p>
+      <p id="s-msg" class="mt-3 text-center text-sm font-bold"></p>
     </div>
   </div>
 
@@ -465,7 +469,7 @@
       document.getElementById('fd-ooo').textContent = ooo || 0;
     }
 
-    // 3. IN-HOUSE GUESTS LIST
+    // 3. IN-HOUSE GUESTS LIST (Recent Transactions Style)
     async function loadInHouseGuests() {
       const list = document.getElementById('in-house-list');
       const today = new Date().toISOString().split('T')[0];
@@ -476,40 +480,49 @@
         .order('expected_check_out', { ascending: true });
 
       if (!guests || guests.length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active guests in-house.</p>';
+        list.innerHTML = '<p class="text-center text-gray-400 text-sm py-6">No active guests in-house.</p>';
         return;
       }
 
       list.innerHTML = guests.map(g => {
         const checkOut = g.expected_check_out;
-        let colorClass = "border-gray-200 bg-white";
+        let iconBg = "bg-gray-100";
+        let iconColor = "text-gray-500";
         let textClass = "text-gray-500";
         let badge = "";
 
         if (checkOut === today) {
-          colorClass = "border-orange-300 bg-orange-50";
+          iconBg = "bg-orange-50";
+          iconColor = "text-orange-500";
           textClass = "text-orange-600 font-bold";
-          badge = `<span class="bg-orange-200 text-orange-800 text-[10px] px-2 py-0.5 rounded font-bold ml-2">Leaving Today</span>`;
+          badge = `<span class="bg-orange-100 text-orange-700 text-[9px] px-2 py-0.5 rounded uppercase font-bold mt-1 inline-block">Leaving Today</span>`;
         } else if (checkOut < today) {
-          colorClass = "border-red-300 bg-red-50";
+          iconBg = "bg-red-50";
+          iconColor = "text-red-500";
           textClass = "text-red-600 font-bold";
-          badge = `<span class="bg-red-200 text-red-800 text-[10px] px-2 py-0.5 rounded font-bold ml-2">OVERDUE</span>`;
+          badge = `<span class="bg-red-100 text-red-700 text-[9px] px-2 py-0.5 rounded uppercase font-bold mt-1 inline-block">Overdue</span>`;
         }
 
         return `
-          <div class="flex justify-between items-center p-3 rounded-xl border ${colorClass} mb-2">
-            <div>
-              <p class="font-bold text-gray-800 text-sm">Room ${g.rooms?.room_number || '??'}</p>
-              <p class="text-xs text-gray-600">${g.guests?.full_name || 'Unknown'}</p>
+          <div class="flex items-center justify-between p-4 hover:bg-gray-50 transition cursor-pointer" onclick="window.location.href='finance.html#folios'">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full ${iconBg} flex items-center justify-center ${iconColor}">
+                <i data-lucide="user" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="font-bold text-gray-900 text-sm">${g.guests?.full_name || 'Unknown'}</p>
+                <p class="text-[11px] text-gray-500">Room ${g.rooms?.room_number || '??'}</p>
+              </div>
             </div>
             <div class="text-right">
-              <p class="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Checkout</p>
+              <p class="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Checkout</p>
               <p class="text-xs ${textClass}">${new Date(checkOut).toLocaleDateString()}</p>
               ${badge}
             </div>
           </div>
         `;
       }).join('');
+      lucide.createIcons();
     }
 
     // GUEST LIST MODAL (Arrivals/Departures)
@@ -520,7 +533,7 @@
       const today = new Date().toISOString().split('T')[0];
       
       title.textContent = type === 'arrivals' ? 'Checked In Today' : 'Leaving Today';
-      content.innerHTML = '<p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>';
+      content.innerHTML = '<p class="text-center text-gray-400 text-sm py-4 animate-pulse">Loading...</p>';
 
       let query = db.from('bookings').select('expected_check_out, guests(full_name), rooms(room_number)').eq('status', 'Checked In');
       
@@ -533,17 +546,17 @@
       const { data, error } = await query;
 
       if (error || !data || data.length === 0) {
-        content.innerHTML = `<p class="text-center text-gray-500 text-sm py-4">No guests found for ${type} today.</p>`;
+        content.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">No guests found for ${type} today.</p>`;
         return;
       }
 
       content.innerHTML = data.map(g => `
-        <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 flex justify-between items-center">
+        <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center">
           <div>
-            <p class="font-bold text-gray-800 text-sm">Room ${g.rooms?.room_number || '??'}</p>
-            <p class="text-xs text-gray-600">${g.guests?.full_name || 'Unknown'}</p>
+            <p class="font-bold text-gray-900 text-sm">${g.guests?.full_name || 'Unknown'}</p>
+            <p class="text-[11px] text-gray-500">Room ${g.rooms?.room_number || '??'}</p>
           </div>
-          <a href="finance.html#folios" class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-bold">View Bill</a>
+          <a href="finance.html#folios" class="text-[11px] bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold">View Bill</a>
         </div>
       `).join('');
     }
@@ -560,7 +573,7 @@
 
       if (rooms) {
         rooms.forEach(r => {
-          const badge = `<a href="rooms.html" class="bg-white border border-gray-200 px-2.5 py-1 rounded-md shadow-sm text-sm hover:bg-gray-50 transition">${r.room_number}</a>`;
+          const badge = `<a href="rooms.html" class="bg-white border border-gray-200 px-3 py-1.5 rounded-xl shadow-sm text-xs font-bold hover:bg-gray-50 transition">${r.room_number}</a>`;
           if (r.status === 'Available') availableHtml += badge;
           if (r.status === 'Reserved') reservedHtml += badge;
           if (r.status === 'Dirty') dirtyHtml += badge;
@@ -592,14 +605,14 @@
       const { data: reqs } = await db.from('pos_orders').select('*, pos_order_items(item_name, quantity)').eq('requires_approval', true);
 
       if (!reqs || reqs.length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-500 py-4">No pending approvals.</p>';
+        list.innerHTML = '<p class="text-center text-gray-400 py-4">No pending approvals.</p>';
         return;
       }
 
       list.innerHTML = reqs.map(r => {
         let itemsStr = r.pos_order_items ? r.pos_order_items.map(i => `${i.quantity}x ${i.item_name}`).join(', ') : 'Items';
         return `
-          <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+          <div class="bg-red-50 p-4 rounded-2xl border border-red-100">
             <div class="flex justify-between items-start mb-2">
               <div>
                 <p class="font-bold text-red-800 text-sm">${r.department} - ₦${Number(r.total_amount).toLocaleString()}</p>
@@ -608,8 +621,8 @@
               </div>
             </div>
             <div class="flex gap-2 mt-3">
-              <button onclick="resolveApproval('${r.id}', false)" class="flex-1 bg-white border border-red-300 text-red-700 py-1.5 rounded-lg text-xs font-bold">Reject</button>
-              <button onclick="resolveApproval('${r.id}', true)" class="flex-1 bg-red-600 text-white py-1.5 rounded-lg text-xs font-bold">Approve</button>
+              <button onclick="resolveApproval('${r.id}', false)" class="flex-1 bg-white border border-red-200 text-red-700 py-2 rounded-xl text-xs font-bold">Reject</button>
+              <button onclick="resolveApproval('${r.id}', true)" class="flex-1 bg-red-600 text-white py-2 rounded-xl text-xs font-bold">Approve</button>
             </div>
           </div>
         `;
@@ -663,12 +676,12 @@
       const list = document.getElementById('housekeeping-feed');
       const { data: reqs } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending').order('created_at', { ascending: false }).limit(5);
       
-      if (!reqs || reqs.length === 0) list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No pending housekeeping requests.</p>';
+      if (!reqs || reqs.length === 0) list.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">No pending requests.</p>';
       else {
         list.innerHTML = reqs.map(r => `
-          <div class="flex justify-between items-center bg-orange-50 p-3 rounded-xl border border-orange-100">
-            <div><p class="font-bold text-gray-800 text-sm">Room ${r.room_number}</p><p class="text-xs text-gray-500">${new Date(r.created_at).toLocaleTimeString()}</p></div>
-            <span class="text-xs font-bold text-orange-600 bg-orange-200 px-2 py-1 rounded">Pending</span>
+          <div class="flex justify-between items-center bg-orange-50 p-3 rounded-2xl border border-orange-100">
+            <div><p class="font-bold text-gray-800 text-sm">Room ${r.room_number}</p><p class="text-[10px] text-gray-500">${new Date(r.created_at).toLocaleTimeString()}</p></div>
+            <span class="text-[10px] font-bold text-orange-600 bg-orange-200 px-2 py-1 rounded-lg">Pending</span>
           </div>
         `).join('');
       }
@@ -678,16 +691,16 @@
       const list = document.getElementById('md-report-feed');
       const { data: reports } = await db.from('manager_reports').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(3);
 
-      if (!reports || reports.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No reports submitted to MD yet.</p>'; return; }
+      if (!reports || reports.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">No reports submitted yet.</p>'; return; }
 
       list.innerHTML = reports.map(r => `
-        <div class="bg-cyan-50 p-3 rounded-xl border border-cyan-100">
+        <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100">
           <div class="flex justify-between items-start mb-1">
             <p class="font-bold text-cyan-800 text-sm">${r.report_type} Report</p>
-            <span class="text-[10px] text-gray-500">${new Date(r.created_at).toLocaleDateString()}</span>
+            <span class="text-[9px] text-gray-500">${new Date(r.created_at).toLocaleDateString()}</span>
           </div>
-          <p class="text-xs text-cyan-900 line-clamp-2">${r.content}</p>
-          <p class="text-[9px] text-cyan-600 font-bold mt-1 uppercase">By: ${r.profiles?.full_name || 'Staff'}</p>
+          <p class="text-xs text-cyan-900 line-clamp-2 mt-1">${r.content}</p>
+          <p class="text-[9px] text-cyan-600 font-bold mt-2 uppercase">By: ${r.profiles?.full_name || 'Staff'}</p>
         </div>
       `).join('');
     }
@@ -696,24 +709,24 @@
       const list = document.getElementById('cleaning-logs-list');
       const { data: rooms } = await db.from('rooms').select('*').not('cleaned_by', 'is', null).order('last_cleaned_at', { ascending: false });
 
-      if (!rooms || rooms.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No cleaning logs available yet.</p>'; return; }
+      if (!rooms || rooms.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">No cleaning logs available.</p>'; return; }
 
       list.innerHTML = rooms.map(r => {
-        const badge = (label, status) => `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${status ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${label}: ${status ? 'ON' : 'OFF'}</span>`;
+        const badge = (label, status) => `<span class="text-[10px] font-bold px-2 py-1 rounded-lg ${status ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}">${label}: ${status ? 'ON' : 'OFF'}</span>`;
         return `
-          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <div class="flex justify-between items-start mb-2 border-b border-gray-200 pb-2">
-              <div><p class="font-bold text-gray-800 text-lg">Room ${r.room_number}</p><p class="text-xs text-gray-500">Cleaned by: <span class="font-bold text-indigo-600">${r.cleaned_by}</span></p></div>
-              <p class="text-[10px] text-gray-400">${new Date(r.last_cleaned_at).toLocaleString()}</p>
+          <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+            <div class="flex justify-between items-start mb-3 border-b border-gray-200 pb-2">
+              <div><p class="font-bold text-gray-900 text-sm">Room ${r.room_number}</p><p class="text-[10px] text-gray-500">Cleaned by: <span class="font-bold text-indigo-600">${r.cleaned_by}</span></p></div>
+              <p class="text-[9px] text-gray-400">${new Date(r.last_cleaned_at).toLocaleString()}</p>
             </div>
-            <p class="text-[10px] font-bold uppercase text-gray-500 mb-1">Facility Check:</p>
+            <p class="text-[9px] font-bold uppercase text-gray-400 mb-2">Facility Check:</p>
             <div class="flex flex-wrap gap-2">${badge('AC', r.ac_status)}${badge('Fridge', r.fridge_status)}${badge('Heater', r.heater_status)}${badge('Fan', r.fan_status)}</div>
           </div>
         `;
       }).join('');
     }
 
-    // SUBMIT EXPENSE (From Manager)
+    // SUBMIT EXPENSE
     document.getElementById('expense-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('exp-btn'); const msg = document.getElementById('exp-msg');
@@ -735,12 +748,12 @@
 
         if (error) throw new Error(error.message);
 
-        msg.textContent = "✅ Expense saved successfully!"; msg.className = "mt-2 text-center text-sm font-bold text-emerald-500";
+        msg.textContent = "✅ Expense saved!"; msg.className = "mt-3 text-center text-sm font-bold text-emerald-500";
         document.getElementById('expense-form').reset();
-        setTimeout(() => { document.getElementById('expense-modal').classList.add('hidden'); msg.textContent = ''; }, 2000);
+        setTimeout(() => { document.getElementById('expense-modal').classList.add('hidden'); msg.textContent = ''; }, 1500);
 
       } catch (err) {
-        msg.textContent = "Error: " + err.message; msg.className = "mt-2 text-center text-sm font-bold text-red-500";
+        msg.textContent = "Error: " + err.message; msg.className = "mt-3 text-center text-sm font-bold text-red-500";
       } finally { btn.innerText = "Save Expense"; btn.disabled = false; }
     });
 
@@ -759,12 +772,12 @@
         const { data, error } = await db.functions.invoke('create-staff', { body: { email, password, full_name, role } });
         if (error) throw new Error(error.message || 'Failed to create staff');
 
-        msg.textContent = "✅ Staff created successfully!"; msg.className = "mt-2 text-center text-sm font-bold text-emerald-500";
+        msg.textContent = "✅ Staff created!"; msg.className = "mt-3 text-center text-sm font-bold text-emerald-500";
         document.getElementById('create-staff-form').reset();
-        setTimeout(() => { document.getElementById('create-staff-modal').classList.add('hidden'); msg.textContent = ''; }, 2000);
+        setTimeout(() => { document.getElementById('create-staff-modal').classList.add('hidden'); msg.textContent = ''; }, 1500);
 
       } catch (err) {
-        msg.textContent = "Error: " + err.message; msg.className = "mt-2 text-center text-sm font-bold text-red-500";
+        msg.textContent = "Error: " + err.message; msg.className = "mt-3 text-center text-sm font-bold text-red-500";
       } finally { btn.innerText = "Create Account"; btn.disabled = false; }
     });
 
