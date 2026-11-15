@@ -61,7 +61,7 @@
 
   <main class="p-4 max-w-6xl mx-auto mt-4 space-y-6">
     
-    <!-- 1. EXECUTIVE KPIs (Revenue, Occupancy, ADR, RevPAR) -->
+    <!-- 1. EXECUTIVE KPIs -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="bg-white p-4 rounded-2xl border-l-4 border-emerald-500 shadow-sm">
         <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Today's Revenue</p>
@@ -83,30 +83,43 @@
 
     <!-- 2. FRONT DESK ACTIONS -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <a href="dashboard.html" onclick="alert('Redirecting to Front Desk Dashboard for Arrivals List...')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
-        <i data-lucide="plane-landing" class="w-5 h-5 text-indigo-500 mb-1"></i>
-        <p class="text-[10px] text-gray-500 font-bold uppercase">Arrivals</p>
+      <!-- Arrivals -->
+      <div onclick="loadGuestsModal('arrivals')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition cursor-pointer">
+        <i data-lucide="log-in" class="w-5 h-5 text-indigo-500 mb-1"></i>
+        <p class="text-[10px] text-gray-500 font-bold uppercase text-center">Checked In Today</p>
         <p id="fd-arrivals" class="text-2xl font-black text-indigo-600">0</p>
-      </a>
-      <a href="dashboard.html" onclick="alert('Redirecting to Front Desk Dashboard for Departures List...')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition relative">
-        <i data-lucide="plane-takeoff" class="w-5 h-5 text-orange-500 mb-1"></i>
-        <p class="text-[10px] text-gray-500 font-bold uppercase">Departures</p>
+      </div>
+      <!-- Departures -->
+      <div onclick="loadGuestsModal('departures')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition relative cursor-pointer">
+        <i data-lucide="log-out" class="w-5 h-5 text-orange-500 mb-1"></i>
+        <p class="text-[10px] text-gray-500 font-bold uppercase text-center">Leaving Today</p>
         <p id="fd-departures" class="text-2xl font-black text-orange-600">0</p>
         <span id="fd-overdue-badge" class="hidden absolute top-2 right-2 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">LATE</span>
-      </a>
+      </div>
       <a href="rooms.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
         <i data-lucide="bed" class="w-5 h-5 text-blue-500 mb-1"></i>
-        <p class="text-[10px] text-gray-500 font-bold uppercase">Occupied</p>
+        <p class="text-[10px] text-gray-500 font-bold uppercase text-center">Occupied</p>
         <p id="fd-occupied" class="text-2xl font-black text-blue-600">0</p>
       </a>
       <a href="rooms.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
         <i data-lucide="wrench" class="w-5 h-5 text-red-500 mb-1"></i>
-        <p class="text-[10px] text-gray-500 font-bold uppercase">Maintenance</p>
+        <p class="text-[10px] text-gray-500 font-bold uppercase text-center">Maintenance</p>
         <p id="fd-ooo" class="text-2xl font-black text-red-600">0</p>
       </a>
     </div>
 
-    <!-- 3. LIVE ROOM STATES (Specific Room Numbers) -->
+    <!-- 3. IN-HOUSE GUESTS (New) -->
+    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+      <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+        <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-indigo-500"></i> Current In-House Guests</h2>
+        <a href="finance.html#folios" class="text-xs text-indigo-600 font-bold hover:underline">View All Folios →</a>
+      </div>
+      <div id="in-house-list" class="space-y-3 max-h-64 overflow-y-auto hide-scroll">
+        <p class="text-center text-gray-500 text-sm animate-pulse">Loading guest list...</p>
+      </div>
+    </div>
+
+    <!-- 4. LIVE ROOM STATES -->
     <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
       <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
         <h2 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-indigo-500"></i> Live Room States</h2>
@@ -114,33 +127,22 @@
       </div>
       
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Available -->
         <div class="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100">
           <h3 class="text-xs font-bold text-emerald-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Available</h3>
-          <div id="list-available" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700">
-            <span class="text-gray-400 font-normal text-xs">Loading...</span>
-          </div>
+          <div id="list-available" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700"><span class="text-gray-400 font-normal text-xs">Loading...</span></div>
         </div>
-
-        <!-- Reserved -->
         <div class="bg-purple-50/50 rounded-xl p-3 border border-purple-100">
           <h3 class="text-xs font-bold text-purple-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-purple-500"></div> Reserved</h3>
-          <div id="list-reserved" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700">
-            <span class="text-gray-400 font-normal text-xs">Loading...</span>
-          </div>
+          <div id="list-reserved" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700"><span class="text-gray-400 font-normal text-xs">Loading...</span></div>
         </div>
-
-        <!-- Dirty -->
         <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-100">
           <h3 class="text-xs font-bold text-amber-700 uppercase mb-2 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-amber-500"></div> Dirty</h3>
-          <div id="list-dirty" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700">
-            <span class="text-gray-400 font-normal text-xs">Loading...</span>
-          </div>
+          <div id="list-dirty" class="flex flex-wrap gap-2 text-sm font-bold text-gray-700"><span class="text-gray-400 font-normal text-xs">Loading...</span></div>
         </div>
       </div>
     </div>
 
-    <!-- 4. MANAGER APPROVALS WIDGET -->
+    <!-- 5. MANAGER APPROVALS WIDGET -->
     <div id="approvals-widget" class="hidden bg-red-50 border-2 border-red-500 p-4 rounded-2xl shadow-lg fade-in relative">
       <div class="flex items-start gap-3">
         <div class="bg-red-200 p-2 rounded-full text-red-700 animate-pulse"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
@@ -179,6 +181,13 @@
     <!-- MANAGEMENT CONTROLS -->
     <h2 class="text-lg font-bold text-gray-800 mt-6 mb-2">Management Controls</h2>
     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+      
+      <!-- NEW LOG EXPENSE BUTTON -->
+      <button onclick="document.getElementById('expense-modal').classList.remove('hidden')" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
+        <div class="bg-teal-100 p-3 rounded-full text-teal-600"><i data-lucide="receipt" class="w-6 h-6"></i></div>
+        <span class="font-bold text-sm text-gray-800 text-center">Log Expense</span>
+      </button>
+
       <a href="admin-menu.html" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
         <div class="bg-amber-100 p-3 rounded-full text-amber-600"><i data-lucide="coffee" class="w-6 h-6"></i></div>
         <span class="font-bold text-sm text-gray-800 text-center">Menu Manager</span>
@@ -279,6 +288,63 @@
     </div>
   </div>
 
+  <!-- GUEST LIST MODAL (Arrivals / Departures) -->
+  <div id="guest-list-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
+      <div class="flex justify-between items-center mb-4 border-b pb-2">
+        <h2 class="text-xl font-bold text-gray-900" id="guest-list-title">Guest List</h2>
+        <button onclick="document.getElementById('guest-list-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      <div id="guest-list-content" class="space-y-3">
+        <p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG EXPENSE MODAL (RESTORED) -->
+  <div id="expense-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-900">Log Expense</h2>
+        <button onclick="document.getElementById('expense-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      
+      <form id="expense-form" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1">Description</label>
+          <input type="text" id="exp-desc" required placeholder="e.g. Diesel for Generator" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1">Amount (₦)</label>
+          <input type="number" id="exp-amount" required min="0" step="0.01" placeholder="0.00" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1">Category</label>
+          <select id="exp-cat" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+            <option value="Fuel/Diesel">Fuel / Diesel</option>
+            <option value="Maintenance">Maintenance / Repairs</option>
+            <option value="Utilities">Utilities (NEPA, Water)</option>
+            <option value="Cost of Goods (Inventory)">Cost of Goods (Inventory)</option>
+            <option value="Salary">Staff Salary</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1">Department</label>
+          <select id="exp-dept" required class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500">
+            <option value="General">General</option>
+            <option value="Kitchen">Kitchen</option>
+            <option value="Bar">Bar</option>
+            <option value="Housekeeping">Housekeeping</option>
+          </select>
+        </div>
+        
+        <button type="submit" id="exp-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2">Save Expense</button>
+      </form>
+      <p id="exp-msg" class="mt-2 text-center text-sm font-bold"></p>
+    </div>
+  </div>
+
   <!-- CREATE STAFF MODAL -->
   <div id="create-staff-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
@@ -331,6 +397,7 @@
 
       loadKPIs();
       loadFrontDeskActions();
+      loadInHouseGuests();
       loadLiveRoomStates();
       checkApprovals();
       loadHousekeepingFeed();
@@ -341,6 +408,7 @@
       setInterval(() => {
         loadKPIs();
         loadFrontDeskActions();
+        loadInHouseGuests();
         loadLiveRoomStates();
         checkApprovals();
         loadGlobalTicker();
@@ -349,11 +417,10 @@
 
     // 1. EXECUTIVE KPIs
     async function loadKPIs() {
-      const today = new Date().toISOString().split('T')[0];
-      const startOfDay = new Date().toISOString();
-      const endOfDay = new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString();
+      const startOfDay = new Date(new Date().setHours(0,0,0,0)).toISOString();
+      const endOfDay = new Date(new Date().setHours(23,59,59,999)).toISOString();
 
-      const { data: pos } = await db.from('pos_orders').select('total_amount').gte('created_at', startOfDay).lt('created_at', endOfDay);
+      const { data: pos } = await db.from('pos_orders').select('total_amount').gte('created_at', startOfDay).lte('created_at', endOfDay);
       const { data: rooms } = await db.from('bookings').select('rooms(price_per_night)').eq('status', 'Checked In');
       
       let posRevenue = 0;
@@ -381,7 +448,7 @@
     async function loadFrontDeskActions() {
       const today = new Date().toISOString().split('T')[0];
 
-      const { count: arrivals } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('check_in_date', today).eq('status', 'Reserved');
+      const { count: arrivals } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('check_in_date', today).eq('status', 'Checked In');
       document.getElementById('fd-arrivals').textContent = arrivals || 0;
 
       const { count: departures } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('expected_check_out', today).eq('status', 'Checked In');
@@ -398,7 +465,90 @@
       document.getElementById('fd-ooo').textContent = ooo || 0;
     }
 
-    // 3. LIVE ROOM STATES (Specific Room Numbers)
+    // 3. IN-HOUSE GUESTS LIST
+    async function loadInHouseGuests() {
+      const list = document.getElementById('in-house-list');
+      const today = new Date().toISOString().split('T')[0];
+
+      const { data: guests } = await db.from('bookings')
+        .select('id, expected_check_out, guests(full_name), rooms(room_number)')
+        .eq('status', 'Checked In')
+        .order('expected_check_out', { ascending: true });
+
+      if (!guests || guests.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No active guests in-house.</p>';
+        return;
+      }
+
+      list.innerHTML = guests.map(g => {
+        const checkOut = g.expected_check_out;
+        let colorClass = "border-gray-200 bg-white";
+        let textClass = "text-gray-500";
+        let badge = "";
+
+        if (checkOut === today) {
+          colorClass = "border-orange-300 bg-orange-50";
+          textClass = "text-orange-600 font-bold";
+          badge = `<span class="bg-orange-200 text-orange-800 text-[10px] px-2 py-0.5 rounded font-bold ml-2">Leaving Today</span>`;
+        } else if (checkOut < today) {
+          colorClass = "border-red-300 bg-red-50";
+          textClass = "text-red-600 font-bold";
+          badge = `<span class="bg-red-200 text-red-800 text-[10px] px-2 py-0.5 rounded font-bold ml-2">OVERDUE</span>`;
+        }
+
+        return `
+          <div class="flex justify-between items-center p-3 rounded-xl border ${colorClass} mb-2">
+            <div>
+              <p class="font-bold text-gray-800 text-sm">Room ${g.rooms?.room_number || '??'}</p>
+              <p class="text-xs text-gray-600">${g.guests?.full_name || 'Unknown'}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Checkout</p>
+              <p class="text-xs ${textClass}">${new Date(checkOut).toLocaleDateString()}</p>
+              ${badge}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // GUEST LIST MODAL (Arrivals/Departures)
+    async function loadGuestsModal(type) {
+      document.getElementById('guest-list-modal').classList.remove('hidden');
+      const title = document.getElementById('guest-list-title');
+      const content = document.getElementById('guest-list-content');
+      const today = new Date().toISOString().split('T')[0];
+      
+      title.textContent = type === 'arrivals' ? 'Checked In Today' : 'Leaving Today';
+      content.innerHTML = '<p class="text-center text-gray-500 text-sm animate-pulse">Loading...</p>';
+
+      let query = db.from('bookings').select('expected_check_out, guests(full_name), rooms(room_number)').eq('status', 'Checked In');
+      
+      if (type === 'arrivals') {
+        query = query.eq('check_in_date', today);
+      } else {
+        query = query.eq('expected_check_out', today);
+      }
+
+      const { data, error } = await query;
+
+      if (error || !data || data.length === 0) {
+        content.innerHTML = `<p class="text-center text-gray-500 text-sm py-4">No guests found for ${type} today.</p>`;
+        return;
+      }
+
+      content.innerHTML = data.map(g => `
+        <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 flex justify-between items-center">
+          <div>
+            <p class="font-bold text-gray-800 text-sm">Room ${g.rooms?.room_number || '??'}</p>
+            <p class="text-xs text-gray-600">${g.guests?.full_name || 'Unknown'}</p>
+          </div>
+          <a href="finance.html#folios" class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-bold">View Bill</a>
+        </div>
+      `).join('');
+    }
+
+    // 4. LIVE ROOM STATES
     async function loadLiveRoomStates() {
       const { data: rooms } = await db.from('rooms').select('room_number, status').order('room_number');
       
@@ -422,7 +572,7 @@
       listDirty.innerHTML = dirtyHtml || '<span class="text-gray-400 font-normal text-xs">None</span>';
     }
 
-    // 4. MANAGER APPROVALS
+    // 5. MANAGER APPROVALS
     async function checkApprovals() {
       const { count: reqs } = await db.from('pos_orders').select('*', { count: 'exact', head: true }).eq('requires_approval', true);
       const widget = document.getElementById('approvals-widget');
@@ -563,6 +713,38 @@
       }).join('');
     }
 
+    // SUBMIT EXPENSE (From Manager)
+    document.getElementById('expense-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('exp-btn'); const msg = document.getElementById('exp-msg');
+      btn.innerText = "Saving..."; btn.disabled = true; msg.textContent = '';
+
+      try {
+        const description = document.getElementById('exp-desc').value;
+        const amount = parseFloat(document.getElementById('exp-amount').value);
+        const category = document.getElementById('exp-cat').value;
+        const department = document.getElementById('exp-dept').value;
+
+        const { error } = await db.from('expenses').insert([{
+          description: description,
+          amount: amount,
+          category: category,
+          department: department,
+          logged_by: currentUser.id
+        }]);
+
+        if (error) throw new Error(error.message);
+
+        msg.textContent = "✅ Expense saved successfully!"; msg.className = "mt-2 text-center text-sm font-bold text-emerald-500";
+        document.getElementById('expense-form').reset();
+        setTimeout(() => { document.getElementById('expense-modal').classList.add('hidden'); msg.textContent = ''; }, 2000);
+
+      } catch (err) {
+        msg.textContent = "Error: " + err.message; msg.className = "mt-2 text-center text-sm font-bold text-red-500";
+      } finally { btn.innerText = "Save Expense"; btn.disabled = false; }
+    });
+
+    // SUBMIT STAFF
     document.getElementById('create-staff-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('s-btn'); const msg = document.getElementById('s-msg');
@@ -580,6 +762,7 @@
         msg.textContent = "✅ Staff created successfully!"; msg.className = "mt-2 text-center text-sm font-bold text-emerald-500";
         document.getElementById('create-staff-form').reset();
         setTimeout(() => { document.getElementById('create-staff-modal').classList.add('hidden'); msg.textContent = ''; }, 2000);
+
       } catch (err) {
         msg.textContent = "Error: " + err.message; msg.className = "mt-2 text-center text-sm font-bold text-red-500";
       } finally { btn.innerText = "Create Account"; btn.disabled = false; }
