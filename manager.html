@@ -62,7 +62,6 @@
     
     <!-- 1. HERO CARD (Bank App Balance Card Style) -->
     <div class="bg-[#0f172a] rounded-[2rem] p-6 shadow-xl relative overflow-hidden">
-      <!-- Decorative background glow -->
       <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
       
       <div class="relative z-10">
@@ -72,7 +71,7 @@
         </div>
         <p id="kpi-revenue" class="text-4xl font-extrabold text-white tracking-tight mb-6">₦0</p>
         
-        <div class="flex gap-4">
+        <div class="flex gap-3">
           <div class="flex-1 bg-white/5 border border-white/10 rounded-2xl p-3">
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Occupancy</p>
             <p id="kpi-occupancy" class="text-xl font-bold text-blue-400">0%</p>
@@ -103,12 +102,14 @@
         <p class="text-[9px] text-gray-500 font-bold uppercase text-center leading-tight mt-1">Checked In</p>
         <p id="fd-arrivals" class="text-lg font-extrabold text-gray-800">0</p>
       </div>
+      
       <div onclick="loadGuestsModal('departures')" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-gray-50 transition relative">
-        <i data-lucide="log-out" class="w-5 h-5 text-orange-500"></i>
+        <i data-lucide="door-closed" class="w-5 h-5 text-orange-500"></i>
         <p class="text-[9px] text-gray-500 font-bold uppercase text-center leading-tight mt-1">Leaving</p>
         <p id="fd-departures" class="text-lg font-extrabold text-gray-800">0</p>
         <span id="fd-overdue-badge" class="hidden absolute top-2 right-2 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">LATE</span>
       </div>
+
       <a href="rooms.html" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition">
         <i data-lucide="bed" class="w-5 h-5 text-blue-500"></i>
         <p class="text-[9px] text-gray-500 font-bold uppercase text-center leading-tight mt-1">Occupied</p>
@@ -121,22 +122,12 @@
       </a>
     </div>
 
-    <!-- 3. MANAGEMENT SERVICES (4-Column Grid exactly like Bank App) -->
+    <!-- 3. MANAGEMENT SERVICES (Cleaned Grid - No Repetitions) -->
     <div>
       <div class="flex justify-between items-center px-2 mb-3">
         <h2 class="text-sm font-bold text-gray-900">Services</h2>
       </div>
       <div class="grid grid-cols-4 md:grid-cols-5 gap-2">
-        
-        <button onclick="document.getElementById('expense-modal').classList.remove('hidden')" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
-          <div class="bg-teal-50 p-2.5 rounded-xl text-teal-600"><i data-lucide="receipt" class="w-5 h-5"></i></div>
-          <span class="font-bold text-[10px] text-gray-800 text-center leading-tight">Log<br>Expense</span>
-        </button>
-
-        <a href="finance.html#folios" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
-          <div class="bg-orange-50 p-2.5 rounded-xl text-orange-500"><i data-lucide="door-open" class="w-5 h-5"></i></div>
-          <span class="font-bold text-[10px] text-gray-800 text-center leading-tight">Guest<br>Folios</span>
-        </a>
         
         <a href="finance.html#reports" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
           <div class="bg-indigo-50 p-2.5 rounded-xl text-indigo-600"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div>
@@ -168,11 +159,6 @@
           <span class="font-bold text-[10px] text-gray-800 text-center leading-tight">Attendance</span>
         </a>
 
-        <a href="night-audit.html" class="bg-[#0f172a] p-3 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-2 active:scale-95 transition">
-          <div class="bg-white/10 p-2.5 rounded-xl text-indigo-300"><i data-lucide="moon" class="w-5 h-5"></i></div>
-          <span class="font-bold text-[10px] text-white text-center leading-tight">Night<br>Audit</span>
-        </a>
-
         <a href="expenses-report.html" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition">
           <div class="bg-red-50 p-2.5 rounded-xl text-red-500"><i data-lucide="file-text" class="w-5 h-5"></i></div>
           <span class="font-bold text-[10px] text-gray-800 text-center leading-tight">Expense<br>Reports</span>
@@ -195,7 +181,21 @@
       </div>
     </div>
 
-    <!-- 4. IN-HOUSE GUESTS (Recent Transactions Style) -->
+    <!-- 4. MAIN ACTIONS (Guest Folios stays here) -->
+    <div class="grid grid-cols-1 gap-3">
+      <a href="finance.html#folios" class="bg-slate-900 hover:bg-slate-800 text-white p-5 rounded-3xl flex items-center justify-between shadow-lg transition">
+        <div class="flex items-center gap-4">
+          <div class="bg-white/10 p-3 rounded-2xl"><i data-lucide="door-open" class="w-6 h-6 text-orange-400"></i></div>
+          <div>
+            <p class="font-bold text-sm">Active Guest Folios</p>
+            <p class="text-[11px] text-slate-400">View live room bills</p>
+          </div>
+        </div>
+        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i>
+      </a>
+    </div>
+
+    <!-- 5. IN-HOUSE GUESTS (Recent Transactions Style) -->
     <div class="bg-white rounded-3xl bank-card overflow-hidden">
       <div class="flex justify-between items-center p-5 border-b border-gray-100">
         <h2 class="font-bold text-gray-900 text-sm">In-House Guests</h2>
@@ -206,7 +206,7 @@
       </div>
     </div>
 
-    <!-- 5. LIVE ROOM STATES -->
+    <!-- 6. LIVE ROOM STATES -->
     <div class="bg-white p-5 rounded-3xl bank-card">
       <div class="flex justify-between items-center mb-4">
         <h2 class="font-bold text-gray-900 text-sm">Live Room States</h2>
@@ -228,7 +228,7 @@
       </div>
     </div>
 
-    <!-- 6. MANAGER APPROVALS WIDGET -->
+    <!-- 7. MANAGER APPROVALS WIDGET -->
     <div id="approvals-widget" class="hidden bg-red-50 border border-red-200 p-5 rounded-3xl shadow-sm fade-in relative">
       <div class="flex items-start gap-4">
         <div class="bg-red-100 p-3 rounded-2xl text-red-600 animate-pulse"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
@@ -270,23 +270,25 @@
 
   </main>
 
-  <!-- DARK BOTTOM NAVIGATION BAR (Like Bank App) -->
+  <!-- DARK BOTTOM NAVIGATION BAR (No Repetition) -->
   <div class="fixed bottom-0 w-full bg-[#0f172a] border-t border-slate-800 flex justify-around items-center py-3 z-50 px-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
     <a href="manager.html" class="flex flex-col items-center gap-1 text-indigo-400">
       <i data-lucide="home" class="w-5 h-5"></i>
       <span class="text-[9px] font-bold">Home</span>
     </a>
-    <a href="rooms.html" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition">
-      <i data-lucide="door-closed" class="w-5 h-5"></i>
-      <span class="text-[9px] font-bold">Rooms</span>
-    </a>
+    <!-- REPLACED: Log Expense opens the modal -->
+    <button onclick="document.getElementById('expense-modal').classList.remove('hidden')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition">
+      <i data-lucide="receipt" class="w-5 h-5"></i>
+      <span class="text-[9px] font-bold">Expense</span>
+    </button>
     <a href="finance.html#folios" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition">
       <i data-lucide="users" class="w-5 h-5"></i>
       <span class="text-[9px] font-bold">Guests</span>
     </a>
-    <a href="staff.html" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition">
-      <i data-lucide="user-cog" class="w-5 h-5"></i>
-      <span class="text-[9px] font-bold">Staff</span>
+    <!-- REPLACED: Night Audit -->
+    <a href="night-audit.html" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition">
+      <i data-lucide="moon" class="w-5 h-5"></i>
+      <span class="text-[9px] font-bold">Audit</span>
     </a>
   </div>
 
