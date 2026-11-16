@@ -52,7 +52,7 @@
   <a href="dashboard.html" id="iframe-banner" class="hidden w-full h-full cursor-pointer flex items-center justify-center p-2 banner-blink shadow-2xl border-b-4 border-red-900">
       <div class="flex items-center justify-center gap-3 font-black text-lg md:text-2xl tracking-wider drop-shadow-md">
         <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
-        <span id="iframe-banner-text">NEW ORDER WAITING! TAP TO VIEW</span>
+        <span id="iframe-banner-text">NEW ALERT WAITING! TAP TO VIEW</span>
         <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
       </div>
   </a>
@@ -77,7 +77,7 @@
 
     <div id="alert-screen" class="hidden w-full h-full flex flex-col items-center justify-center p-6">
       <div class="animate-bounce mb-4"><i data-lucide="bell-ring" class="w-24 h-24 text-white"></i></div>
-      <h1 class="text-6xl font-black text-white mb-2">NEW ORDER!</h1>
+      <h1 class="text-6xl font-black text-white mb-2">NEW ALERT!</h1>
       <div class="bg-black/40 px-6 py-3 rounded-full border border-white/20 mb-10 flex items-center gap-3">
         <span class="text-white font-bold text-xl uppercase tracking-widest" id="alert-count">1 PENDING</span>
       </div>
@@ -102,12 +102,12 @@
     let voiceInterval = null;
     let currentPendingCount = 0;
     let isAcknowledged = false;
+    let currentAlertType = 'order'; // 'order' or 'housekeeping'
 
     if (isIframeMode) {
       document.body.classList.add('iframe-mode');
       document.getElementById('standalone-container').style.display = 'none';
       
-      // If they tap the banner, acknowledge it so the alarm stops
       document.getElementById('iframe-banner').addEventListener('click', () => {
           isAcknowledged = true;
           stopVoice();
@@ -132,20 +132,25 @@
       document.getElementById('standby-screen').classList.remove('hidden');
     }
 
-    // LOUD, DEEP, URGENT VOICE
+    // DYNAMIC VOICE BASED ON ALERT TYPE
     function speakAlert() {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       
-      const utterance = new SpeechSynthesisUtterance("Attention. New order waiting. Please check the system.");
+      let text = "Attention. New order waiting. Please check the system.";
+      if (currentAlertType === 'housekeeping') {
+          text = "Attention. New housekeeping request. Please check the system.";
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
       const voices = window.speechSynthesis.getVoices();
       const maleVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David') || v.name.includes('Google UK English Male'));
       
       if (maleVoice) utterance.voice = maleVoice;
       
-      utterance.pitch = 0.5;   // Even deeper
-      utterance.rate = 1.0;    // Normal speed (so it's clear)
-      utterance.volume = 1.0;  // Max volume
+      utterance.pitch = 0.5;   
+      utterance.rate = 1.0;    
+      utterance.volume = 1.0;  
       
       window.speechSynthesis.speak(utterance);
     }
@@ -153,7 +158,6 @@
     function startVoice() {
       if (voiceInterval) return;
       speakAlert();
-      // Repeats every 3 seconds instead of 5 (More urgent)
       voiceInterval = setInterval(speakAlert, 3000);
     }
 
@@ -165,6 +169,8 @@
     async function checkAlerts() {
       if (!isIframeMode && !isMonitoring) return;
 
+      // We now query guest_orders for Pending requests.
+      // We also check if the order is a housekeeping request to change the voice/banner.
       let query = db.from('guest_orders').select('id, department').eq('status', 'Pending');
 
       if (userRole === 'barman' || userRole === 'bar') {
@@ -172,9 +178,12 @@
       } else if (userRole === 'chef' || userRole === 'kitchen') {
         query = query.in('department', ['Kitchen', 'Food']);
       } else if (userRole === 'waitress') {
-        query = query.in('department', ['Kitchen', 'Food', 'Bar']);
+        query = query.in('department', ['Kitchen', 'Food', 'Bar', 'Housekeeping']);
+      } else if (userRole === 'housekeeping') {
+        query = query.eq('department', 'Housekeeping');
       } else {
-        query = query.in('department', ['Bar', 'Kitchen', 'Food']);
+        // Managers / Admins get everything
+        query = query.in('department', ['Bar', 'Kitchen', 'Food', 'Housekeeping']);
       }
 
       const { data: pendingOrders, error } = await query;
@@ -185,6 +194,12 @@
       }
 
       const newCount = pendingOrders ? pendingOrders.length : 0;
+      
+      // Check if the pending items include housekeeping to change the voice text
+      if (pendingOrders && pendingOrders.length > 0) {
+          const hasHousekeeping = pendingOrders.some(o => o.department === 'Housekeeping');
+          currentAlertType = hasHousekeeping ? 'housekeeping' : 'order';
+      }
 
       if (isIframeMode) {
         const banner = document.getElementById('iframe-banner');
@@ -192,15 +207,15 @@
         
         if (newCount > 0) {
           banner.classList.remove('hidden');
-          bannerText.textContent = `${newCount} NEW ORDER${newCount > 1 ? 'S' : ''} WAITING! TAP TO VIEW`;
+          bannerText.textContent = currentAlertType === 'housekeeping' 
+            ? `${newCount} HOUSEKEEPING REQUEST${newCount > 1 ? 'S' : ''}! TAP TO VIEW`
+            : `${newCount} NEW ORDER${newCount > 1 ? 'S' : ''} WAITING! TAP TO VIEW`;
           
-          // If count increased, or it hasn't been acknowledged yet, start the alarm
           if (newCount > currentPendingCount || !isAcknowledged) {
              startVoice();
           }
         } else {
           banner.classList.add('hidden');
-          // If all orders are attended to (0 pending), reset and stop alarm
           if (currentPendingCount > 0) {
               isAcknowledged = false;
               stopVoice();
@@ -216,7 +231,9 @@
           isAcknowledged = false; 
           document.getElementById('standby-screen').classList.add('hidden');
           document.getElementById('alert-screen').classList.remove('hidden');
-          document.getElementById('alert-count').textContent = `${newCount} PENDING`;
+          document.getElementById('alert-count').textContent = currentAlertType === 'housekeeping' 
+            ? `${newCount} HOUSEKEEPING` 
+            : `${newCount} PENDING`;
           if (!document.body.classList.contains('blink-active')) document.body.classList.add('blink-active');
           startVoice();
         }
