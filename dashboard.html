@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vicnos HotelStack - Dashboard</title>
- 
+  
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -76,6 +76,36 @@
 
   <main id="main-content" class="flex-grow w-full mx-auto pb-12 pt-4">
    
+    <!-- ================= HOUSEKEEPING INLINE VIEW ================= -->
+    <div id="housekeeping-view" class="hidden p-4 max-w-4xl mx-auto space-y-6 fade-in">
+      
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-emerald-400"></i> Live Command</h2>
+        <button onclick="loadHousekeepingData()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-md transition">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
+        </button>
+      </div>
+
+      <!-- Pending Requests -->
+      <div>
+        <h3 class="text-[11px] font-bold text-slate-400 mb-3 ml-1 uppercase tracking-wider flex items-center gap-2"><i data-lucide="bell-ring" class="w-4 h-4 text-orange-400"></i> Pending Guest Requests</h3>
+        <div id="hk-requests-list" class="space-y-3">
+          <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 text-center">
+            <p class="text-slate-400 text-sm animate-pulse">Scanning for requests...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Room Status -->
+      <div>
+        <h3 class="text-[11px] font-bold text-slate-400 mb-3 ml-1 uppercase tracking-wider flex items-center gap-2"><i data-lucide="bed" class="w-4 h-4 text-indigo-400"></i> Room Status</h3>
+        <div id="hk-rooms-list" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <p class="col-span-full text-center text-slate-500 text-sm animate-pulse py-4">Loading rooms...</p>
+        </div>
+      </div>
+
+    </div>
+
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
      
@@ -180,7 +210,7 @@
 
     <!-- ================= STANDARD VIEW (SUPER ADMIN / MANAGER / ACCOUNTANT) ================= -->
     <div id="standard-view" class="hidden text-slate-200 p-4 min-h-screen bg-slate-900">
-      
+     
       <!-- Premium Profile Card -->
       <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden mb-8 mt-4">
         <div class="relative z-10">
@@ -193,7 +223,7 @@
 
       <!-- ACCOUNTANT QUICK VIEW (LIVE ROOMS & AUDIT SEARCH) -->
       <div id="accountant-quick-view" class="hidden mb-8 space-y-6">
-        
+       
         <!-- Live Room State -->
         <div class="bg-slate-800/40 backdrop-blur-md p-5 rounded-3xl border border-slate-700/50">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
@@ -217,7 +247,7 @@
         </div>
 
       </div>
-      
+     
       <!-- PREMIUM GRID -->
       <div id="std-operations-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 pb-8"></div>
     </div>
@@ -271,10 +301,70 @@
       <button onclick="closeAritModal()" class="mt-4 text-gray-500 text-sm font-bold hover:text-gray-800">Cancel</button>
     </div>
   </div>
-  
+ 
   <div id="loading-overlay" class="fixed inset-0 bg-white/90 backdrop-blur-md hidden items-center justify-center z-[120] flex-col">
     <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
     <p class="text-blue-900 font-bold animate-pulse">Writing data to ARIT Hardware...</p>
+  </div>
+
+  <!-- CLEANING MODAL FOR HOUSEKEEPING -->
+  <div id="cleaning-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto hide-scroll">
+      
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">Room <span id="clean-room-num" class="text-emerald-400">---</span></h2>
+        <button onclick="closeCleaningModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Cleaned By (Staff Name)</label>
+          <input type="text" id="clean-staff-name" placeholder="e.g. Blessing" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+          <h3 class="text-sm font-bold text-white mb-3 border-b border-slate-700 pb-1">Facility Status Check</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">AC</span>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-ac" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">Fridge</span>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-fridge" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">Water Heater</span>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-heater" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">Ceiling Fan</span>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-fan" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-300">TV</span>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-tv" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+          <h3 class="text-sm font-bold text-white mb-2 text-red-400">Report Broken Item (Optional)</h3>
+          <textarea id="clean-note" rows="2" placeholder="Describe the fault..." class="w-full bg-slate-800 border border-slate-700 p-2 rounded-lg text-white text-sm outline-none focus:border-red-500 mb-2"></textarea>
+          <div class="flex items-center gap-2">
+            <input type="file" id="clean-photo" accept="image/*" capture="environment" class="hidden">
+            <button onclick="document.getElementById('clean-photo').click()" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2">
+              <i data-lucide="camera" class="w-4 h-4"></i> Snap Photo
+            </button>
+            <span id="photo-name" class="text-xs text-slate-400">No photo attached</span>
+          </div>
+        </div>
+
+        <button onclick="submitCleaning()" id="clean-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg transition text-lg mt-2">
+          Complete & Mark Available
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -311,6 +401,10 @@
     let orderCheckInterval = null;
     let currentDept = '';
     let alertSoundInterval = null;
+    
+    // Housekeeping variables
+    let hkSelectedRoomId = null;
+    let hkRefreshInterval = null;
 
     async function init() {
       try {
@@ -368,6 +462,18 @@
           // Route Managers, MDs, and Admins to their dedicated dashboard
           window.location.href = 'manager.html';
         }
+        else if (currentRole === 'housekeeping') {
+          // Inline Housekeeping View - No extra clicking!
+          document.body.classList.add('standard-theme');
+          document.getElementById('nav-icon-bg').className = "bg-emerald-500 p-2 rounded-xl text-slate-900 shadow-md shadow-emerald-500/20";
+          document.getElementById('housekeeping-view').classList.remove('hidden');
+          document.getElementById('admin-name').textContent = profile.full_name;
+          document.getElementById('user-role-display').textContent = 'Housekeeping';
+          document.getElementById('duty-title').textContent = 'Live Command';
+          
+          loadHousekeepingData();
+          hkRefreshInterval = setInterval(loadHousekeepingData, 30000); // Auto-refresh
+        }
         else {
           document.body.classList.add('standard-theme');
           document.getElementById('nav-icon-bg').className = "bg-amber-500 p-2 rounded-xl text-slate-900 shadow-md shadow-amber-500/20";
@@ -375,7 +481,7 @@
           document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
           document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
           document.getElementById('duty-title').textContent = profile.role + ' Portal';
-          
+         
           if (currentRole === 'accountant') {
               document.getElementById('accountant-quick-view').classList.remove('hidden');
               loadLiveRoomsDash();
@@ -389,13 +495,206 @@
     }
 
     // ==========================================
+    // HOUSEKEEPING INLINE LOGIC
+    // ==========================================
+    function loadHousekeepingData() {
+        loadHKGuestRequests();
+        loadHKRоoms();
+    }
+
+    async function loadHKGuestRequests() {
+        const list = document.getElementById('hk-requests-list');
+        const { data: reqs } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending').order('created_at', { ascending: true });
+
+        if (!reqs || reqs.length === 0) {
+            list.innerHTML = `<div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 text-center"><p class="text-slate-400 text-sm">No pending guest requests right now. 🎉</p></div>`;
+            return;
+        }
+
+        list.innerHTML = reqs.map(r => {
+            let itemsHtml = '';
+            try {
+                if (r.items && Array.isArray(r.items)) {
+                    itemsHtml = r.items.map(i => `<span class="inline-block bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-lg text-xs font-bold mr-2 mb-2">${i.qty}x ${i.name}</span>`).join('');
+                } else {
+                    itemsHtml = `<span class="text-orange-400 font-bold text-sm">${JSON.stringify(r.items)}</span>`;
+                }
+            } catch (e) {
+                itemsHtml = `<span class="text-orange-400 font-bold text-sm">${JSON.stringify(r.items)}</span>`;
+            }
+
+            return `
+            <div class="bg-slate-800/80 p-4 rounded-2xl border border-orange-500/30 flex justify-between items-center shadow-lg">
+                <div>
+                    <h3 class="font-black text-white text-xl">Room ${r.room_number}</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">${new Date(r.created_at).toLocaleTimeString()}</p>
+                    <div class="mt-2 flex flex-wrap">${itemsHtml}</div>
+                </div>
+                <button onclick="completeHKRequest('${r.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-xl shadow-md transition flex items-center gap-2">
+                    <i data-lucide="check" class="w-5 h-5"></i> Done
+                </button>
+            </div>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    async function completeHKRequest(id) {
+        if(!confirm("Mark this request as completed? The guest will be notified.")) return;
+        await db.from('guest_orders').update({ status: 'Completed' }).eq('id', id);
+        loadHKGuestRequests();
+    }
+
+    async function loadHKRоoms() {
+        const list = document.getElementById('hk-rooms-list');
+        const today = new Date().toISOString().split('T')[0];
+
+        const { data: rooms } = await db.from('rooms').select('*').in('status', ['Occupied', 'Dirty']).order('room_number');
+        const { data: bookings } = await db.from('bookings').select('room_id, expected_check_out, guests(full_name)').eq('status', 'Checked In');
+
+        if (!rooms || rooms.length === 0) {
+            list.innerHTML = '<p class="col-span-full text-center text-slate-500 py-6">No rooms need cleaning right now.</p>';
+            return;
+        }
+
+        list.innerHTML = rooms.map(r => {
+            let colorClass = '';
+            let badge = '';
+            let guestInfo = '';
+
+            if (r.status === 'Dirty') {
+                colorClass = 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20';
+                badge = `<span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase mt-2 inline-block">Needs Cleaning</span>`;
+            } else if (r.status === 'Occupied') {
+                colorClass = 'bg-blue-500/10 border-blue-500/50 hover:bg-blue-500/20';
+                
+                const booking = bookings?.find(b => b.room_id === r.id);
+                if (booking) {
+                    const isCheckingOutToday = booking.expected_check_out === today;
+                    const textColor = isCheckingOutToday ? 'text-red-400 font-bold' : 'text-slate-400';
+                    const icon = isCheckingOutToday ? '<i data-lucide="alert-circle" class="w-3 h-3 inline mr-1"></i>' : '';
+                    
+                    guestInfo = `
+                        <p class="text-[11px] text-white mt-1 truncate">${booking.guests?.full_name || 'Guest'}</p>
+                        <p class="text-[10px] ${textColor} mt-1">${icon}Out: ${new Date(booking.expected_check_out).toLocaleDateString()}</p>
+                    `;
+                }
+            }
+
+            return `
+                <div class="p-4 rounded-2xl border ${colorClass} cursor-pointer transition transform active:scale-95 shadow-sm" onclick="openHKCleaningModal('${r.id}', '${r.room_number}', '${r.status}')">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Room</p>
+                    <p class="text-3xl font-black text-white">${r.room_number}</p>
+                    ${guestInfo}
+                    ${badge}
+                </div>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function openHKCleaningModal(roomId, roomNumber, status) {
+        if (status !== 'Dirty') {
+            alert(`Room ${roomNumber} is currently Occupied. You can only clean Dirty rooms.`);
+            return;
+        }
+        
+        hkSelectedRoomId = roomId;
+        document.getElementById('clean-room-num').textContent = roomNumber;
+        document.getElementById('clean-staff-name').value = '';
+        document.getElementById('clean-note').value = '';
+        document.getElementById('clean-photo').value = '';
+        document.getElementById('photo-name').textContent = "No photo attached";
+        
+        document.getElementById('toggle-ac').checked = true;
+        document.getElementById('toggle-fridge').checked = true;
+        document.getElementById('toggle-heater').checked = true;
+        document.getElementById('toggle-fan').checked = true;
+        document.getElementById('toggle-tv').checked = true;
+
+        document.getElementById('cleaning-modal').classList.remove('hidden');
+        document.getElementById('cleaning-modal').classList.add('flex');
+    }
+
+    function closeCleaningModal() {
+        document.getElementById('cleaning-modal').classList.add('hidden');
+        document.getElementById('cleaning-modal').classList.remove('flex');
+    }
+
+    document.getElementById('clean-photo').addEventListener('change', function(e) {
+        if(e.target.files.length > 0) {
+            document.getElementById('photo-name').textContent = e.target.files[0].name;
+        }
+    });
+
+    async function submitCleaning() {
+        const staffName = document.getElementById('clean-staff-name').value;
+        if(!staffName) return alert("Please enter the name of the cleaner.");
+
+        const btn = document.getElementById('clean-submit-btn');
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Saving...`;
+        btn.disabled = true;
+
+        try {
+            const acStatus = document.getElementById('toggle-ac').checked;
+            const fridgeStatus = document.getElementById('toggle-fridge').checked;
+            const heaterStatus = document.getElementById('toggle-heater').checked;
+            const fanStatus = document.getElementById('toggle-fan').checked;
+            const tvStatus = document.getElementById('toggle-tv').checked;
+            const note = document.getElementById('clean-note').value;
+            const photoFile = document.getElementById('clean-photo').files[0];
+
+            await db.from('rooms').update({ 
+                status: 'Available',
+                ac_status: acStatus,
+                fridge_status: fridgeStatus,
+                heater_status: heaterStatus,
+                fan_status: fanStatus,
+                tv_status: tvStatus,
+                cleaned_by: staffName,
+                last_cleaned_at: new Date().toISOString()
+            }).eq('id', hkSelectedRoomId);
+
+            if (note.trim() !== '' || photoFile) {
+                let photoUrl = null;
+                if (photoFile) {
+                    const fileName = `${Date.now()}_${photoFile.name}`;
+                    const { data: uploadData, error: uploadError } = await db.storage.from('maintenance-photos').upload(fileName, photoFile);
+                    if (!uploadError) {
+                        const { data: urlData } = db.storage.from('maintenance-photos').getPublicUrl(fileName);
+                        photoUrl = urlData.publicUrl;
+                    }
+                }
+
+                await db.from('maintenance_tickets').insert({
+                    room_id: hkSelectedRoomId,
+                    reported_by: currentUser.id,
+                    issue_description: `Cleaned by ${staffName}. Complaint: ${note || 'See attached photo.'}`,
+                    priority: 'Normal',
+                    status: 'Pending',
+                    photo_url: photoUrl
+                });
+            }
+
+            alert("✅ Room marked available and logs saved!");
+            closeCleaningModal();
+            loadHousekeepingData();
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.innerHTML = `Complete & Mark Available`;
+            btn.disabled = false;
+        }
+    }
+
+    // ==========================================
     // ACCOUNTANT QUICK VIEW LOGIC
     // ==========================================
     async function loadLiveRoomsDash() {
       const list = document.getElementById('dash-live-rooms-list');
       const { data: bookings } = await db.from('bookings').select(`id, status, rooms(room_number), guests(full_name)`).eq('status', 'Checked In');
       const { data: charges } = await db.from('folio_charges').select('booking_id, amount');
-      
+     
       if (!bookings || bookings.length === 0) {
         list.innerHTML = '<p class="col-span-full text-center text-slate-500 py-4">No guests are currently checked in.</p>';
         return;
@@ -404,7 +703,7 @@
       list.innerHTML = bookings.map(b => {
         const roomCharges = charges ? charges.filter(c => c.booking_id === b.id) : [];
         const total = roomCharges.reduce((sum, c) => sum + Number(c.amount), 0);
-        
+       
         return `
           <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-sm">
             <p class="text-[10px] text-slate-500 uppercase font-bold">Room</p>
@@ -423,10 +722,10 @@
     async function loadSpecificAuditDash() {
       const dateInput = document.getElementById('dash-audit-search-date');
       if (!dateInput.value) return;
-      
+     
       const list = document.getElementById('dash-specific-audit-result');
       list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Searching records...</p>';
-      
+     
       const { data: audit, error } = await db.from('night_audits').select('*, profiles(full_name)').eq('audit_date', dateInput.value).single();
 
       if (error || !audit) {
@@ -440,7 +739,7 @@
             <h3 class="font-bold text-white">Audit Report: ${new Date(audit.audit_date).toLocaleDateString()}</h3>
             <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30 uppercase font-bold">Closed by ${audit.profiles?.full_name || 'Manager'}</span>
           </div>
-          
+         
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div class="bg-slate-800 p-3 rounded-lg">
               <p class="text-[10px] text-slate-400 font-bold uppercase">Total Revenue</p>
@@ -1011,12 +1310,7 @@
           buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock');
           buttons += clockBtn;
       }
-      else if (role === 'housekeeping') {
-          buttons += btn('housekeeping.html', 'sparkles', 'text-emerald-400', 'bg-emerald-500/20', 'Housekeeping Command');
-          buttons += btn('maintenance.html', 'wrench', 'text-rose-400', 'bg-rose-500/20', 'Maintenance');
-          buttons += chatBtn;
-          buttons += clockBtn;
-      }
+      // Note: Housekeeping role is handled completely above in init(), so it doesn't reach here.
       else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += chatBtn; buttons += clockBtn; }
       else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += maintenanceBtn; buttons += chatBtn; buttons += clockBtn; }
       else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-rose-400', 'bg-rose-500/20', 'Security Control'); buttons += chatBtn; buttons += clockBtn; }
@@ -1028,6 +1322,7 @@
     async function logout() {
         clearInterval(heartbeatInterval);
         clearInterval(orderCheckInterval);
+        if(hkRefreshInterval) clearInterval(hkRefreshInterval);
         if(alertSoundInterval) clearInterval(alertSoundInterval);
         if (wakeLock !== null) wakeLock.release();
         localStorage.clear();
