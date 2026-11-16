@@ -189,7 +189,6 @@
         id_type: document.getElementById('guest-id').value
       }).select().single();
 
-      // CRITICAL FIX: If the guest save fails, STOP. Do not create a ghost booking.
       if (guestErr) { 
           msg.textContent = "Guest Save Error: " + guestErr.message; 
           msg.className = 'mt-4 text-center text-sm font-bold text-red-600'; 
@@ -198,13 +197,16 @@
       }
 
       // STEP 2: Save the booking with the name backed up
+      // FIX: check_in_date is now JUST the date string (YYYY-MM-DD) so the Manager dashboard finds it perfectly
+      const todayDate = new Date().toISOString().split('T')[0];
+
       const { error: bookErr } = await db.from('bookings').insert({
         room_id: selectedRoomId, guest_id: guest.id,
-        check_in_date: new Date().toISOString(),
+        check_in_date: todayDate, // <--- FIXED HERE
         expected_check_out: document.getElementById('checkout-date').value,
         status: 'Checked In', created_by: currentUser.id,
         payment_method: document.getElementById('payment-method').value,
-        additional_guest_name: guestName, // Backup the name
+        additional_guest_name: guestName, 
         additional_guest_relation: document.getElementById('add-relation').value,
         agreed_to_rules: document.getElementById('agree-rules').checked
       });
