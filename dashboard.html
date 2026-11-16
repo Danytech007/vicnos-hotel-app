@@ -119,12 +119,13 @@
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
      
-      <div id="live-upgrade-alert" class="hidden bg-red-600 text-white p-4 rounded-xl shadow-lg fade-in flex justify-between items-center blink-alert cursor-pointer" onclick="window.location.href='manage-booking.html'">
+      <!-- RED ALERT BANNER (CLICKABLE) -->
+      <div id="live-upgrade-alert" class="hidden bg-red-600 text-white p-4 rounded-xl shadow-lg fade-in flex justify-between items-center blink-alert cursor-pointer" onclick="openGuestOrdersModal()">
         <div class="flex items-center gap-3">
             <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
             <div>
-                <h3 class="font-bold text-sm">URGENT: Guest Request!</h3>
-                <p id="live-upgrade-text" class="text-red-100 text-xs mt-1 font-medium">A guest is waiting...</p>
+                <h3 class="font-bold text-sm">URGENT: New Order / Guest Request!</h3>
+                <p id="live-upgrade-text" class="text-red-100 text-xs mt-1 font-medium">Click to view and process.</p>
             </div>
         </div>
         <i data-lucide="chevron-right" class="w-6 h-6"></i>
@@ -143,7 +144,13 @@
         <a href="./checkout.html" class="bg-orange-600 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> Check-Out</a>
         <a href="./guest-history.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i> Directory</a>
         <a href="./qr-code.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="qr-code" class="w-4 h-4 text-purple-500"></i> QR Codes</a>
-        <a href="./pos.html?dept=Minimart" id="recep-orders-btn" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm relative"><i data-lucide="shopping-cart" class="w-4 h-4 text-teal-600"></i> Minimart POS <span id="recep-dot" class="hidden absolute top-1 right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span></a>
+        
+        <!-- MINIMART POS BUTTON (With Badge for live orders) -->
+        <a href="./pos.html?dept=Minimart" id="recep-orders-btn" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm relative">
+            <i data-lucide="shopping-cart" class="w-4 h-4 text-teal-600"></i> Minimart POS 
+            <span id="recep-dot" class="hidden absolute top-1 right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
+        </a>
+
         <a href="./maintenance.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="wrench" class="w-4 h-4 text-red-500"></i> Maintenance</a>
         <a href="./internal-chat.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4 text-emerald-500"></i> Staff Chat</a>
       </div>
@@ -377,6 +384,25 @@
     </div>
   </div>
 
+  <!-- ================= GUEST ORDERS MODAL FOR RECEPTIONIST ================= -->
+  <div id="guest-orders-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-white w-full max-w-2xl rounded-3xl p-6 shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto hide-scroll">
+      
+      <div class="flex justify-between items-center mb-6 border-b pb-3">
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">Pending Guest Orders</h2>
+          <p class="text-xs text-gray-500 mt-1">Manage Minimart & Housekeeping requests here.</p>
+        </div>
+        <button onclick="closeGuestOrdersModal()" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div id="recep-orders-list" class="space-y-4">
+        <p class="text-center text-gray-500 py-6 animate-pulse">Loading orders...</p>
+      </div>
+
+    </div>
+  </div>
+
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
@@ -411,6 +437,7 @@
     let orderCheckInterval = null;
     let currentDept = '';
     let alertSoundInterval = null;
+    let recepOrdersInterval = null;
     
     // Housekeeping variables
     let hkSelectedRoomId = null;
@@ -438,6 +465,7 @@
           loadReceptionistData();
           startHeartbeat();
           orderCheckInterval = setInterval(checkNewOrders, 5000);
+          recepOrdersInterval = setInterval(loadReceptionistOrders, 15000); // Refresh modal if open
         }
         else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
           if (currentRole === 'chef' || currentRole === 'kitchen') currentDept = 'Kitchen';
@@ -818,33 +846,99 @@
     async function checkUpgradeRequests() {
         const { data: pendingUpgrades } = await db.from('guest_orders').select('*').eq('department', 'Upgrade Request').eq('status', 'Pending');
         const { data: pendingHousekeeping } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending');
+        const { data: pendingMinimart } = await db.from('guest_orders').select('*').eq('department', 'Minimart').eq('status', 'Pending');
         const { data: autoLogs } = await db.from('guest_orders').select('*').eq('department', 'Upgrade Log').eq('status', 'Completed').gte('created_at', new Date(Date.now() - 5 * 60000).toISOString());
        
         const alertBanner = document.getElementById('live-upgrade-alert');
         const alertText = document.getElementById('live-upgrade-text');
 
-        if ((pendingUpgrades && pendingUpgrades.length > 0) || (pendingHousekeeping && pendingHousekeeping.length > 0)) {
-            alertBanner.classList.remove('hidden'); alertBanner.classList.replace('bg-emerald-600', 'bg-red-600');
-           
+        const totalPending = (pendingUpgrades?.length || 0) + (pendingHousekeeping?.length || 0) + (pendingMinimart?.length || 0);
+
+        if (totalPending > 0) {
+            alertBanner.classList.remove('hidden'); 
+            alertBanner.classList.replace('bg-emerald-600', 'bg-red-600');
+            
             let messages = [];
-            if (pendingHousekeeping && pendingHousekeeping.length > 0) {
-                const rooms = pendingHousekeeping.map(req => `Room ${req.room_number}`).join(', ');
-                messages.push(`Housekeeping: ${rooms}`);
-                alertBanner.setAttribute('onclick', "window.location.href='housekeeping-requests.html'");
-            }
-            if (pendingUpgrades && pendingUpgrades.length > 0) {
-                messages.push(`${pendingUpgrades.length} Upgrade Request(s)`);
-                if (!pendingHousekeeping || pendingHousekeeping.length === 0) {
-                    alertBanner.setAttribute('onclick', "window.location.href='manage-booking.html'");
-                }
-            }
+            if (pendingMinimart && pendingMinimart.length > 0) messages.push(`${pendingMinimart.length} Minimart`);
+            if (pendingHousekeeping && pendingHousekeeping.length > 0) messages.push(`${pendingHousekeeping.length} Housekeeping`);
+            if (pendingUpgrades && pendingUpgrades.length > 0) messages.push(`${pendingUpgrades.length} Upgrade`);
+
             alertText.textContent = messages.join(' | ');
+            alertBanner.setAttribute('onclick', "openGuestOrdersModal()");
             try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
         } else if (autoLogs && autoLogs.length > 0) {
             alertBanner.classList.remove('hidden'); alertBanner.classList.replace('bg-red-600', 'bg-emerald-600');
-            alertText.textContent = `NOTICE: ${autoLogs.length} guest(s) upgraded their room via the app. Room status updated automatically.`;
+            alertText.textContent = `NOTICE: ${autoLogs.length} guest(s) upgraded their room via the app.`;
             alertBanner.setAttribute('onclick', "window.location.href='manage-booking.html'");
-        } else { alertBanner.classList.add('hidden'); }
+        } else { 
+            alertBanner.classList.add('hidden'); 
+        }
+    }
+
+    // GUEST ORDERS MODAL LOGIC FOR RECEPTIONIST
+    function openGuestOrdersModal() {
+        document.getElementById('guest-orders-modal').classList.remove('hidden');
+        document.getElementById('guest-orders-modal').classList.add('flex');
+        loadReceptionistOrders();
+    }
+
+    function closeGuestOrdersModal() {
+        document.getElementById('guest-orders-modal').classList.add('hidden');
+        document.getElementById('guest-orders-modal').classList.remove('flex');
+    }
+
+    async function loadReceptionistOrders() {
+        const list = document.getElementById('recep-orders-list');
+        if(!list) return;
+
+        // Fetch Minimart, Housekeeping, and Upgrades for the receptionist
+        const { data: orders } = await db.from('guest_orders')
+            .select('*')
+            .in('department', ['Minimart', 'Housekeeping', 'Upgrade Request'])
+            .eq('status', 'Pending')
+            .order('created_at', { ascending: true });
+
+        if (!orders || orders.length === 0) {
+            list.innerHTML = '<p class="text-center text-gray-500 py-6">No pending guest orders right now. 🎉</p>';
+            return;
+        }
+
+        list.innerHTML = orders.map(order => {
+            let itemsHtml = '';
+            try {
+                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                if (Array.isArray(items)) {
+                    itemsHtml = items.map(item => `<div class="flex justify-between border-b border-gray-100 py-1"><span class="text-gray-800 font-bold text-sm">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join('');
+                }
+            } catch(e) {}
+
+            return `
+                <div class="bg-white p-5 rounded-2xl border-l-4 border-amber-500 shadow-md flex flex-col justify-between fade-in mb-3">
+                    <div>
+                        <div class="flex justify-between items-start mb-3 pb-2 border-b border-gray-100">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">${order.department}</span>
+                                <h3 class="font-black text-xl text-gray-900 mt-1">Room ${order.room_number || 'N/A'}</h3>
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-1 rounded bg-amber-100 text-amber-700">Pending</span>
+                        </div>
+                        <div class="space-y-1 mb-4">${itemsHtml}</div>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="updateReceptionistOrderStatus('${order.id}', 'Completed')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-sm transition shadow-md">
+                            Mark as Delivered / Completed
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    async function updateReceptionistOrderStatus(orderId, newStatus) {
+        await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+        loadReceptionistOrders(); // Reload the list
+        checkUpgradeRequests(); // Update the banner count
     }
 
     async function loadReceptionistData() {
@@ -890,6 +984,7 @@
 
       renderRoomGrid();
       loadMovements();
+      loadReceptionistOrders(); // Load orders into background if modal open
     }
 
     function filterRooms(status, btnElement) {
@@ -1337,6 +1432,7 @@
         clearInterval(heartbeatInterval);
         clearInterval(orderCheckInterval);
         if(hkRefreshInterval) clearInterval(hkRefreshInterval);
+        if(recepOrdersInterval) clearInterval(recepOrdersInterval);
         if(alertSoundInterval) clearInterval(alertSoundInterval);
         if (wakeLock !== null) wakeLock.release();
         localStorage.clear();
