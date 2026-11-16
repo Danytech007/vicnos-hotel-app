@@ -472,17 +472,20 @@
       document.getElementById('kpi-revpar').textContent = `₦${revpar.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
     }
 
-    // 2. FRONT DESK ACTIONS
+    // 2. FRONT DESK ACTIONS (FIXED TO MATCH MODAL QUERY)
     async function loadFrontDeskActions() {
-      const today = new Date().toISOString().split('T')[0];
+      const todayString = new Date().toISOString().split('T')[0];
+      const todayStart = new Date(new Date().setHours(0,0,0,0)).toISOString();
+      const todayEnd = new Date(new Date().setHours(23,59,59,999)).toISOString();
 
-      const { count: arrivals } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('check_in_date', today).eq('status', 'Checked In');
+      // Arrivals: Matches the exact same range as the modal
+      const { count: arrivals } = await db.from('bookings').select('*', { count: 'exact', head: true }).gte('check_in_date', todayStart).lte('check_in_date', todayEnd).eq('status', 'Checked In');
       document.getElementById('fd-arrivals').textContent = arrivals || 0;
 
-      const { count: departures } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('expected_check_out', today).eq('status', 'Checked In');
+      const { count: departures } = await db.from('bookings').select('*', { count: 'exact', head: true }).eq('expected_check_out', todayString).eq('status', 'Checked In');
       document.getElementById('fd-departures').textContent = departures || 0;
 
-      const { count: overdue } = await db.from('bookings').select('*', { count: 'exact', head: true }).lt('expected_check_out', today).eq('status', 'Checked In');
+      const { count: overdue } = await db.from('bookings').select('*', { count: 'exact', head: true }).lt('expected_check_out', todayString).eq('status', 'Checked In');
       const badge = document.getElementById('fd-overdue-badge');
       if (overdue > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden');
 
