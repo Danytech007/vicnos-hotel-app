@@ -87,7 +87,7 @@
 
   </main>
 
-  <!-- CLEANING MODAL (Facilities & Photos) -->
+  <!-- CLEANING MODAL -->
   <div id="cleaning-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
     <div class="bg-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto hide-scroll">
       
@@ -102,59 +102,35 @@
           <input type="text" id="clean-staff-name" placeholder="e.g. Blessing" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-emerald-500">
         </div>
 
-        <!-- Facility Toggles -->
         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
           <h3 class="text-sm font-bold text-white mb-3 border-b border-slate-700 pb-1">Facility Status Check</h3>
-          
           <div class="space-y-2 text-sm">
-            <!-- AC -->
             <div class="flex justify-between items-center">
               <span class="text-slate-300">AC</span>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="toggle-ac" class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-              </label>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-ac" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
             </div>
-            <!-- Fridge -->
             <div class="flex justify-between items-center">
               <span class="text-slate-300">Fridge</span>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="toggle-fridge" class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-              </label>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-fridge" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
             </div>
-            <!-- Heater -->
             <div class="flex justify-between items-center">
               <span class="text-slate-300">Water Heater</span>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="toggle-heater" class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-              </label>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-heater" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
             </div>
-            <!-- Fan -->
             <div class="flex justify-between items-center">
               <span class="text-slate-300">Ceiling Fan</span>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="toggle-fan" class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-              </label>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-fan" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
             </div>
-            <!-- TV -->
             <div class="flex justify-between items-center">
               <span class="text-slate-300">TV</span>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="toggle-tv" class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-              </label>
+              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-tv" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
             </div>
           </div>
         </div>
 
-        <!-- Maintenance Complaint & Photo -->
         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
           <h3 class="text-sm font-bold text-white mb-2 text-red-400">Report Broken Item (Optional)</h3>
-          <textarea id="clean-note" rows="2" placeholder="Describe the fault (e.g., AC is making a loud noise)..." class="w-full bg-slate-800 border border-slate-700 p-2 rounded-lg text-white text-sm outline-none focus:border-red-500 mb-2"></textarea>
-          
+          <textarea id="clean-note" rows="2" placeholder="Describe the fault..." class="w-full bg-slate-800 border border-slate-700 p-2 rounded-lg text-white text-sm outline-none focus:border-red-500 mb-2"></textarea>
           <div class="flex items-center gap-2">
             <input type="file" id="clean-photo" accept="image/*" capture="environment" class="hidden">
             <button onclick="document.getElementById('clean-photo').click()" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2">
@@ -199,7 +175,7 @@
         if (tabId === 'chat') loadChat();
     }
 
-    // 1. GUEST REQUESTS
+    // 1. GUEST REQUESTS (FIXED PARSING LOGIC)
     async function loadGuestRequests() {
         const list = document.getElementById('requests-list');
         const { data: reqs } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending').order('created_at', { ascending: true });
@@ -209,18 +185,32 @@
             return;
         }
 
-        list.innerHTML = reqs.map(r => `
+        list.innerHTML = reqs.map(r => {
+            // NEW: Parse the JSON items and format them beautifully
+            let itemsHtml = '';
+            try {
+                if (r.items && Array.isArray(r.items)) {
+                    itemsHtml = r.items.map(i => `<span class="inline-block bg-orange-500/20 text-orange-400 px-2 py-1 rounded text-xs font-bold mr-1 mb-1">${i.qty}x ${i.name}</span>`).join('');
+                } else {
+                    itemsHtml = `<span class="text-orange-400 font-bold text-sm">${JSON.stringify(r.items)}</span>`;
+                }
+            } catch (e) {
+                itemsHtml = `<span class="text-orange-400 font-bold text-sm">${JSON.stringify(r.items)}</span>`;
+            }
+
+            return `
             <div class="bg-slate-900 p-4 rounded-xl border border-orange-500/30 flex justify-between items-center shadow-lg">
                 <div>
                     <h3 class="font-bold text-white text-lg">Room ${r.room_number}</h3>
                     <p class="text-xs text-slate-400 mt-1">${new Date(r.created_at).toLocaleTimeString()}</p>
-                    <p class="text-sm text-orange-400 font-bold mt-2">${JSON.stringify(r.items)}</p>
+                    <div class="mt-2 flex flex-wrap">${itemsHtml}</div>
                 </div>
                 <button onclick="completeRequest('${r.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow-md transition flex items-center gap-1">
                     <i data-lucide="check" class="w-4 h-4"></i> Done
                 </button>
             </div>
-        `).join('');
+            `;
+        }).join('');
         lucide.createIcons();
     }
 
@@ -270,7 +260,6 @@
         document.getElementById('clean-photo').value = '';
         document.getElementById('photo-name').textContent = "No photo attached";
         
-        // Default toggles to ON
         document.getElementById('toggle-ac').checked = true;
         document.getElementById('toggle-fridge').checked = true;
         document.getElementById('toggle-heater').checked = true;
@@ -309,7 +298,6 @@
             const note = document.getElementById('clean-note').value;
             const photoFile = document.getElementById('clean-photo').files[0];
 
-            // 1. Update Room status and toggles
             await db.from('rooms').update({ 
                 status: 'Available',
                 ac_status: acStatus,
@@ -321,11 +309,9 @@
                 last_cleaned_at: new Date().toISOString()
             }).eq('id', selectedRoomId);
 
-            // 2. Handle Maintenance Ticket & Photo
             if (note.trim() !== '' || photoFile) {
                 let photoUrl = null;
                 if (photoFile) {
-                    // Upload to Supabase Storage (Bucket: maintenance-photos)
                     const fileName = `${Date.now()}_${photoFile.name}`;
                     const { data: uploadData, error: uploadError } = await db.storage.from('maintenance-photos').upload(fileName, photoFile);
                     if (!uploadError) {
