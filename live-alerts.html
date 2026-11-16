@@ -178,12 +178,15 @@
       } else if (userRole === 'chef' || userRole === 'kitchen') {
         query = query.in('department', ['Kitchen', 'Food']);
       } else if (userRole === 'waitress') {
-        query = query.in('department', ['Kitchen', 'Food', 'Bar', 'Housekeeping']);
+        query = query.in('department', ['Kitchen', 'Food', 'Bar', 'Housekeeping', 'Minimart']);
       } else if (userRole === 'housekeeping') {
         query = query.eq('department', 'Housekeeping');
+      } else if (userRole === 'receptionist') {
+        // Receptionist gets Minimart and Housekeeping
+        query = query.in('department', ['Minimart', 'Housekeeping', 'Porter Request']);
       } else {
         // Managers / Admins get everything
-        query = query.in('department', ['Bar', 'Kitchen', 'Food', 'Housekeeping']);
+        query = query.in('department', ['Bar', 'Kitchen', 'Food', 'Housekeeping', 'Minimart', 'Porter Request']);
       }
 
       const { data: pendingOrders, error } = await query;
