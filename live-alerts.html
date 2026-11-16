@@ -20,6 +20,7 @@
       -webkit-tap-highlight-color: transparent; 
       user-select: none; 
       overflow: hidden; 
+      margin: 0;
     }
 
     body.iframe-mode { background-color: transparent !important; }
@@ -49,13 +50,13 @@
 <body class="min-h-screen flex flex-col justify-center items-center transition-colors duration-300 relative">
 
   <!-- IFRAME MODE (For Dashboard) -->
-  <a href="dashboard.html" id="iframe-banner" class="hidden w-full h-full cursor-pointer flex items-center justify-center p-2 banner-blink shadow-2xl border-b-4 border-red-900">
+  <div id="iframe-banner" class="hidden w-full h-full cursor-pointer flex items-center justify-center p-2 banner-blink shadow-2xl border-b-4 border-red-900">
       <div class="flex items-center justify-center gap-3 font-black text-lg md:text-2xl tracking-wider drop-shadow-md">
         <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
         <span id="iframe-banner-text">NEW ALERT WAITING! TAP TO VIEW</span>
         <i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
       </div>
-  </a>
+  </div>
 
   <!-- STANDALONE MODE (For Second Window) -->
   <div id="standalone-container" class="w-full h-full flex flex-col relative">
@@ -102,15 +103,18 @@
     let voiceInterval = null;
     let currentPendingCount = 0;
     let isAcknowledged = false;
-    let currentAlertType = 'order'; // 'order' or 'housekeeping'
+    let currentAlertType = 'order'; // 'order', 'housekeeping', 'minimart'
 
     if (isIframeMode) {
       document.body.classList.add('iframe-mode');
       document.getElementById('standalone-container').style.display = 'none';
       
+      // When clicked in iframe mode, notify the parent dashboard
       document.getElementById('iframe-banner').addEventListener('click', () => {
           isAcknowledged = true;
           stopVoice();
+          // Send message to parent window to open the modal
+          window.parent.postMessage({ action: 'open_orders_modal' }, '*');
       });
     } else {
       document.getElementById('sound-unlock-overlay').style.display = 'flex';
@@ -140,6 +144,8 @@
       let text = "Attention. New order waiting. Please check the system.";
       if (currentAlertType === 'housekeeping') {
           text = "Attention. New housekeeping request. Please check the system.";
+      } else if (currentAlertType === 'minimart') {
+          text = "Attention. New minimart order. Please check the system.";
       }
 
       const utterance = new SpeechSynthesisUtterance(text);
@@ -169,8 +175,6 @@
     async function checkAlerts() {
       if (!isIframeMode && !isMonitoring) return;
 
-      // We now query guest_orders for Pending requests.
-      // We also check if the order is a housekeeping request to change the voice/banner.
       let query = db.from('guest_orders').select('id, department').eq('status', 'Pending');
 
       if (userRole === 'barman' || userRole === 'bar') {
@@ -182,11 +186,10 @@
       } else if (userRole === 'housekeeping') {
         query = query.eq('department', 'Housekeeping');
       } else if (userRole === 'receptionist') {
-        // Receptionist gets Minimart and Housekeeping
-        query = query.in('department', ['Minimart', 'Housekeeping', 'Porter Request']);
+        query = query.in('department', ['Minimart', 'Housekeeping', 'Upgrade Request']);
       } else {
         // Managers / Admins get everything
-        query = query.in('department', ['Bar', 'Kitchen', 'Food', 'Housekeeping', 'Minimart', 'Porter Request']);
+        query = query.in('department', ['Bar', 'Kitchen', 'Food', 'Housekeeping', 'Minimart', 'Upgrade Request']);
       }
 
       const { data: pendingOrders, error } = await query;
@@ -198,10 +201,13 @@
 
       const newCount = pendingOrders ? pendingOrders.length : 0;
       
-      // Check if the pending items include housekeeping to change the voice text
       if (pendingOrders && pendingOrders.length > 0) {
           const hasHousekeeping = pendingOrders.some(o => o.department === 'Housekeeping');
-          currentAlertType = hasHousekeeping ? 'housekeeping' : 'order';
+          const hasMinimart = pendingOrders.some(o => o.department === 'Minimart');
+          
+          if (hasHousekeeping) currentAlertType = 'housekeeping';
+          else if (hasMinimart) currentAlertType = 'minimart';
+          else currentAlertType = 'order';
       }
 
       if (isIframeMode) {
@@ -210,9 +216,7 @@
         
         if (newCount > 0) {
           banner.classList.remove('hidden');
-          bannerText.textContent = currentAlertType === 'housekeeping' 
-            ? `${newCount} HOUSEKEEPING REQUEST${newCount > 1 ? 'S' : ''}! TAP TO VIEW`
-            : `${newCount} NEW ORDER${newCount > 1 ? 'S' : ''} WAITING! TAP TO VIEW`;
+          bannerText.textContent = `${newCount} NEW ORDER${newCount > 1 ? 'S' : ''} WAITING! TAP TO VIEW`;
           
           if (newCount > currentPendingCount || !isAcknowledged) {
              startVoice();
@@ -234,9 +238,7 @@
           isAcknowledged = false; 
           document.getElementById('standby-screen').classList.add('hidden');
           document.getElementById('alert-screen').classList.remove('hidden');
-          document.getElementById('alert-count').textContent = currentAlertType === 'housekeeping' 
-            ? `${newCount} HOUSEKEEPING` 
-            : `${newCount} PENDING`;
+          document.getElementById('alert-count').textContent = `${newCount} PENDING`;
           if (!document.body.classList.contains('blink-active')) document.body.classList.add('blink-active');
           startVoice();
         }

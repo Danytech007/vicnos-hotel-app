@@ -406,6 +406,16 @@
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
+    // LISTENER FOR CLICKS FROM THE RED BANNER IFRAME
+    window.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'open_orders_modal') {
+            // If the function exists on the page, call it
+            if (typeof openGuestOrdersModal === 'function') {
+                openGuestOrdersModal();
+            }
+        }
+    });
+
     // SCREEN WAKE LOCK LOGIC
     let wakeLock = null;
     async function requestWakeLock() {
