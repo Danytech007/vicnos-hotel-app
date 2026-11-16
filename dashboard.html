@@ -86,6 +86,16 @@
         </button>
       </div>
 
+      <!-- QUICK ACTIONS BAR (Restored Maintenance & Chat) -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <a href="maintenance.html" class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold text-sm hover:bg-slate-700 transition active:scale-95">
+            <i data-lucide="wrench" class="w-4 h-4 text-rose-400"></i> Maintenance
+        </a>
+        <a href="internal-chat.html" class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold text-sm hover:bg-slate-700 transition active:scale-95">
+            <i data-lucide="message-square" class="w-4 h-4 text-amber-400"></i> Staff Chat
+        </a>
+      </div>
+
       <!-- Pending Requests -->
       <div>
         <h3 class="text-[11px] font-bold text-slate-400 mb-3 ml-1 uppercase tracking-wider flex items-center gap-2"><i data-lucide="bell-ring" class="w-4 h-4 text-orange-400"></i> Pending Guest Requests</h3>
@@ -574,9 +584,14 @@
                     const textColor = isCheckingOutToday ? 'text-red-400 font-bold' : 'text-slate-400';
                     const icon = isCheckingOutToday ? '<i data-lucide="alert-circle" class="w-3 h-3 inline mr-1"></i>' : '';
                     
+                    // Added time display (12:00 PM format)
+                    const dateObj = new Date(booking.expected_check_out);
+                    const dateString = dateObj.toLocaleDateString('en-GB');
+                    const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
                     guestInfo = `
                         <p class="text-[11px] text-white mt-1 truncate">${booking.guests?.full_name || 'Guest'}</p>
-                        <p class="text-[10px] ${textColor} mt-1">${icon}Out: ${new Date(booking.expected_check_out).toLocaleDateString()}</p>
+                        <p class="text-[10px] ${textColor} mt-1">${icon}Out: ${dateString} at ${timeString}</p>
                     `;
                 }
             }
@@ -1310,7 +1325,6 @@
           buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock');
           buttons += clockBtn;
       }
-      // Note: Housekeeping role is handled completely above in init(), so it doesn't reach here.
       else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += chatBtn; buttons += clockBtn; }
       else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += maintenanceBtn; buttons += chatBtn; buttons += clockBtn; }
       else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-rose-400', 'bg-rose-500/20', 'Security Control'); buttons += chatBtn; buttons += clockBtn; }
