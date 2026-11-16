@@ -276,7 +276,6 @@
       <i data-lucide="home" class="w-5 h-5"></i>
       <span class="text-[9px] font-bold">Home</span>
     </a>
-    <!-- REPLACED: Log Expense opens the modal -->
     <button onclick="document.getElementById('expense-modal').classList.remove('hidden')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition">
       <i data-lucide="receipt" class="w-5 h-5"></i>
       <span class="text-[9px] font-bold">Expense</span>
@@ -285,7 +284,6 @@
       <i data-lucide="users" class="w-5 h-5"></i>
       <span class="text-[9px] font-bold">Guests</span>
     </a>
-    <!-- REPLACED: Night Audit -->
     <a href="night-audit.html" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition">
       <i data-lucide="moon" class="w-5 h-5"></i>
       <span class="text-[9px] font-bold">Audit</span>
@@ -551,12 +549,15 @@
       lucide.createIcons();
     }
 
-    // GUEST LIST MODAL (Arrivals/Departures)
+    // GUEST LIST MODAL (Arrivals/Departures) - FIXED DATE QUERY
     async function loadGuestsModal(type) {
       document.getElementById('guest-list-modal').classList.remove('hidden');
       const title = document.getElementById('guest-list-title');
       const content = document.getElementById('guest-list-content');
-      const today = new Date().toISOString().split('T')[0];
+      
+      const todayStart = new Date(new Date().setHours(0,0,0,0)).toISOString();
+      const todayEnd = new Date(new Date().setHours(23,59,59,999)).toISOString();
+      const todayString = new Date().toISOString().split('T')[0];
       
       title.textContent = type === 'arrivals' ? 'Checked In Today' : 'Leaving Today';
       content.innerHTML = '<p class="text-center text-gray-400 text-sm py-4 animate-pulse">Loading...</p>';
@@ -564,9 +565,10 @@
       let query = db.from('bookings').select('expected_check_out, guests(full_name), rooms(room_number)').eq('status', 'Checked In');
       
       if (type === 'arrivals') {
-        query = query.eq('check_in_date', today);
+        // FIXED: Uses a range so it catches any time format saved today
+        query = query.gte('check_in_date', todayStart).lte('check_in_date', todayEnd);
       } else {
-        query = query.eq('expected_check_out', today);
+        query = query.eq('expected_check_out', todayString);
       }
 
       const { data, error } = await query;
