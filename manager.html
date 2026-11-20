@@ -131,7 +131,6 @@
 
   </main>
 
-  <!-- DARK BOTTOM NAVIGATION BAR (No Repetition) -->
   <div class="fixed bottom-0 w-full bg-[#0f172a] border-t border-slate-800 flex justify-around items-center py-3 z-50 px-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
     <a href="manager.html" class="flex flex-col items-center gap-1 text-indigo-400"><i data-lucide="home" class="w-5 h-5"></i><span class="text-[9px] font-bold">Home</span></a>
     <button onclick="document.getElementById('expense-modal').classList.remove('hidden')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition"><i data-lucide="receipt" class="w-5 h-5"></i><span class="text-[9px] font-bold">Expense</span></button>
@@ -139,7 +138,6 @@
     <a href="night-audit.html" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition"><i data-lucide="moon" class="w-5 h-5"></i><span class="text-[9px] font-bold">Audit</span></a>
   </div>
 
-  <!-- MODALS (Cleaning Log, Approvals, Guest List, Expense, Create Staff, Laundry Price) -->
   <div id="cleaning-log-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
     <div class="bg-white w-full max-w-md rounded-[2rem] p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
       <div class="flex justify-between items-center mb-4 border-b pb-3"><h2 class="text-lg font-bold text-gray-900">Room Cleaning Logs</h2><button onclick="document.getElementById('cleaning-log-modal').classList.add('hidden')" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-4 h-4"></i></button></div>
@@ -212,6 +210,20 @@
 
     let currentUser = null;
     let currentLaundryFilter = 'Active';
+
+    // FALLBACK PRICES (If DB fails, this guarantees the app works)
+    const FALLBACK_PRICES = [
+      { id: 'fb-1', item_name: 'Polo', price: 400 },
+      { id: 'fb-2', item_name: 'Jeans', price: 500 },
+      { id: 'fb-3', item_name: 'Complete Native', price: 700 },
+      { id: 'fb-4', item_name: 'Duvet', price: 1500 },
+      { id: 'fb-5', item_name: 'Complete Suit', price: 1500 },
+      { id: 'fb-6', item_name: 'Suit Jacket', price: 1000 },
+      { id: 'fb-7', item_name: 'Complete Agbada', price: 1500 },
+      { id: 'fb-8', item_name: 'Long Sleeve', price: 500 },
+      { id: 'fb-9', item_name: 'Shoe', price: 1000 },
+      { id: 'fb-10', item_name: 'Bag', price: 1000 }
+    ];
 
     async function init() {
       const { data: { user } } = await db.auth.getUser();
@@ -302,10 +314,17 @@
 
     async function loadLaundryPrices() {
       const list = document.getElementById('laundry-price-list');
-      const { data: prices } = await db.from('laundry_services').select('*').eq('is_active', true).order('item_name');
+      const { data: prices, error } = await db.from('laundry_services').select('*').eq('is_active', true).order('item_name');
 
-      if (!prices || prices.length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-400 text-sm">No items found. Add one below.</p>';
+      if (error || !prices || prices.length === 0) {
+        // FALLBACK: If DB fails, show the hardcoded list so the UI isn't broken
+        if(error) console.error("DB Error:", error);
+        list.innerHTML = FALLBACK_PRICES.map(p => `
+          <div class="flex items-center gap-2 opacity-60">
+            <input type="text" value="${p.item_name}" readonly class="flex-1 bg-gray-100 border border-gray-200 p-2.5 rounded-xl text-sm font-bold text-gray-500">
+            <input type="number" value="${p.price}" readonly class="w-24 bg-gray-100 border border-gray-200 p-2.5 rounded-xl text-sm font-bold text-gray-500">
+          </div>
+        `).join('') + `<p class="text-xs text-red-500 mt-2">⚠️ Could not load from database. Showing fallback. Please check your SQL table.</p>`;
         return;
       }
 
@@ -320,9 +339,11 @@
     }
 
     async function updateLaundryPrice(id, field, value) {
+      if(id.startsWith('fb-')) return alert("Cannot edit fallback items. Please fix the database first.");
       const updateData = {};
       updateData[field] = field === 'price' ? parseFloat(value) : value;
-      await db.from('laundry_services').update(updateData).eq('id', id);
+      const { error } = await db.from('laundry_services').update(updateData).eq('id', id);
+      if(error) alert("Failed to update: " + error.message);
     }
 
     async function addLaundryItem() {
@@ -330,15 +351,22 @@
       const price = parseFloat(document.getElementById('new-laundry-price').value);
       if (!name || !price) return alert("Enter both item name and price.");
       
-      await db.from('laundry_services').insert({ item_name: name, price: price });
-      document.getElementById('new-laundry-item').value = '';
-      document.getElementById('new-laundry-price').value = '';
-      loadLaundryPrices();
+      const { error } = await db.from('laundry_services').insert({ item_name: name, price: price });
+      
+      if (error) {
+        alert("Database Error: " + error.message + "\n\nMake sure you ran the SQL query in Supabase to create the 'laundry_services' table.");
+      } else {
+        document.getElementById('new-laundry-item').value = '';
+        document.getElementById('new-laundry-price').value = '';
+        loadLaundryPrices();
+      }
     }
 
     async function deleteLaundryItem(id) {
+      if(id.startsWith('fb-')) return alert("Cannot delete fallback items.");
       if (!confirm("Remove this item from the price list?")) return;
-      await db.from('laundry_services').update({ is_active: false }).eq('id', id);
+      const { error } = await db.from('laundry_services').update({ is_active: false }).eq('id', id);
+      if(error) alert("Failed to delete: " + error.message);
       loadLaundryPrices();
     }
 
@@ -355,7 +383,7 @@
       
       let posRevenue = 0;
       if (pos) pos.forEach(p => posRevenue += Number(p.total_amount));
-      if (laundry) laundry.forEach(l => posRevenue += Number(l.total_amount)); // Added Laundry to KPI
+      if (laundry) laundry.forEach(l => posRevenue += Number(l.total_amount));
       
       let roomRevenue = 0;
       if (rooms) rooms.forEach(r => { if(r.rooms) roomRevenue += Number(r.rooms.price_per_night); });
