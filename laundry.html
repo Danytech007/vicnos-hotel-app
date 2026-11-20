@@ -3,47 +3,449 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vicnos Hotel - Laundry Hub</title>
+  <title>Vicnos - Laundry Hub</title>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+      });
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    body { -webkit-tap-highlight-color: transparent; user-select: none; }
-    input, textarea { user-select: text; }
+    * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; color: #0f172a; padding-bottom: 90px; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .bank-card { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid rgba(0,0,0,0.02); }
   </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
 </head>
-<body class="bg-gray-50 min-h-screen pb-24 font-sans">
-  <nav class="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-50">
+<body class="min-h-screen">
+
+  <!-- HEADER -->
+  <nav class="bg-white px-5 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
     <div class="flex items-center gap-3">
-      <a href="dashboard.html" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200"><i data-lucide="arrow-left" class="w-5 h-5"></i></a>
+      <a href="dashboard.html" class="bg-gray-100 p-2.5 rounded-2xl text-gray-600 hover:bg-gray-200 transition">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </a>
       <div>
-        <h1 class="font-bold text-gray-800 text-lg leading-tight">Laundry Hub</h1>
-        <p class="text-xs text-gray-500">Staff Dashboard</p>
+        <h1 class="font-extrabold text-gray-900 text-xl tracking-tight leading-tight">Laundry Hub</h1>
+        <p class="text-[10px] text-blue-600 uppercase tracking-widest font-bold">Staff Operations</p>
       </div>
     </div>
+    <button onclick="openNewOrderModal()" class="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-2xl shadow-lg shadow-blue-500/30 transition active:scale-95 flex items-center gap-2 text-sm font-bold">
+      <i data-lucide="plus" class="w-4 h-4"></i> New Order
+    </button>
   </nav>
 
-  <main class="p-4 max-w-2xl mx-auto space-y-5">
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
-      <div class="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-        <i data-lucide="shirt" class="w-8 h-8 text-blue-600"></i>
-      </div>
-      <h2 class="text-xl font-bold text-gray-800 mb-2">Welcome to Laundry</h2>
-      <p class="text-sm text-gray-500 mb-6">The full guest laundry tracker (QR tags, washing status) will arrive in the Guest Portal update.</p>
-      
-      <a href="maintenance.html" class="block w-full bg-red-100 text-red-700 py-4 rounded-xl font-bold border border-red-200">
-        ⚠️ Report a Maintenance Challenge
-      </a>
+  <main class="px-4 max-w-4xl mx-auto mt-4 space-y-6 fade-in">
+
+    <!-- TABS -->
+    <div class="flex gap-2 overflow-x-auto hide-scroll pb-1">
+      <button onclick="filterOrders('Active', this)" id="tab-active" class="tab-btn bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-md transition">Active Orders</button>
+      <button onclick="filterOrders('Ready', this)" id="tab-ready" class="tab-btn bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm transition">Ready for Pickup</button>
+      <button onclick="filterOrders('Completed', this)" id="tab-completed" class="tab-btn bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm transition">Delivered / History</button>
     </div>
+
+    <!-- ORDERS LIST -->
+    <div id="laundry-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <p class="col-span-full text-center text-gray-400 text-sm py-8 animate-pulse">Loading laundry orders...</p>
+    </div>
+
   </main>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
-    });
-  }
-</script>
+
+  <!-- NEW ORDER MODAL -->
+  <div id="new-order-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] p-6 shadow-2xl max-h-[90vh] overflow-y-auto hide-scroll">
+      
+      <div class="flex justify-between items-center mb-5">
+        <h2 class="text-lg font-bold text-gray-900">Log New Laundry Order</h2>
+        <button onclick="closeNewOrderModal()" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Room Select -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Guest Room</label>
+          <select id="laundry-room" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-blue-500 text-sm font-bold appearance-none">
+            <option value="">-- Select Room --</option>
+          </select>
+        </div>
+
+        <!-- Guest Name (Optional) -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Guest Name (Optional)</label>
+          <input type="text" id="laundry-guest-name" placeholder="e.g. Mr Steve" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-blue-500 text-sm">
+        </div>
+
+        <!-- Items -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Items to Wash</label>
+          <div class="space-y-2" id="items-container">
+            <!-- Dynamic Rows go here -->
+          </div>
+          <button onclick="addItemRow()" class="mt-2 text-xs text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800"><i data-lucide="plus" class="w-4 h-4"></i> Add Another Item</button>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Special Instructions</label>
+          <textarea id="laundry-notes" rows="2" placeholder="e.g. Starch the shirt collar" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl outline-none focus:border-blue-500 text-sm"></textarea>
+        </div>
+
+        <!-- Total -->
+        <div class="flex justify-between items-center bg-blue-50 p-4 rounded-xl border border-blue-100 mt-2">
+          <span class="text-sm font-bold text-blue-900">Total Amount:</span>
+          <span id="laundry-total" class="text-2xl font-black text-blue-600">₦0</span>
+        </div>
+
+        <button onclick="submitLaundryOrder()" id="laundry-submit-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition mt-2">Save Laundry Order</button>
+      </div>
+      <p id="laundry-msg" class="mt-3 text-center text-sm font-bold"></p>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
+
+    const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    lucide.createIcons();
+
+    let currentUser = null;
+    let currentFilter = 'Active';
+
+    // UPDATED PRICE LIST BASED ON VICNOS HOTEL PRICE LIST
+    const LAUNDRY_PRICES = {
+      'Polo': 400,
+      'Jeans': 500,
+      'Complete Native': 700,
+      'Duvet': 1500,
+      'Complete Suit': 1500,
+      'Suit Jacket': 1000, // Assuming 1000 since it wasn't specified
+      'Complete Agbada': 1500,
+      'Long Sleeve': 500,
+      'Shoe': 1000,
+      'Bag': 1000,
+      'Other': 0 // Allows manual entry if price is 0
+    };
+
+    async function init() {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = 'index.html'; return; }
+      currentUser = user;
+      
+      loadRoomsForSelect();
+      addItemRow(); // Add first row in modal
+      loadLaundryOrders();
+      
+      // Auto-refresh every 30s
+      setInterval(loadLaundryOrders, 30000);
+    }
+
+    // ============================
+    // 1. LOAD ROOMS FOR MODAL
+    // ============================
+    async function loadRoomsForSelect() {
+      const { data: bookings } = await db.from('bookings').select('rooms(room_number), guests(full_name)').eq('status', 'Checked In');
+      const select = document.getElementById('laundry-room');
+      
+      if (bookings && bookings.length > 0) {
+        bookings.sort((a,b) => a.rooms.room_number.localeCompare(b.rooms.room_number));
+        bookings.forEach(b => {
+          select.innerHTML += `<option value="${b.rooms.room_number}" data-guest="${b.guests?.full_name || ''}">Room ${b.rooms.room_number} (${b.guests?.full_name || 'Guest'})</option>`;
+        });
+      } else {
+        select.innerHTML = '<option value="">No active guests found</option>';
+      }
+    }
+
+    // ============================
+    // 2. DYNAMIC ITEM ROWS
+    // ============================
+    function addItemRow() {
+      const container = document.getElementById('items-container');
+      const rowId = 'row-' + Date.now();
+      
+      const rowHtml = `
+        <div class="flex gap-2 items-center" id="${rowId}">
+          <select onchange="handleItemChange(this)" class="item-name w-full bg-white border border-gray-200 p-3 rounded-xl outline-none text-sm">
+            ${Object.keys(LAUNDRY_PRICES).map(item => `<option value="${item}" data-price="${LAUNDRY_PRICES[item]}">${item} ${LAUNDRY_PRICES[item] > 0 ? '(₦'+LAUNDRY_PRICES[item]+')' : '(Custom Price)'}</option>`).join('')}
+          </select>
+          
+          <!-- Custom Price Input (Hidden by default) -->
+          <input type="number" placeholder="Price" oninput="calculateTotal()" class="item-custom-price hidden w-24 bg-white border border-gray-200 p-3 rounded-xl outline-none text-sm text-center font-bold text-blue-600">
+          
+          <input type="number" min="1" value="1" onchange="calculateTotal()" oninput="calculateTotal()" class="item-qty w-16 bg-white border border-gray-200 p-3 rounded-xl outline-none text-sm text-center font-bold">
+          
+          <button onclick="document.getElementById('${rowId}').remove(); calculateTotal();" class="bg-red-50 text-red-500 p-3 rounded-xl hover:bg-red-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>
+      `;
+      
+      container.insertAdjacentHTML('beforeend', rowHtml);
+      lucide.createIcons();
+      calculateTotal();
+    }
+
+    function handleItemChange(selectElement) {
+      const row = selectElement.closest('div');
+      const customInput = row.querySelector('.item-custom-price');
+      const selectedOption = selectElement.options[selectElement.selectedIndex];
+      const price = parseInt(selectedOption.getAttribute('data-price'));
+      
+      if (price === 0) {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+      } else {
+        customInput.classList.add('hidden');
+        customInput.value = '';
+      }
+      calculateTotal();
+    }
+
+    function calculateTotal() {
+      let total = 0;
+      const rows = document.querySelectorAll('#items-container > div');
+      
+      rows.forEach(row => {
+        const select = row.querySelector('.item-name');
+        const qtyInput = row.querySelector('.item-qty');
+        const customPriceInput = row.querySelector('.item-custom-price');
+        
+        if (select && qtyInput) {
+          const qty = parseInt(qtyInput.value) || 0;
+          let price = parseInt(select.options[select.selectedIndex].getAttribute('data-price')) || 0;
+          
+          // If custom price is visible, use that instead
+          if (!customPriceInput.classList.contains('hidden')) {
+            price = parseInt(customPriceInput.value) || 0;
+          }
+          
+          total += price * qty;
+        }
+      });
+      
+      document.getElementById('laundry-total').textContent = '₦' + total.toLocaleString();
+    }
+
+    // ============================
+    // 3. OPEN / CLOSE MODAL
+    // ============================
+    function openNewOrderModal() {
+      document.getElementById('new-order-modal').classList.remove('hidden');
+      document.getElementById('new-order-modal').classList.add('flex');
+      document.getElementById('laundry-msg').textContent = '';
+      document.getElementById('laundry-notes').value = '';
+      document.getElementById('laundry-room').selectedIndex = 0;
+      
+      // Reset items
+      document.getElementById('items-container').innerHTML = '';
+      addItemRow();
+    }
+
+    function closeNewOrderModal() {
+      document.getElementById('new-order-modal').classList.add('hidden');
+      document.getElementById('new-order-modal').classList.remove('flex');
+    }
+
+    // ============================
+    // 4. SUBMIT LAUNDRY ORDER
+    // ============================
+    async function submitLaundryOrder() {
+      const room = document.getElementById('laundry-room').value;
+      const notes = document.getElementById('laundry-notes').value;
+      
+      if (!room) return alert("Please select a guest room.");
+
+      const btn = document.getElementById('laundry-submit-btn');
+      const msg = document.getElementById('laundry-msg');
+      btn.innerText = "Saving..."; btn.disabled = true; msg.textContent = '';
+
+      try {
+        // 1. Build items JSON
+        let items = [];
+        let total = 0;
+        const rows = document.querySelectorAll('#items-container > div');
+        
+        rows.forEach(row => {
+          const select = row.querySelector('.item-name');
+          const qtyInput = row.querySelector('.item-qty');
+          const customPriceInput = row.querySelector('.item-custom-price');
+          
+          if (select && qtyInput) {
+            const qty = parseInt(qtyInput.value) || 0;
+            if (qty > 0) {
+              const name = select.value;
+              let price = parseInt(select.options[select.selectedIndex].getAttribute('data-price')) || 0;
+              
+              // If custom price is visible, use that instead
+              if (!customPriceInput.classList.contains('hidden')) {
+                price = parseInt(customPriceInput.value) || 0;
+              }
+              
+              items.push({ name: name, quantity: qty, price: price });
+              total += price * qty;
+            }
+          }
+        });
+
+        if (items.length === 0) throw new Error("Please add at least one item.");
+        if (total === 0) throw new Error("Total is zero. Please set a price for custom items.");
+
+        // 2. Find the Booking ID for this room
+        const { data: roomData } = await db.from('rooms').select('id').eq('room_number', room).single();
+        const { data: booking } = await db.from('bookings').select('id').eq('status', 'Checked In').eq('room_id', roomData.id).single();
+        
+        if (!booking) throw new Error("Could not find active booking for Room " + room + ". Is the guest checked in?");
+
+        // 3. Insert into guest_orders
+        const { error: orderErr } = await db.from('guest_orders').insert({
+          room_number: room,
+          booking_id: booking.id,
+          department: 'Laundry',
+          items: items,
+          total_amount: total,
+          status: 'Pending',
+          payment_method: 'Charge_to_Room' // Automatically charge to room
+        });
+
+        if (orderErr) throw orderErr;
+
+        // 4. Insert into folio_charges (So it shows on the bill)
+        const description = items.map(i => `${i.quantity}x ${i.name}`).join(', ') + (notes ? ` (${notes})` : '');
+        await db.from('folio_charges').insert({
+          booking_id: booking.id,
+          department: 'Laundry',
+          description: description,
+          amount: total
+        });
+
+        // Success
+        msg.textContent = "✅ Order saved and charged to Room " + room;
+        msg.className = "mt-3 text-center text-sm font-bold text-emerald-500";
+        
+        setTimeout(() => {
+          closeNewOrderModal();
+          loadLaundryOrders();
+        }, 1500);
+
+      } catch (err) {
+        msg.textContent = "Error: " + err.message;
+        msg.className = "mt-3 text-center text-sm font-bold text-red-500";
+      } finally {
+        btn.innerText = "Save Laundry Order";
+        btn.disabled = false;
+      }
+    }
+
+    // ============================
+    // 5. LOAD & RENDER ORDERS
+    // ============================
+    async function loadLaundryOrders() {
+      const list = document.getElementById('laundry-orders-list');
+      
+      let query = db.from('guest_orders').select('*').eq('department', 'Laundry');
+      
+      if (currentFilter === 'Active') {
+        query = query.in('status', ['Pending', 'Preparing']);
+      } else if (currentFilter === 'Ready') {
+        query = query.eq('status', 'Ready');
+      } else {
+        query = query.in('status', ['Completed', 'Rejected']);
+      }
+
+      const { data: orders } = await query.order('created_at', { ascending: false });
+
+      if (!orders || orders.length === 0) {
+        list.innerHTML = `<p class="col-span-full text-center text-gray-400 text-sm py-8">No ${currentFilter.toLowerCase()} orders found.</p>`;
+        return;
+      }
+
+      list.innerHTML = orders.map(order => {
+        let itemsHtml = '';
+        try {
+          const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+          if (Array.isArray(items)) {
+            itemsHtml = items.map(i => `<li class="flex justify-between text-xs py-0.5"><span>${i.quantity}x ${i.name}</span><span class="text-gray-500">₦${(i.price * i.quantity).toLocaleString()}</span></li>`).join('');
+          }
+        } catch(e) {}
+
+        let badgeColor = 'bg-gray-100 text-gray-600';
+        if (order.status === 'Pending') badgeColor = 'bg-amber-100 text-amber-700';
+        if (order.status === 'Preparing') badgeColor = 'bg-blue-100 text-blue-700';
+        if (order.status === 'Ready') badgeColor = 'bg-emerald-100 text-emerald-700';
+        if (order.status === 'Completed') badgeColor = 'bg-gray-200 text-gray-700';
+
+        let actionButtons = '';
+        if (order.status === 'Pending') {
+          actionButtons = `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-xs transition">Start Washing</button>`;
+        } else if (order.status === 'Preparing') {
+          actionButtons = `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition">Mark as Ready</button>`;
+        } else if (order.status === 'Ready') {
+          actionButtons = `<button onclick="updateOrderStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-xs transition">Mark as Delivered</button>`;
+        }
+
+        return `
+          <div class="bg-white p-5 rounded-3xl bank-card fade-in flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start mb-3 pb-2 border-b border-gray-100">
+                <div>
+                  <h3 class="font-black text-gray-900 text-xl">Room ${order.room_number}</h3>
+                  <p class="text-[10px] text-gray-400 font-bold uppercase mt-1">${new Date(order.created_at).toLocaleString()}</p>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-1 rounded-lg ${badgeColor}">${order.status}</span>
+              </div>
+              
+              <ul class="mb-4">${itemsHtml}</ul>
+              
+              <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100 mb-4">
+                <span class="text-xs font-bold text-gray-500 uppercase">Total</span>
+                <span class="text-lg font-black text-gray-900">₦${Number(order.total_amount).toLocaleString()}</span>
+              </div>
+            </div>
+            
+            <div>${actionButtons}</div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // ============================
+    // 6. FILTER & UPDATE STATUS
+    // ============================
+    function filterOrders(filter, btnElement) {
+      currentFilter = filter;
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = "tab-btn bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm transition";
+      });
+      btnElement.className = "tab-btn bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-md transition";
+      
+      loadLaundryOrders();
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      if (!confirm(`Mark this order as ${newStatus}?`)) return;
+      await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+      loadLaundryOrders();
+    }
+
+    init();
+  </script>
 </body>
 </html>
