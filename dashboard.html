@@ -44,7 +44,6 @@
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     .blink-alert { animation: blink 1.5s infinite; }
 
-    /* Premium Hilton-Style Dark Theme for Standard View */
     body.standard-theme { background-color: #0b1120; color: #f8fafc; }
     body.standard-theme nav { background-color: rgba(15, 23, 42, 0.9) !important; border-color: #1e293b !important; }
     body.standard-theme nav h1, body.standard-theme nav p { color: white !important; }
@@ -56,7 +55,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- RED BLINKER IFRAME OVERLAY -->
   <div id="global-alert-container" class="fixed top-0 left-0 right-0 z-[99999] pointer-events-none w-full h-[60px]">
     <iframe id="alert-iframe" src="live-alerts.html?mode=banner" class="w-full h-full pointer-events-auto border-none" scrolling="no" style="overflow:hidden;"></iframe>
   </div>
@@ -78,48 +76,44 @@
    
     <!-- ================= HOUSEKEEPING INLINE VIEW ================= -->
     <div id="housekeeping-view" class="hidden p-4 max-w-4xl mx-auto space-y-6 fade-in">
-      
       <div class="flex justify-between items-center mb-2">
         <h2 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-emerald-400"></i> Live Command</h2>
-        <button onclick="loadHousekeepingData()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-md transition">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
-        </button>
+        <button onclick="loadHousekeepingData()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-md transition"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button>
       </div>
-
-      <!-- QUICK ACTIONS BAR (Restored Maintenance & Chat) -->
       <div class="grid grid-cols-2 gap-3 mb-4">
-        <a href="maintenance.html" class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold text-sm hover:bg-slate-700 transition active:scale-95">
-            <i data-lucide="wrench" class="w-4 h-4 text-rose-400"></i> Maintenance
-        </a>
-        <a href="internal-chat.html" class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold text-sm hover:bg-slate-700 transition active:scale-95">
-            <i data-lucide="message-square" class="w-4 h-4 text-amber-400"></i> Staff Chat
-        </a>
+        <a href="maintenance.html" class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold text-sm hover:bg-slate-700 transition active:scale-95"><i data-lucide="wrench" class="w-4 h-4 text-rose-400"></i> Maintenance</a>
+        <a href="internal-chat.html" class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold text-sm hover:bg-slate-700 transition active:scale-95"><i data-lucide="message-square" class="w-4 h-4 text-amber-400"></i> Staff Chat</a>
       </div>
-
-      <!-- Pending Requests -->
       <div>
         <h3 class="text-[11px] font-bold text-slate-400 mb-3 ml-1 uppercase tracking-wider flex items-center gap-2"><i data-lucide="bell-ring" class="w-4 h-4 text-orange-400"></i> Pending Guest Requests</h3>
-        <div id="hk-requests-list" class="space-y-3">
-          <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 text-center">
-            <p class="text-slate-400 text-sm animate-pulse">Scanning for requests...</p>
-          </div>
-        </div>
+        <div id="hk-requests-list" class="space-y-3"><div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 text-center"><p class="text-slate-400 text-sm animate-pulse">Scanning for requests...</p></div></div>
       </div>
-
-      <!-- Room Status -->
       <div>
         <h3 class="text-[11px] font-bold text-slate-400 mb-3 ml-1 uppercase tracking-wider flex items-center gap-2"><i data-lucide="bed" class="w-4 h-4 text-indigo-400"></i> Room Status</h3>
-        <div id="hk-rooms-list" class="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <p class="col-span-full text-center text-slate-500 text-sm animate-pulse py-4">Loading rooms...</p>
-        </div>
+        <div id="hk-rooms-list" class="grid grid-cols-2 md:grid-cols-3 gap-3"><p class="col-span-full text-center text-slate-500 text-sm animate-pulse py-4">Loading rooms...</p></div>
+      </div>
+    </div>
+
+    <!-- ================= LAUNDRY INLINE VIEW ================= -->
+    <div id="laundry-view" class="hidden p-4 max-w-4xl mx-auto space-y-6 fade-in">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="shirt" class="w-5 h-5 text-blue-400"></i> Laundry Hub</h2>
+        <button onclick="openLaundryModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-md transition"><i data-lucide="plus" class="w-4 h-4"></i> New Order</button>
       </div>
 
+      <div class="flex gap-2 overflow-x-auto hide-scroll pb-1">
+        <button onclick="filterLaundry('Active', this)" id="laundry-tab-active" class="tab-btn bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-md transition">Active Orders</button>
+        <button onclick="filterLaundry('Ready', this)" id="laundry-tab-ready" class="tab-btn bg-slate-800 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm transition">Ready for Pickup</button>
+        <button onclick="filterLaundry('Completed', this)" id="laundry-tab-completed" class="tab-btn bg-slate-800 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm transition">Delivered</button>
+      </div>
+
+      <div id="laundry-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <p class="col-span-full text-center text-slate-400 text-sm py-8 animate-pulse">Loading laundry orders...</p>
+      </div>
     </div>
 
     <!-- ================= RECEPTIONIST VIEW ================= -->
     <div id="receptionist-view" class="hidden p-4 max-w-7xl mx-auto space-y-6">
-     
-      <!-- RED ALERT BANNER (CLICKABLE) -->
       <div id="live-upgrade-alert" class="hidden bg-red-600 text-white p-4 rounded-xl shadow-lg fade-in flex justify-between items-center blink-alert cursor-pointer" onclick="openGuestOrdersModal()">
         <div class="flex items-center gap-3">
             <i data-lucide="bell-ring" class="w-6 h-6 animate-bounce"></i>
@@ -144,13 +138,7 @@
         <a href="./checkout.html" class="bg-orange-600 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg active:scale-95 transition text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> Check-Out</a>
         <a href="./guest-history.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i> Directory</a>
         <a href="./qr-code.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="qr-code" class="w-4 h-4 text-purple-500"></i> QR Codes</a>
-        
-        <!-- MINIMART POS BUTTON (With Badge for live orders) -->
-        <a href="./pos.html?dept=Minimart" id="recep-orders-btn" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm relative">
-            <i data-lucide="shopping-cart" class="w-4 h-4 text-teal-600"></i> Minimart POS 
-            <span id="recep-dot" class="hidden absolute top-1 right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
-        </a>
-
+        <a href="./pos.html?dept=Minimart" id="recep-orders-btn" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm relative"><i data-lucide="shopping-cart" class="w-4 h-4 text-teal-600"></i> Minimart POS <span id="recep-dot" class="hidden absolute top-1 right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span></a>
         <a href="./maintenance.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="wrench" class="w-4 h-4 text-red-500"></i> Maintenance</a>
         <a href="./internal-chat.html" class="bg-white border border-gray-200 text-gray-800 p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 transition hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4 text-emerald-500"></i> Staff Chat</a>
       </div>
@@ -161,7 +149,6 @@
             <div><h2 class="text-xl font-bold text-gray-800">Room Status & Key Cards</h2><p class="text-xs text-gray-500 mt-1">Click any room to manage Door, Reservation, or Check-in.</p></div>
             <button onclick="loadReceptionistData()" class="text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh</button>
           </div>
-         
           <div class="flex gap-2 overflow-x-auto hide-scroll mb-4 pb-1">
             <button onclick="filterRooms('All', this)" class="filter-btn active px-4 py-2 rounded-lg text-xs font-bold border border-gray-200 whitespace-nowrap transition">All Rooms</button>
             <button onclick="filterRooms('Available', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Available</button>
@@ -169,10 +156,8 @@
             <button onclick="filterRooms('Reserved', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Reserved</button>
             <button onclick="filterRooms('Dirty', this)" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-200 whitespace-nowrap transition">Dirty</button>
           </div>
-
           <div id="room-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4"><p class="text-gray-500 text-sm animate-pulse">Loading rooms...</p></div>
         </div>
-       
         <div class="fade-in space-y-4">
           <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2"><i data-lucide="plane-landing" class="w-4 h-4 text-blue-500"></i> Arrivals Today</h3><div id="arrivals-list" class="space-y-3"><p class="text-xs text-gray-500">Loading...</p></div></div>
           <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2"><i data-lucide="plane-takeoff" class="w-4 h-4 text-orange-500"></i> Departures Today</h3><div id="departures-list" class="space-y-3"><p class="text-xs text-gray-500">Loading...</p></div></div>
@@ -182,90 +167,54 @@
 
     <!-- ================= DARK MODE VIEW (F&B STAFF) ================= -->
     <div id="dark-ops-view" class="hidden p-4 max-w-6xl mx-auto space-y-6 mt-2">
-     
-      <!-- NEW LOW STOCK ALERT BANNER -->
       <div id="low-stock-banner" class="hidden bg-amber-500 text-black p-4 rounded-2xl shadow-lg flex items-start gap-3 fade-in">
-        <div class="bg-black/10 p-2 rounded-full flex-shrink-0">
-            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-        </div>
-        <div class="flex-1">
-            <h3 class="font-black text-sm uppercase tracking-wide">Low Stock Alert!</h3>
-            <p id="low-stock-items" class="text-xs font-bold mt-1">Loading items...</p>
-        </div>
+        <div class="bg-black/10 p-2 rounded-full flex-shrink-0"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
+        <div class="flex-1"><h3 class="font-black text-sm uppercase tracking-wide">Low Stock Alert!</h3><p id="low-stock-items" class="text-xs font-bold mt-1">Loading items...</p></div>
       </div>
-
-      <!-- LIVE ORDERS QUEUE -->
       <div id="dashboard-live-orders" class="hidden fade-in">
         <div class="glass-card p-5 rounded-2xl border border-slate-700/50">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
                 <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5 text-amber-400"></i> Active Orders Queue</h3>
                 <button onclick="loadLiveDashboardOrders()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg"><i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Refresh</button>
             </div>
-            <div id="dashboard-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <p class="text-sm text-slate-400 col-span-full text-center py-6">Loading active orders...</p>
-            </div>
+            <div id="dashboard-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><p class="text-sm text-slate-400 col-span-full text-center py-6">Loading active orders...</p></div>
         </div>
       </div>
-
-      <!-- STATS -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in mt-6">
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Total Sales Today</p><p id="ops-total-sales" class="text-2xl font-black gold-text">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Room Credits</p><p id="ops-credit-sales" class="text-2xl font-black text-amber-400">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between"><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Cash to Remit</p><p id="ops-cash-sales" class="text-2xl font-black text-emerald-400">₦0</p></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-indigo-500/20 to-transparent border-indigo-500/30"><p class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider mb-1">Shift Status</p><p id="ops-shift-status" class="text-lg font-bold text-white">No Active Shift</p></div>
       </div>
-     
-      <!-- ACTIONS -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in" id="ops-action-buttons"></div>
-
-      <!-- BILLS -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in mt-6">
         <div class="glass-card p-5 rounded-2xl"><div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2"><h3 id="ops-bills-title" class="font-bold text-white flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room Bills (Checkout Due)</h3></div><div id="ops-room-bills-list" class="space-y-3 max-h-60 overflow-y-auto hide-scroll"><p class="text-xs text-slate-400">Checking for pending bills...</p></div></div>
         <div class="glass-card p-5 rounded-2xl flex flex-col justify-center items-center text-center"><div class="bg-amber-500/20 p-4 rounded-full mb-3 text-amber-400"><i data-lucide="package-plus" class="w-8 h-8"></i></div><h3 class="font-bold text-white mb-2">Received New Stock?</h3><p class="text-xs text-slate-400 mb-4 max-w-xs">Add new packs or restock existing items. This will be sent to the Manager for approval.</p><a id="ops-stock-request-link" href="#" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-lg transition">Request Stock</a></div>
       </div>
     </div>
 
-    <!-- ================= STANDARD VIEW (SUPER ADMIN / MANAGER / ACCOUNTANT) ================= -->
+    <!-- ================= STANDARD VIEW ================= -->
     <div id="standard-view" class="hidden text-slate-200 p-4 min-h-screen bg-slate-900">
-     
-      <!-- Premium Profile Card -->
       <div class="bg-slate-800/40 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-lg flex justify-between items-center relative overflow-hidden mb-8 mt-4">
-        <div class="relative z-10">
-            <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p>
-            <h2 id="std-admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2>
-        </div>
-        <!-- Premium Gold Badge -->
+        <div class="relative z-10"><p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">User Profile</p><h2 id="std-admin-name" class="text-2xl font-bold text-white">Loading... 👋</h2></div>
         <span id="std-role-badge" class="relative z-10 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-1.5 rounded-lg tracking-wide shadow-sm">ROLE</span>
       </div>
-
-      <!-- ACCOUNTANT QUICK VIEW (LIVE ROOMS & AUDIT SEARCH) -->
       <div id="accountant-quick-view" class="hidden mb-8 space-y-6">
-       
-        <!-- Live Room State -->
         <div class="bg-slate-800/40 backdrop-blur-md p-5 rounded-3xl border border-slate-700/50">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
               <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="door-open" class="w-5 h-5 text-orange-400"></i> Live Room State (Front Desk Oversight)</h2>
               <button onclick="loadLiveRoomsDash()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg"><i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Refresh</button>
             </div>
-            <div id="dash-live-rooms-list" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <p class="col-span-full text-center text-slate-500 text-sm animate-pulse">Loading live room data...</p>
-            </div>
+            <div id="dash-live-rooms-list" class="grid grid-cols-2 md:grid-cols-4 gap-3"><p class="col-span-full text-center text-slate-500 text-sm animate-pulse">Loading live room data...</p></div>
         </div>
-
-        <!-- Night Audit Search -->
         <div class="bg-slate-800/40 backdrop-blur-md p-5 rounded-3xl border border-slate-700/50">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-slate-700 pb-2 gap-2">
               <h2 class="font-bold text-white flex items-center gap-2"><i data-lucide="search" class="w-5 h-5 text-indigo-400"></i> Search Night Audits</h2>
               <input type="date" id="dash-audit-search-date" onchange="loadSpecificAuditDash()" class="bg-slate-900 border border-slate-600 p-2 rounded-lg text-white outline-none text-sm">
             </div>
-            <div id="dash-specific-audit-result" class="space-y-4">
-              <p class="text-center text-slate-500 text-sm py-4">Select a date above to pull the Manager's closed report.</p>
-            </div>
+            <div id="dash-specific-audit-result" class="space-y-4"><p class="text-center text-slate-500 text-sm py-4">Select a date above to pull the Manager's closed report.</p></div>
         </div>
-
       </div>
-     
-      <!-- PREMIUM GRID -->
       <div id="std-operations-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 pb-8"></div>
     </div>
 
@@ -275,10 +224,7 @@
   <div id="action-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-end md:items-center justify-center z-[100] p-0 md:p-4">
     <div class="bg-white w-full max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl fade-in">
       <div class="flex justify-between items-center mb-4">
-        <div>
-          <h2 class="text-2xl font-black text-gray-900">Room <span id="modal-room-num">---</span></h2>
-          <p id="modal-guest-name" class="text-sm font-bold text-blue-600">No Guest</p>
-        </div>
+        <div><h2 class="text-2xl font-black text-gray-900">Room <span id="modal-room-num">---</span></h2><p id="modal-guest-name" class="text-sm font-bold text-blue-600">No Guest</p></div>
         <button onclick="closeActionModal()" class="bg-gray-100 p-2 rounded-full text-gray-500"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-3 mt-6" id="modal-actions-container"></div>
@@ -290,7 +236,6 @@
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in">
       <h2 class="text-xl font-bold text-gray-900 mb-1">Reserve Room <span id="res-room-num" class="text-purple-600">---</span></h2>
       <p class="text-xs text-gray-500 mb-5">Enter guest details for this reservation.</p>
-     
       <div class="space-y-3">
         <div><label class="block text-xs font-bold text-gray-600 mb-1">Guest Name</label><input type="text" id="res-guest-name" placeholder="e.g. John Doe" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-purple-500"></div>
         <div><label class="block text-xs font-bold text-gray-600 mb-1">Phone Number</label><input type="text" id="res-guest-phone" placeholder="e.g. 08012345678" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-purple-500"></div>
@@ -299,7 +244,6 @@
             <div><label class="block text-xs font-bold text-gray-600 mb-1">Check-Out Date</label><input type="date" id="res-checkout" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl outline-none focus:border-purple-500"></div>
         </div>
       </div>
-     
       <div class="flex gap-2 mt-6">
         <button onclick="closeReservationModal()" class="w-1/3 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl active:scale-95 transition">Cancel</button>
         <button onclick="submitReservation()" id="res-submit-btn" class="flex-1 bg-purple-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition">Save Reservation</button>
@@ -327,111 +271,95 @@
   <!-- CLEANING MODAL FOR HOUSEKEEPING -->
   <div id="cleaning-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
     <div class="bg-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto hide-scroll">
-      
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-white">Room <span id="clean-room-num" class="text-emerald-400">---</span></h2>
         <button onclick="closeCleaningModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
-
       <div class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-400 mb-1">Cleaned By (Staff Name)</label>
-          <input type="text" id="clean-staff-name" placeholder="e.g. Blessing" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-emerald-500">
-        </div>
-
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Cleaned By (Staff Name)</label><input type="text" id="clean-staff-name" placeholder="e.g. Blessing" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>
         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
           <h3 class="text-sm font-bold text-white mb-3 border-b border-slate-700 pb-1">Facility Status Check</h3>
           <div class="space-y-2 text-sm">
-            <div class="flex justify-between items-center">
-              <span class="text-slate-300">AC</span>
-              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-ac" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-300">Fridge</span>
-              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-fridge" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-300">Water Heater</span>
-              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-heater" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-300">Ceiling Fan</span>
-              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-fan" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-300">TV</span>
-              <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-tv" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label>
-            </div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">AC</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-ac" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Fridge</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-fridge" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Water Heater</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-heater" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Ceiling Fan</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-fan" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">TV</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="toggle-tv" class="sr-only peer"><div class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div></label></div>
           </div>
         </div>
-
         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
           <h3 class="text-sm font-bold text-white mb-2 text-red-400">Report Broken Item (Optional)</h3>
           <textarea id="clean-note" rows="2" placeholder="Describe the fault..." class="w-full bg-slate-800 border border-slate-700 p-2 rounded-lg text-white text-sm outline-none focus:border-red-500 mb-2"></textarea>
           <div class="flex items-center gap-2">
             <input type="file" id="clean-photo" accept="image/*" capture="environment" class="hidden">
-            <button onclick="document.getElementById('clean-photo').click()" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2">
-              <i data-lucide="camera" class="w-4 h-4"></i> Snap Photo
-            </button>
+            <button onclick="document.getElementById('clean-photo').click()" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2"><i data-lucide="camera" class="w-4 h-4"></i> Snap Photo</button>
             <span id="photo-name" class="text-xs text-slate-400">No photo attached</span>
           </div>
         </div>
-
-        <button onclick="submitCleaning()" id="clean-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg transition text-lg mt-2">
-          Complete & Mark Available
-        </button>
+        <button onclick="submitCleaning()" id="clean-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg transition text-lg mt-2">Complete & Mark Available</button>
       </div>
     </div>
   </div>
 
-  <!-- ================= GUEST ORDERS MODAL FOR RECEPTIONIST ================= -->
+  <!-- GUEST ORDERS MODAL FOR RECEPTIONIST -->
   <div id="guest-orders-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
     <div class="bg-white w-full max-w-2xl rounded-3xl p-6 shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto hide-scroll">
-      
       <div class="flex justify-between items-center mb-6 border-b pb-3">
-        <div>
-          <h2 class="text-xl font-bold text-gray-900">Pending Guest Orders</h2>
-          <p class="text-xs text-gray-500 mt-1">Manage Minimart & Housekeeping requests here.</p>
-        </div>
+        <div><h2 class="text-xl font-bold text-gray-900">Pending Guest Orders</h2><p class="text-xs text-gray-500 mt-1">Manage Minimart & Housekeeping requests here.</p></div>
         <button onclick="closeGuestOrdersModal()" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
+      <div id="recep-orders-list" class="space-y-4"><p class="text-center text-gray-500 py-6 animate-pulse">Loading orders...</p></div>
+    </div>
+  </div>
 
-      <div id="recep-orders-list" class="space-y-4">
-        <p class="text-center text-gray-500 py-6 animate-pulse">Loading orders...</p>
+  <!-- NEW LAUNDRY ORDER MODAL -->
+  <div id="laundry-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div class="bg-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto hide-scroll">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">Log New Laundry</h2>
+        <button onclick="closeLaundryModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
-
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Guest Room</label>
+          <select id="laundry-room" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-blue-500 font-bold"><option value="">-- Select Room --</option></select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-2">Items to Wash</label>
+          <div class="space-y-2" id="laundry-items-container"></div>
+          <button onclick="addLaundryItemRow()" class="mt-2 text-xs text-blue-400 font-bold flex items-center gap-1 hover:text-blue-300"><i data-lucide="plus" class="w-4 h-4"></i> Add Another Item</button>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Notes (Optional)</label>
+          <textarea id="laundry-notes" rows="2" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-blue-500 text-sm"></textarea>
+        </div>
+        <div class="flex justify-between items-center bg-blue-500/10 p-4 rounded-xl border border-blue-500/30 mt-2">
+          <span class="text-sm font-bold text-blue-300">Total:</span>
+          <span id="laundry-total" class="text-2xl font-black text-blue-400">₦0</span>
+        </div>
+        <button onclick="submitLaundryOrder()" id="laundry-submit-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transition mt-2">Save Order</button>
+      </div>
+      <p id="laundry-msg" class="mt-3 text-center text-sm font-bold"></p>
     </div>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.log(err))); }
 
-    // LISTENER FOR CLICKS FROM THE RED BANNER IFRAME
     window.addEventListener('message', (event) => {
         if (event.data && event.data.action === 'open_orders_modal') {
-            // If the function exists on the page, call it
-            if (typeof openGuestOrdersModal === 'function') {
-                openGuestOrdersModal();
-            }
+            if (typeof openGuestOrdersModal === 'function') { openGuestOrdersModal(); }
         }
     });
 
-    // SCREEN WAKE LOCK LOGIC
     let wakeLock = null;
     async function requestWakeLock() {
       try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
-          wakeLock.addEventListener('release', () => {});
-        }
+        if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => {}); }
       } catch (err) { console.warn(`Wake Lock Error: ${err.name}, ${err.message}`); }
     }
-    document.addEventListener('visibilitychange', async () => {
-      if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
-    });
-    document.body.addEventListener('click', async () => {
-        if (!wakeLock) { await requestWakeLock(); }
-    }, { once: true });
+    document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); } });
+    document.body.addEventListener('click', async () => { if (!wakeLock) { await requestWakeLock(); } }, { once: true });
 
     const SUPABASE_URL = 'https://yphhfnbzgexwkzaoiokf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaGhmbmJ6Z2V4d2t6YW9pb2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3Mzk2MjcsImV4cCI6MjEwODMxNTYyN30.jux_BYQ2ZxMQyArrnhNtbRT8cuBD3BM-FVrMq1lIWFU';
@@ -449,14 +377,15 @@
     let alertSoundInterval = null;
     let recepOrdersInterval = null;
     
-    // Housekeeping variables
     let hkSelectedRoomId = null;
     let hkRefreshInterval = null;
+    let laundryServices = [];
+    let currentLaundryFilter = 'Active';
+    let laundryRefreshInterval = null;
 
     async function init() {
       try {
         requestWakeLock();
-
         const { data: { user } } = await db.auth.getUser();
         if (!user) { window.location.href = 'index.html'; return; }
         currentUser = user;
@@ -475,7 +404,7 @@
           loadReceptionistData();
           startHeartbeat();
           orderCheckInterval = setInterval(checkNewOrders, 5000);
-          recepOrdersInterval = setInterval(loadReceptionistOrders, 15000); // Refresh modal if open
+          recepOrdersInterval = setInterval(loadReceptionistOrders, 15000);
         }
         else if (['barman', 'chef', 'kitchen', 'waitress', 'bar'].includes(currentRole)) {
           if (currentRole === 'chef' || currentRole === 'kitchen') currentDept = 'Kitchen';
@@ -501,26 +430,33 @@
           loadLiveDashboardOrders();
           loadLowStock();
          
-          orderCheckInterval = setInterval(() => {
-              loadLiveDashboardOrders();
-              loadLowStock();
-          }, 10000);
+          orderCheckInterval = setInterval(() => { loadLiveDashboardOrders(); loadLowStock(); }, 10000);
         }
         else if (currentRole === 'manager' || currentRole === 'md' || currentRole === 'admin') {
-          // Route Managers, MDs, and Admins to their dedicated dashboard
           window.location.href = 'manager.html';
         }
         else if (currentRole === 'housekeeping') {
-          // Inline Housekeeping View - No extra clicking!
           document.body.classList.add('standard-theme');
           document.getElementById('nav-icon-bg').className = "bg-emerald-500 p-2 rounded-xl text-slate-900 shadow-md shadow-emerald-500/20";
           document.getElementById('housekeeping-view').classList.remove('hidden');
           document.getElementById('admin-name').textContent = profile.full_name;
           document.getElementById('user-role-display').textContent = 'Housekeeping';
           document.getElementById('duty-title').textContent = 'Live Command';
-          
           loadHousekeepingData();
-          hkRefreshInterval = setInterval(loadHousekeepingData, 30000); // Auto-refresh
+          hkRefreshInterval = setInterval(loadHousekeepingData, 30000);
+        }
+        else if (currentRole === 'laundry') {
+          document.body.classList.add('standard-theme');
+          document.getElementById('nav-icon-bg').className = "bg-blue-500 p-2 rounded-xl text-slate-900 shadow-md shadow-blue-500/20";
+          document.getElementById('laundry-view').classList.remove('hidden');
+          document.getElementById('admin-name').textContent = profile.full_name;
+          document.getElementById('user-role-display').textContent = 'Laundry';
+          document.getElementById('duty-title').textContent = 'Laundry Hub';
+          
+          await loadLaundryServices();
+          loadRoomsForLaundry();
+          loadLaundryOrders();
+          laundryRefreshInterval = setInterval(loadLaundryOrders, 30000);
         }
         else {
           document.body.classList.add('standard-theme');
@@ -529,17 +465,206 @@
           document.getElementById('std-admin-name').textContent = profile.full_name + ' 👋';
           document.getElementById('std-role-badge').textContent = profile.role.toUpperCase();
           document.getElementById('duty-title').textContent = profile.role + ' Portal';
-         
-          if (currentRole === 'accountant') {
-              document.getElementById('accountant-quick-view').classList.remove('hidden');
-              loadLiveRoomsDash();
-          }
-
+          if (currentRole === 'accountant') { document.getElementById('accountant-quick-view').classList.remove('hidden'); loadLiveRoomsDash(); }
           renderStandardOperations(profile.role);
         }
+      } catch (err) { console.error(err); }
+    }
+
+    // ==========================================
+    // LAUNDRY LOGIC (FRONT SCREEN)
+    // ==========================================
+    async function loadLaundryServices() {
+      const { data } = await db.from('laundry_services').select('*').eq('is_active', true).order('item_name');
+      laundryServices = data || [];
+    }
+
+    async function loadRoomsForLaundry() {
+      const { data: bookings } = await db.from('bookings').select('rooms(room_number), guests(full_name)').eq('status', 'Checked In');
+      const select = document.getElementById('laundry-room');
+      if (bookings && bookings.length > 0) {
+        bookings.sort((a,b) => a.rooms.room_number.localeCompare(b.rooms.room_number));
+        bookings.forEach(b => { select.innerHTML += `<option value="${b.rooms.room_number}">Room ${b.rooms.room_number} (${b.guests?.full_name || 'Guest'})</option>`; });
+      } else { select.innerHTML = '<option value="">No active guests found</option>'; }
+    }
+
+    function openLaundryModal() {
+      document.getElementById('laundry-modal').classList.remove('hidden');
+      document.getElementById('laundry-modal').classList.add('flex');
+      document.getElementById('laundry-msg').textContent = '';
+      document.getElementById('laundry-notes').value = '';
+      document.getElementById('laundry-room').selectedIndex = 0;
+      document.getElementById('laundry-items-container').innerHTML = '';
+      addLaundryItemRow();
+    }
+
+    function closeLaundryModal() {
+      document.getElementById('laundry-modal').classList.add('hidden');
+      document.getElementById('laundry-modal').classList.remove('flex');
+    }
+
+    function addLaundryItemRow() {
+      if (laundryServices.length === 0) return alert("No laundry services found. Please ask Manager to add items.");
+      const container = document.getElementById('laundry-items-container');
+      const rowId = 'lrow-' + Date.now();
+      const rowHtml = `
+        <div class="flex gap-2 items-center" id="${rowId}">
+          <select onchange="calcLaundryTotal()" class="l-item-name w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none text-sm">
+            ${laundryServices.map(s => `<option value="${s.item_name}" data-price="${s.price}">${s.item_name} (₦${s.price})</option>`).join('')}
+          </select>
+          <input type="number" min="1" value="1" onchange="calcLaundryTotal()" oninput="calcLaundryTotal()" class="l-item-qty w-16 bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none text-sm text-center font-bold">
+          <button onclick="document.getElementById('${rowId}').remove(); calcLaundryTotal();" class="bg-red-500/20 text-red-400 p-3 rounded-xl hover:bg-red-500/30"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', rowHtml);
+      lucide.createIcons();
+      calcLaundryTotal();
+    }
+
+    function calcLaundryTotal() {
+      let total = 0;
+      document.querySelectorAll('#laundry-items-container > div').forEach(row => {
+        const select = row.querySelector('.l-item-name');
+        const qty = row.querySelector('.l-item-qty').value;
+        if (select && qty) {
+          const price = parseInt(select.options[select.selectedIndex].getAttribute('data-price'));
+          total += price * parseInt(qty);
+        }
+      });
+      document.getElementById('laundry-total').textContent = '₦' + total.toLocaleString();
+    }
+
+    async function submitLaundryOrder() {
+      const room = document.getElementById('laundry-room').value;
+      const notes = document.getElementById('laundry-notes').value;
+      if (!room) return alert("Please select a room.");
+
+      const btn = document.getElementById('laundry-submit-btn');
+      const msg = document.getElementById('laundry-msg');
+      btn.innerText = "Saving..."; btn.disabled = true; msg.textContent = '';
+
+      try {
+        let items = [];
+        let total = 0;
+        document.querySelectorAll('#laundry-items-container > div').forEach(row => {
+          const select = row.querySelector('.l-item-name');
+          const qty = parseInt(row.querySelector('.l-item-qty').value);
+          if (qty > 0) {
+            const name = select.value;
+            const price = parseInt(select.options[select.selectedIndex].getAttribute('data-price'));
+            items.push({ name, quantity: qty, price });
+            total += price * qty;
+          }
+        });
+
+        if (items.length === 0) throw new Error("Add at least one item.");
+
+        const { data: roomData } = await db.from('rooms').select('id').eq('room_number', room).single();
+        const { data: booking } = await db.from('bookings').select('id').eq('status', 'Checked In').eq('room_id', roomData.id).single();
+        
+        if (!booking) throw new Error("Guest is not checked in.");
+
+        await db.from('guest_orders').insert({
+          room_number: room,
+          booking_id: booking.id,
+          department: 'Laundry',
+          items: items,
+          total_amount: total,
+          status: 'Pending',
+          payment_method: 'Charge_to_Room'
+        });
+
+        const description = items.map(i => `${i.quantity}x ${i.name}`).join(', ') + (notes ? ` (${notes})` : '');
+        await db.from('folio_charges').insert({
+          booking_id: booking.id,
+          department: 'Laundry',
+          description: description,
+          amount: total
+        });
+
+        msg.textContent = "✅ Saved and charged to Room " + room;
+        msg.className = "mt-3 text-center text-sm font-bold text-emerald-400";
+        setTimeout(() => { closeLaundryModal(); loadLaundryOrders(); }, 1500);
+
       } catch (err) {
-        console.error(err);
+        msg.textContent = "Error: " + err.message;
+        msg.className = "mt-3 text-center text-sm font-bold text-red-400";
+      } finally {
+        btn.innerText = "Save Order";
+        btn.disabled = false;
       }
+    }
+
+    function filterLaundry(filter, btnElement) {
+      currentLaundryFilter = filter;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = "tab-btn bg-slate-800 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm transition";
+      });
+      btnElement.className = "tab-btn bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-md transition";
+      loadLaundryOrders();
+    }
+
+    async function loadLaundryOrders() {
+      const list = document.getElementById('laundry-orders-list');
+      let query = db.from('guest_orders').select('*').eq('department', 'Laundry');
+      
+      if (currentLaundryFilter === 'Active') query = query.in('status', ['Pending', 'Preparing']);
+      else if (currentLaundryFilter === 'Ready') query = query.eq('status', 'Ready');
+      else query = query.in('status', ['Completed', 'Rejected']);
+
+      const { data: orders } = await query.order('created_at', { ascending: false });
+
+      if (!orders || orders.length === 0) {
+        list.innerHTML = `<p class="col-span-full text-center text-slate-400 text-sm py-8">No ${currentLaundryFilter.toLowerCase()} orders.</p>`;
+        return;
+      }
+
+      list.innerHTML = orders.map(order => {
+        let itemsHtml = '';
+        try {
+          const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+          if (Array.isArray(items)) {
+            itemsHtml = items.map(i => `<li class="flex justify-between text-xs py-0.5"><span>${i.quantity}x ${i.name}</span><span class="text-slate-400">₦${(i.price * i.quantity).toLocaleString()}</span></li>`).join('');
+          }
+        } catch(e) {}
+
+        let badgeColor = 'bg-slate-700 text-slate-300';
+        if (order.status === 'Pending') badgeColor = 'bg-amber-500/20 text-amber-400';
+        if (order.status === 'Preparing') badgeColor = 'bg-blue-500/20 text-blue-400';
+        if (order.status === 'Ready') badgeColor = 'bg-emerald-500/20 text-emerald-400';
+
+        let actionButtons = '';
+        if (order.status === 'Pending') actionButtons = `<button onclick="updateLaundryStatus('${order.id}', 'Preparing')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-xs transition">Start Washing</button>`;
+        else if (order.status === 'Preparing') actionButtons = `<button onclick="updateLaundryStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition">Mark as Ready</button>`;
+        else if (order.status === 'Ready') actionButtons = `<button onclick="updateLaundryStatus('${order.id}', 'Completed')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-xs transition">Mark as Delivered</button>`;
+
+        return `
+          <div class="glass-card p-5 rounded-2xl flex flex-col justify-between fade-in">
+            <div>
+              <div class="flex justify-between items-start mb-3 pb-2 border-b border-slate-700">
+                <div>
+                  <h3 class="font-black text-white text-xl">Room ${order.room_number}</h3>
+                  <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">${new Date(order.created_at).toLocaleString()}</p>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-1 rounded-lg ${badgeColor}">${order.status}</span>
+              </div>
+              <ul class="mb-4">${itemsHtml}</ul>
+              <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700 mb-4">
+                <span class="text-xs font-bold text-slate-400 uppercase">Total</span>
+                <span class="text-lg font-black text-white">₦${Number(order.total_amount).toLocaleString()}</span>
+              </div>
+            </div>
+            <div>${actionButtons}</div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    async function updateLaundryStatus(orderId, newStatus) {
+      if (!confirm(`Mark this order as ${newStatus}?`)) return;
+      await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
+      loadLaundryOrders();
     }
 
     // ==========================================
@@ -553,12 +678,10 @@
     async function loadHKGuestRequests() {
         const list = document.getElementById('hk-requests-list');
         const { data: reqs } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending').order('created_at', { ascending: true });
-
         if (!reqs || reqs.length === 0) {
             list.innerHTML = `<div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 text-center"><p class="text-slate-400 text-sm">No pending guest requests right now. 🎉</p></div>`;
             return;
         }
-
         list.innerHTML = reqs.map(r => {
             let itemsHtml = '';
             try {
@@ -567,10 +690,7 @@
                 } else {
                     itemsHtml = `<span class="text-orange-400 font-bold text-sm">${JSON.stringify(r.items)}</span>`;
                 }
-            } catch (e) {
-                itemsHtml = `<span class="text-orange-400 font-bold text-sm">${JSON.stringify(r.items)}</span>`;
-            }
-
+            } catch (e) { itemsHtml = `<span class="text-orange-400 font-bold text-sm">${JSON.stringify(r.items)}</span>`; }
             return `
             <div class="bg-slate-800/80 p-4 rounded-2xl border border-orange-500/30 flex justify-between items-center shadow-lg">
                 <div>
@@ -578,11 +698,8 @@
                     <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">${new Date(r.created_at).toLocaleTimeString()}</p>
                     <div class="mt-2 flex flex-wrap">${itemsHtml}</div>
                 </div>
-                <button onclick="completeHKRequest('${r.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-xl shadow-md transition flex items-center gap-2">
-                    <i data-lucide="check" class="w-5 h-5"></i> Done
-                </button>
-            </div>
-            `;
+                <button onclick="completeHKRequest('${r.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-xl shadow-md transition flex items-center gap-2"><i data-lucide="check" class="w-5 h-5"></i> Done</button>
+            </div>`;
         }).join('');
         lucide.createIcons();
     }
@@ -596,75 +713,54 @@
     async function loadHKRоoms() {
         const list = document.getElementById('hk-rooms-list');
         const today = new Date().toISOString().split('T')[0];
-
         const { data: rooms } = await db.from('rooms').select('*').in('status', ['Occupied', 'Dirty']).order('room_number');
         const { data: bookings } = await db.from('bookings').select('room_id, expected_check_out, guests(full_name)').eq('status', 'Checked In');
-
         if (!rooms || rooms.length === 0) {
             list.innerHTML = '<p class="col-span-full text-center text-slate-500 py-6">No rooms need cleaning right now.</p>';
             return;
         }
-
         list.innerHTML = rooms.map(r => {
-            let colorClass = '';
-            let badge = '';
-            let guestInfo = '';
-
+            let colorClass = '', badge = '', guestInfo = '';
             if (r.status === 'Dirty') {
                 colorClass = 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20';
                 badge = `<span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase mt-2 inline-block">Needs Cleaning</span>`;
             } else if (r.status === 'Occupied') {
                 colorClass = 'bg-blue-500/10 border-blue-500/50 hover:bg-blue-500/20';
-                
                 const booking = bookings?.find(b => b.room_id === r.id);
                 if (booking) {
                     const isCheckingOutToday = booking.expected_check_out === today;
                     const textColor = isCheckingOutToday ? 'text-red-400 font-bold' : 'text-slate-400';
                     const icon = isCheckingOutToday ? '<i data-lucide="alert-circle" class="w-3 h-3 inline mr-1"></i>' : '';
-                    
-                    // Added time display (12:00 PM format)
                     const dateObj = new Date(booking.expected_check_out);
                     const dateString = dateObj.toLocaleDateString('en-GB');
                     const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                    guestInfo = `
-                        <p class="text-[11px] text-white mt-1 truncate">${booking.guests?.full_name || 'Guest'}</p>
-                        <p class="text-[10px] ${textColor} mt-1">${icon}Out: ${dateString} at ${timeString}</p>
-                    `;
+                    guestInfo = `<p class="text-[11px] text-white mt-1 truncate">${booking.guests?.full_name || 'Guest'}</p><p class="text-[10px] ${textColor} mt-1">${icon}Out: ${dateString} at ${timeString}</p>`;
                 }
             }
-
             return `
                 <div class="p-4 rounded-2xl border ${colorClass} cursor-pointer transition transform active:scale-95 shadow-sm" onclick="openHKCleaningModal('${r.id}', '${r.room_number}', '${r.status}')">
                     <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Room</p>
                     <p class="text-3xl font-black text-white">${r.room_number}</p>
                     ${guestInfo}
                     ${badge}
-                </div>
-            `;
+                </div>`;
         }).join('');
         lucide.createIcons();
     }
 
     function openHKCleaningModal(roomId, roomNumber, status) {
-        if (status !== 'Dirty') {
-            alert(`Room ${roomNumber} is currently Occupied. You can only clean Dirty rooms.`);
-            return;
-        }
-        
+        if (status !== 'Dirty') { alert(`Room ${roomNumber} is currently Occupied. You can only clean Dirty rooms.`); return; }
         hkSelectedRoomId = roomId;
         document.getElementById('clean-room-num').textContent = roomNumber;
         document.getElementById('clean-staff-name').value = '';
         document.getElementById('clean-note').value = '';
         document.getElementById('clean-photo').value = '';
         document.getElementById('photo-name').textContent = "No photo attached";
-        
         document.getElementById('toggle-ac').checked = true;
         document.getElementById('toggle-fridge').checked = true;
         document.getElementById('toggle-heater').checked = true;
         document.getElementById('toggle-fan').checked = true;
         document.getElementById('toggle-tv').checked = true;
-
         document.getElementById('cleaning-modal').classList.remove('hidden');
         document.getElementById('cleaning-modal').classList.add('flex');
     }
@@ -675,19 +771,15 @@
     }
 
     document.getElementById('clean-photo').addEventListener('change', function(e) {
-        if(e.target.files.length > 0) {
-            document.getElementById('photo-name').textContent = e.target.files[0].name;
-        }
+        if(e.target.files.length > 0) { document.getElementById('photo-name').textContent = e.target.files[0].name; }
     });
 
     async function submitCleaning() {
         const staffName = document.getElementById('clean-staff-name').value;
         if(!staffName) return alert("Please enter the name of the cleaner.");
-
         const btn = document.getElementById('clean-submit-btn');
         btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Saving...`;
         btn.disabled = true;
-
         try {
             const acStatus = document.getElementById('toggle-ac').checked;
             const fridgeStatus = document.getElementById('toggle-fridge').checked;
@@ -696,78 +788,32 @@
             const tvStatus = document.getElementById('toggle-tv').checked;
             const note = document.getElementById('clean-note').value;
             const photoFile = document.getElementById('clean-photo').files[0];
-
-            await db.from('rooms').update({ 
-                status: 'Available',
-                ac_status: acStatus,
-                fridge_status: fridgeStatus,
-                heater_status: heaterStatus,
-                fan_status: fanStatus,
-                tv_status: tvStatus,
-                cleaned_by: staffName,
-                last_cleaned_at: new Date().toISOString()
-            }).eq('id', hkSelectedRoomId);
-
+            await db.from('rooms').update({ status: 'Available', ac_status: acStatus, fridge_status: fridgeStatus, heater_status: heaterStatus, fan_status: fanStatus, tv_status: tvStatus, cleaned_by: staffName, last_cleaned_at: new Date().toISOString() }).eq('id', hkSelectedRoomId);
             if (note.trim() !== '' || photoFile) {
                 let photoUrl = null;
                 if (photoFile) {
                     const fileName = `${Date.now()}_${photoFile.name}`;
                     const { data: uploadData, error: uploadError } = await db.storage.from('maintenance-photos').upload(fileName, photoFile);
-                    if (!uploadError) {
-                        const { data: urlData } = db.storage.from('maintenance-photos').getPublicUrl(fileName);
-                        photoUrl = urlData.publicUrl;
-                    }
+                    if (!uploadError) { const { data: urlData } = db.storage.from('maintenance-photos').getPublicUrl(fileName); photoUrl = urlData.publicUrl; }
                 }
-
-                await db.from('maintenance_tickets').insert({
-                    room_id: hkSelectedRoomId,
-                    reported_by: currentUser.id,
-                    issue_description: `Cleaned by ${staffName}. Complaint: ${note || 'See attached photo.'}`,
-                    priority: 'Normal',
-                    status: 'Pending',
-                    photo_url: photoUrl
-                });
+                await db.from('maintenance_tickets').insert({ room_id: hkSelectedRoomId, reported_by: currentUser.id, issue_description: `Cleaned by ${staffName}. Complaint: ${note || 'See attached photo.'}`, priority: 'Normal', status: 'Pending', photo_url: photoUrl });
             }
-
             alert("✅ Room marked available and logs saved!");
             closeCleaningModal();
             loadHousekeepingData();
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerHTML = `Complete & Mark Available`;
-            btn.disabled = false;
-        }
+        } catch (err) { alert("Error: " + err.message); } 
+        finally { btn.innerHTML = `Complete & Mark Available`; btn.disabled = false; }
     }
 
-    // ==========================================
-    // ACCOUNTANT QUICK VIEW LOGIC
-    // ==========================================
     async function loadLiveRoomsDash() {
       const list = document.getElementById('dash-live-rooms-list');
       const { data: bookings } = await db.from('bookings').select(`id, status, rooms(room_number), guests(full_name)`).eq('status', 'Checked In');
       const { data: charges } = await db.from('folio_charges').select('booking_id, amount');
-     
-      if (!bookings || bookings.length === 0) {
-        list.innerHTML = '<p class="col-span-full text-center text-slate-500 py-4">No guests are currently checked in.</p>';
-        return;
-      }
-
+      if (!bookings || bookings.length === 0) { list.innerHTML = '<p class="col-span-full text-center text-slate-500 py-4">No guests are currently checked in.</p>'; return; }
       list.innerHTML = bookings.map(b => {
         const roomCharges = charges ? charges.filter(c => c.booking_id === b.id) : [];
         const total = roomCharges.reduce((sum, c) => sum + Number(c.amount), 0);
-       
-        return `
-          <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-sm">
-            <p class="text-[10px] text-slate-500 uppercase font-bold">Room</p>
-            <p class="text-lg font-black text-white">${b.rooms.room_number}</p>
-            <p class="text-xs text-slate-300 mt-1 truncate">${b.guests.full_name}</p>
-            <div class="mt-2 pt-2 border-t border-slate-800 flex justify-between items-center">
-              <span class="text-[10px] text-orange-400 font-bold uppercase">Bill</span>
-              <span class="font-bold text-orange-400">₦${total.toLocaleString()}</span>
-            </div>
-          </div>
-        `;
+        return `<div class="bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-sm"><p class="text-[10px] text-slate-500 uppercase font-bold">Room</p><p class="text-lg font-black text-white">${b.rooms.room_number}</p><p class="text-xs text-slate-300 mt-1 truncate">${b.guests.full_name}</p><div class="mt-2 pt-2 border-t border-slate-800 flex justify-between items-center"><span class="text-[10px] text-orange-400 font-bold uppercase">Bill</span><span class="font-bold text-orange-400">₦${total.toLocaleString()}</span></div></div>`;
       }).join('');
       lucide.createIcons();
     }
@@ -775,79 +821,27 @@
     async function loadSpecificAuditDash() {
       const dateInput = document.getElementById('dash-audit-search-date');
       if (!dateInput.value) return;
-     
       const list = document.getElementById('dash-specific-audit-result');
       list.innerHTML = '<p class="text-center text-slate-500 text-sm animate-pulse">Searching records...</p>';
-     
       const { data: audit, error } = await db.from('night_audits').select('*, profiles(full_name)').eq('audit_date', dateInput.value).single();
-
-      if (error || !audit) {
-        list.innerHTML = `<p class="text-center text-amber-500 py-4 bg-amber-500/10 rounded-xl border border-amber-500/30">No Night Audit was found for ${new Date(dateInput.value).toLocaleDateString()}.</p>`;
-        return;
-      }
-
-      list.innerHTML = `
-        <div class="bg-slate-900 p-5 rounded-xl border border-slate-700">
-          <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
-            <h3 class="font-bold text-white">Audit Report: ${new Date(audit.audit_date).toLocaleDateString()}</h3>
-            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30 uppercase font-bold">Closed by ${audit.profiles?.full_name || 'Manager'}</span>
-          </div>
-         
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="bg-slate-800 p-3 rounded-lg">
-              <p class="text-[10px] text-slate-400 font-bold uppercase">Total Revenue</p>
-              <p class="text-xl font-black text-emerald-400">₦${Number(audit.total_revenue).toLocaleString()}</p>
-            </div>
-            <div class="bg-slate-800 p-3 rounded-lg">
-              <p class="text-[10px] text-slate-400 font-bold uppercase">Total Cash Remitted</p>
-              <p class="text-xl font-black text-white">₦${Number(audit.total_cash_collected).toLocaleString()}</p>
-            </div>
-          </div>
-
-          <div class="space-y-2 text-sm">
-             <div class="flex justify-between text-slate-300"><span>Bar Sales:</span> <span>₦${Number(audit.total_bar_revenue).toLocaleString()}</span></div>
-             <div class="flex justify-between text-slate-300"><span>Kitchen Sales:</span> <span>₦${Number(audit.total_kitchen_revenue).toLocaleString()}</span></div>
-             <div class="flex justify-between text-slate-300"><span>Minimart Sales:</span> <span>₦${Number(audit.total_minimart_revenue).toLocaleString()}</span></div>
-             <div class="flex justify-between text-slate-300"><span>Room Revenue:</span> <span>₦${Number(audit.total_room_revenue).toLocaleString()}</span></div>
-             <div class="flex justify-between text-amber-400 font-bold pt-2 border-t border-slate-700 mt-2"><span>Room Credits (Unpaid):</span> <span>₦${Number(audit.total_room_credits).toLocaleString()}</span></div>
-          </div>
-        </div>
-      `;
+      if (error || !audit) { list.innerHTML = `<p class="text-center text-amber-500 py-4 bg-amber-500/10 rounded-xl border border-amber-500/30">No Night Audit was found for ${new Date(dateInput.value).toLocaleDateString()}.</p>`; return; }
+      list.innerHTML = `<div class="bg-slate-900 p-5 rounded-xl border border-slate-700"><div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2"><h3 class="font-bold text-white">Audit Report: ${new Date(audit.audit_date).toLocaleDateString()}</h3><span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30 uppercase font-bold">Closed by ${audit.profiles?.full_name || 'Manager'}</span></div><div class="grid grid-cols-2 gap-4 mb-4"><div class="bg-slate-800 p-3 rounded-lg"><p class="text-[10px] text-slate-400 font-bold uppercase">Total Revenue</p><p class="text-xl font-black text-emerald-400">₦${Number(audit.total_revenue).toLocaleString()}</p></div><div class="bg-slate-800 p-3 rounded-lg"><p class="text-[10px] text-slate-400 font-bold uppercase">Total Cash Remitted</p><p class="text-xl font-black text-white">₦${Number(audit.total_cash_collected).toLocaleString()}</p></div></div><div class="space-y-2 text-sm"><div class="flex justify-between text-slate-300"><span>Bar Sales:</span> <span>₦${Number(audit.total_bar_revenue).toLocaleString()}</span></div><div class="flex justify-between text-slate-300"><span>Kitchen Sales:</span> <span>₦${Number(audit.total_kitchen_revenue).toLocaleString()}</span></div><div class="flex justify-between text-slate-300"><span>Minimart Sales:</span> <span>₦${Number(audit.total_minimart_revenue).toLocaleString()}</span></div><div class="flex justify-between text-slate-300"><span>Room Revenue:</span> <span>₦${Number(audit.total_room_revenue).toLocaleString()}</span></div><div class="flex justify-between text-amber-400 font-bold pt-2 border-t border-slate-700 mt-2"><span>Room Credits (Unpaid):</span> <span>₦${Number(audit.total_room_credits).toLocaleString()}</span></div></div></div>`;
       lucide.createIcons();
     }
 
-    // ==========================================
-    // LOW STOCK LOGIC
-    // ==========================================
     async function loadLowStock() {
         if (!currentDept) return;
-       
         let queryDept;
-        if (currentDept === 'Waitress') {
-            queryDept = ['Kitchen', 'Food']; // Waitress ONLY checks Kitchen
-        } else if (currentDept === 'Kitchen') {
-            queryDept = ['Kitchen', 'Food'];
-        } else {
-            queryDept = ['Bar']; // Barman only checks Bar
-        }
-
-        const { data: lowStock } = await db.from('inventory')
-            .select('*')
-            .in('department', queryDept)
-            .lte('stock_quantity', 5);
-
+        if (currentDept === 'Waitress') queryDept = ['Kitchen', 'Food'];
+        else if (currentDept === 'Kitchen') queryDept = ['Kitchen', 'Food'];
+        else queryDept = ['Bar'];
+        const { data: lowStock } = await db.from('inventory').select('*').in('department', queryDept).lte('stock_quantity', 5);
         const banner = document.getElementById('low-stock-banner');
         const list = document.getElementById('low-stock-items');
-
-        if (lowStock && lowStock.length > 0) {
-            banner.classList.remove('hidden');
-            list.textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(' | ');
-        } else {
-            banner.classList.add('hidden');
-        }
+        if (lowStock && lowStock.length > 0) { banner.classList.remove('hidden'); list.textContent = lowStock.map(i => `${i.item_name} (${i.stock_quantity} left)`).join(' | '); } 
+        else { banner.classList.add('hidden'); }
     }
 
-    // RECEPTIONIST LOGIC
     function startHeartbeat() {
         checkUpgradeRequests();
         heartbeatInterval = setInterval(() => { checkUpgradeRequests(); }, 10000);
@@ -858,21 +852,15 @@
         const { data: pendingHousekeeping } = await db.from('guest_orders').select('*').eq('department', 'Housekeeping').eq('status', 'Pending');
         const { data: pendingMinimart } = await db.from('guest_orders').select('*').eq('department', 'Minimart').eq('status', 'Pending');
         const { data: autoLogs } = await db.from('guest_orders').select('*').eq('department', 'Upgrade Log').eq('status', 'Completed').gte('created_at', new Date(Date.now() - 5 * 60000).toISOString());
-       
         const alertBanner = document.getElementById('live-upgrade-alert');
         const alertText = document.getElementById('live-upgrade-text');
-
         const totalPending = (pendingUpgrades?.length || 0) + (pendingHousekeeping?.length || 0) + (pendingMinimart?.length || 0);
-
         if (totalPending > 0) {
-            alertBanner.classList.remove('hidden'); 
-            alertBanner.classList.replace('bg-emerald-600', 'bg-red-600');
-            
+            alertBanner.classList.remove('hidden'); alertBanner.classList.replace('bg-emerald-600', 'bg-red-600');
             let messages = [];
             if (pendingMinimart && pendingMinimart.length > 0) messages.push(`${pendingMinimart.length} Minimart`);
             if (pendingHousekeeping && pendingHousekeeping.length > 0) messages.push(`${pendingHousekeeping.length} Housekeeping`);
             if (pendingUpgrades && pendingUpgrades.length > 0) messages.push(`${pendingUpgrades.length} Upgrade`);
-
             alertText.textContent = messages.join(' | ');
             alertBanner.setAttribute('onclick', "openGuestOrdersModal()");
             try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(err) {}
@@ -880,121 +868,51 @@
             alertBanner.classList.remove('hidden'); alertBanner.classList.replace('bg-red-600', 'bg-emerald-600');
             alertText.textContent = `NOTICE: ${autoLogs.length} guest(s) upgraded their room via the app.`;
             alertBanner.setAttribute('onclick', "window.location.href='manage-booking.html'");
-        } else { 
-            alertBanner.classList.add('hidden'); 
-        }
+        } else { alertBanner.classList.add('hidden'); }
     }
 
-    // GUEST ORDERS MODAL LOGIC FOR RECEPTIONIST
-    function openGuestOrdersModal() {
-        document.getElementById('guest-orders-modal').classList.remove('hidden');
-        document.getElementById('guest-orders-modal').classList.add('flex');
-        loadReceptionistOrders();
-    }
-
-    function closeGuestOrdersModal() {
-        document.getElementById('guest-orders-modal').classList.add('hidden');
-        document.getElementById('guest-orders-modal').classList.remove('flex');
-    }
+    function openGuestOrdersModal() { document.getElementById('guest-orders-modal').classList.remove('hidden'); document.getElementById('guest-orders-modal').classList.add('flex'); loadReceptionistOrders(); }
+    function closeGuestOrdersModal() { document.getElementById('guest-orders-modal').classList.add('hidden'); document.getElementById('guest-orders-modal').classList.remove('flex'); }
 
     async function loadReceptionistOrders() {
         const list = document.getElementById('recep-orders-list');
         if(!list) return;
-
-        // Fetch Minimart, Housekeeping, and Upgrades for the receptionist
-        const { data: orders } = await db.from('guest_orders')
-            .select('*')
-            .in('department', ['Minimart', 'Housekeeping', 'Upgrade Request'])
-            .eq('status', 'Pending')
-            .order('created_at', { ascending: true });
-
-        if (!orders || orders.length === 0) {
-            list.innerHTML = '<p class="text-center text-gray-500 py-6">No pending guest orders right now. 🎉</p>';
-            return;
-        }
-
+        const { data: orders } = await db.from('guest_orders').select('*').in('department', ['Minimart', 'Housekeeping', 'Upgrade Request']).eq('status', 'Pending').order('created_at', { ascending: true });
+        if (!orders || orders.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 py-6">No pending guest orders right now. 🎉</p>'; return; }
         list.innerHTML = orders.map(order => {
             let itemsHtml = '';
             try {
                 const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                if (Array.isArray(items)) {
-                    itemsHtml = items.map(item => `<div class="flex justify-between border-b border-gray-100 py-1"><span class="text-gray-800 font-bold text-sm">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join('');
-                }
+                if (Array.isArray(items)) { itemsHtml = items.map(item => `<div class="flex justify-between border-b border-gray-100 py-1"><span class="text-gray-800 font-bold text-sm">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join(''); }
             } catch(e) {}
-
-            return `
-                <div class="bg-white p-5 rounded-2xl border-l-4 border-amber-500 shadow-md flex flex-col justify-between fade-in mb-3">
-                    <div>
-                        <div class="flex justify-between items-start mb-3 pb-2 border-b border-gray-100">
-                            <div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">${order.department}</span>
-                                <h3 class="font-black text-xl text-gray-900 mt-1">Room ${order.room_number || 'N/A'}</h3>
-                            </div>
-                            <span class="text-[10px] font-bold px-2 py-1 rounded bg-amber-100 text-amber-700">Pending</span>
-                        </div>
-                        <div class="space-y-1 mb-4">${itemsHtml}</div>
-                    </div>
-                    <div class="flex gap-2 mt-2">
-                        <button onclick="updateReceptionistOrderStatus('${order.id}', 'Completed')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-sm transition shadow-md">
-                            Mark as Delivered / Completed
-                        </button>
-                    </div>
-                </div>
-            `;
+            return `<div class="bg-white p-5 rounded-2xl border-l-4 border-amber-500 shadow-md flex flex-col justify-between fade-in mb-3"><div><div class="flex justify-between items-start mb-3 pb-2 border-b border-gray-100"><div><span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">${order.department}</span><h3 class="font-black text-xl text-gray-900 mt-1">Room ${order.room_number || 'N/A'}</h3></div><span class="text-[10px] font-bold px-2 py-1 rounded bg-amber-100 text-amber-700">Pending</span></div><div class="space-y-1 mb-4">${itemsHtml}</div></div><div class="flex gap-2 mt-2"><button onclick="updateReceptionistOrderStatus('${order.id}', 'Completed')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-sm transition shadow-md">Mark as Delivered / Completed</button></div></div>`;
         }).join('');
         lucide.createIcons();
     }
 
-    async function updateReceptionistOrderStatus(orderId, newStatus) {
-        await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId);
-        loadReceptionistOrders(); // Reload the list
-        checkUpgradeRequests(); // Update the banner count
-    }
+    async function updateReceptionistOrderStatus(orderId, newStatus) { await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId); loadReceptionistOrders(); checkUpgradeRequests(); }
 
     async function loadReceptionistData() {
       const { data: rooms } = await db.from('rooms').select('*').order('room_number');
       const { data: bookings } = await db.from('bookings').select('*, guests(full_name)').in('status', ['Checked In', 'Reserved']);
-     
       let stats = { Available: 0, Occupied: 0, Reserved: 0, Dirty: 0, Maintenance: 0 };
       allRoomsData = [];
-
       if (!rooms || rooms.length === 0) { document.getElementById('room-grid').innerHTML = '<p class="text-gray-500 text-sm">No rooms configured.</p>'; return; }
-
       rooms.forEach(room => {
-        let displayStatus = room.status;
-        let guestName = '';
-        let activeBookingId = '';
-        let isKeyIssued = false;
-
+        let displayStatus = room.status; let guestName = ''; let activeBookingId = ''; let isKeyIssued = false;
         const activeBooking = bookings?.find(b => b.room_id === room.id);
-       
-        if (activeBooking) {
-            displayStatus = activeBooking.status === 'Reserved' ? 'Reserved' : 'Occupied';
-            guestName = activeBooking.guests?.full_name || 'Guest';
-            activeBookingId = activeBooking.id;
-            isKeyIssued = activeBooking.key_issued === true;
-        } else {
-            if (displayStatus === 'Occupied' || displayStatus === 'Reserved') displayStatus = 'Available';
-        }
-
-        if (displayStatus === 'Available' || displayStatus === 'Dirty' || displayStatus === 'Maintenance' || displayStatus === 'Reserved') {
-            isKeyIssued = false;
-        }
-
+        if (activeBooking) { displayStatus = activeBooking.status === 'Reserved' ? 'Reserved' : 'Occupied'; guestName = activeBooking.guests?.full_name || 'Guest'; activeBookingId = activeBooking.id; isKeyIssued = activeBooking.key_issued === true; } 
+        else { if (displayStatus === 'Occupied' || displayStatus === 'Reserved') displayStatus = 'Available'; }
+        if (displayStatus === 'Available' || displayStatus === 'Dirty' || displayStatus === 'Maintenance' || displayStatus === 'Reserved') { isKeyIssued = false; }
         if (stats[displayStatus] !== undefined) stats[displayStatus]++;
-
         allRoomsData.push({ id: room.id, room_number: room.room_number, room_type: room.room_type, status: displayStatus, guestName: guestName, isKeyIssued: isKeyIssued, activeBookingId: activeBookingId });
       });
-
       document.getElementById('stat-available').textContent = stats.Available;
       document.getElementById('stat-occupied').textContent = stats.Occupied;
       document.getElementById('stat-reserved').textContent = stats.Reserved;
       document.getElementById('stat-dirty').textContent = stats.Dirty;
       document.getElementById('stat-maintenance').textContent = stats.Maintenance;
-
-      renderRoomGrid();
-      loadMovements();
-      loadReceptionistOrders(); // Load orders into background if modal open
+      renderRoomGrid(); loadMovements(); loadReceptionistOrders();
     }
 
     function filterRooms(status, btnElement) {
@@ -1007,11 +925,8 @@
     function renderRoomGrid() {
         const roomGrid = document.getElementById('room-grid');
         roomGrid.innerHTML = '';
-
         const filteredRooms = currentFilter === 'All' ? allRoomsData : allRoomsData.filter(r => r.status === currentFilter);
-
         if (filteredRooms.length === 0) { roomGrid.innerHTML = `<p class="text-gray-500 text-sm py-4">No rooms found for "${currentFilter}".</p>`; return; }
-
         filteredRooms.forEach(room => {
             let cardColor = 'bg-white border-gray-200', badgeColor = 'bg-gray-100 text-gray-600', iconColor = 'text-gray-400';
             if (room.status === 'Available') { badgeColor = 'bg-emerald-100 text-emerald-700'; iconColor = 'text-emerald-500'; }
@@ -1019,38 +934,22 @@
             if (room.status === 'Reserved') { badgeColor = 'bg-purple-100 text-purple-700'; iconColor = 'text-purple-500'; cardColor = 'bg-white border-purple-200'; }
             if (room.status === 'Dirty') { badgeColor = 'bg-amber-100 text-amber-700'; iconColor = 'text-amber-500'; }
             if (room.status === 'Maintenance') { badgeColor = 'bg-red-100 text-red-700'; iconColor = 'text-red-500'; }
-
-            let keyIconHtml = '';
-            let keyBtnText = "Manage Room";
-            let keyBtnClass = "bg-gray-50 text-gray-700";
-           
-            if (room.isKeyIssued) {
-                keyIconHtml = `<span class="text-emerald-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="unlock" class="w-3 h-3"></i> UNLOCKED</span>`;
-                keyBtnClass = "bg-emerald-50 text-emerald-600";
-            } else {
-                keyIconHtml = `<span class="text-gray-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="lock" class="w-3 h-3"></i> LOCKED</span>`;
-            }
-
+            let keyIconHtml = ''; let keyBtnText = "Manage Room"; let keyBtnClass = "bg-gray-50 text-gray-700";
+            if (room.isKeyIssued) { keyIconHtml = `<span class="text-emerald-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="unlock" class="w-3 h-3"></i> UNLOCKED</span>`; keyBtnClass = "bg-emerald-50 text-emerald-600"; } 
+            else { keyIconHtml = `<span class="text-gray-500 flex items-center gap-1 text-[10px] font-bold"><i data-lucide="lock" class="w-3 h-3"></i> LOCKED</span>`; }
             const roomData = encodeURIComponent(JSON.stringify(room));
-
             roomGrid.innerHTML += `
               <div onclick="openActionModal(decodeURIComponent('${roomData}'))" class="room-card ${cardColor} border p-3 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between fade-in group">
                 <div>
                   <div class="flex justify-between items-start mb-1">
-                    <div>
-                       <h3 class="text-xl font-black text-gray-900 group-hover:text-blue-700 transition">${room.room_number}</h3>
-                       <div class="mt-1">${keyIconHtml}</div>
-                    </div>
+                    <div><h3 class="text-xl font-black text-gray-900 group-hover:text-blue-700 transition">${room.room_number}</h3><div class="mt-1">${keyIconHtml}</div></div>
                     <span class="${badgeColor} text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">${room.status}</span>
                   </div>
                   <p class="text-[10px] text-gray-500 font-medium mt-1 truncate">${room.room_type}</p>
                   <div class="mt-1 flex items-center gap-1.5 h-5"><i data-lucide="user" class="w-3 h-3 ${iconColor}"></i><p class="text-[11px] font-bold text-gray-700 truncate">${room.guestName || 'No Guest'}</p></div>
                 </div>
-                <div class="mt-3 pt-2 border-t border-gray-100 flex items-center justify-center gap-1 text-[10px] font-bold py-1.5 rounded-md transition ${keyBtnClass}">
-                  <i data-lucide="settings" class="w-3 h-3"></i> ${keyBtnText}
-                </div>
-              </div>
-            `;
+                <div class="mt-3 pt-2 border-t border-gray-100 flex items-center justify-center gap-1 text-[10px] font-bold py-1.5 rounded-md transition ${keyBtnClass}"><i data-lucide="settings" class="w-3 h-3"></i> ${keyBtnText}</div>
+              </div>`;
         });
         lucide.createIcons();
     }
@@ -1061,43 +960,27 @@
         document.getElementById('modal-guest-name').textContent = selectedRoom.guestName || 'No Guest';
         const actionsContainer = document.getElementById('modal-actions-container');
         actionsContainer.innerHTML = '';
-
         if (selectedRoom.isKeyIssued) {
-            actionsContainer.innerHTML += `<button onclick="lockDoor()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="lock" class="w-5 h-5"></i> Close Door (Lock)</button>
-                <button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition mt-2"><i data-lucide="refresh-cw" class="w-5 h-5"></i> Re-encode Key</button>`;
+            actionsContainer.innerHTML += `<button onclick="lockDoor()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="lock" class="w-5 h-5"></i> Close Door (Lock)</button><button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition mt-2"><i data-lucide="refresh-cw" class="w-5 h-5"></i> Re-encode Key</button>`;
+        } else if (selectedRoom.status === 'Occupied') {
+            actionsContainer.innerHTML += `<button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="key" class="w-5 h-5"></i> Encode Guest Key (Unlock)</button><a href="manage-booking.html" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="arrow-up-right" class="w-5 h-5"></i> Upgrade / Extend Stay</a>`;
+        } else if (selectedRoom.status === 'Available') {
+            actionsContainer.innerHTML += `<button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="key" class="w-5 h-5"></i> Encode Master Key (Unlock)</button><button onclick="openReservationModal('${selectedRoom.id}', '${selectedRoom.room_number}')" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="calendar-check" class="w-5 h-5"></i> Reserve this Room</button>`;
+        } else if (selectedRoom.status === 'Reserved') {
+            actionsContainer.innerHTML += `<a href="checkin.html?booking_id=${selectedRoom.activeBookingId}" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="log-in" class="w-5 h-5"></i> Check-In Guest Now</a><button onclick="cancelReservation('${selectedRoom.id}', '${selectedRoom.activeBookingId}')" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition mt-2"><i data-lucide="x-circle" class="w-5 h-5"></i> Cancel Reservation</button>`;
         }
-        else if (selectedRoom.status === 'Occupied') {
-            actionsContainer.innerHTML += `<button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="key" class="w-5 h-5"></i> Encode Guest Key (Unlock)</button>
-                <a href="manage-booking.html" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="arrow-up-right" class="w-5 h-5"></i> Upgrade / Extend Stay</a>`;
-        }
-        else if (selectedRoom.status === 'Available') {
-            actionsContainer.innerHTML += `<button onclick="openAritModal('${selectedRoom.room_number}', '${selectedRoom.status}', '${selectedRoom.guestName}', '${selectedRoom.activeBookingId}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="key" class="w-5 h-5"></i> Encode Master Key (Unlock)</button>
-                <button onclick="openReservationModal('${selectedRoom.id}', '${selectedRoom.room_number}')" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition mt-2"><i data-lucide="calendar-check" class="w-5 h-5"></i> Reserve this Room</button>`;
-        }
-        else if (selectedRoom.status === 'Reserved') {
-            actionsContainer.innerHTML += `
-                <a href="checkin.html?booking_id=${selectedRoom.activeBookingId}" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="log-in" class="w-5 h-5"></i> Check-In Guest Now</a>
-                <button onclick="cancelReservation('${selectedRoom.id}', '${selectedRoom.activeBookingId}')" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition mt-2"><i data-lucide="x-circle" class="w-5 h-5"></i> Cancel Reservation</button>`;
-        }
-
-        document.getElementById('action-modal').classList.remove('hidden');
-        document.getElementById('action-modal').classList.add('flex');
-        lucide.createIcons();
+        document.getElementById('action-modal').classList.remove('hidden'); document.getElementById('action-modal').classList.add('flex'); lucide.createIcons();
     }
 
     function closeActionModal() { document.getElementById('action-modal').classList.add('hidden'); document.getElementById('action-modal').classList.remove('flex'); }
-
     async function lockDoor() { if (selectedRoom.activeBookingId) { await db.from('bookings').update({ key_issued: false }).eq('id', selectedRoom.activeBookingId); } closeActionModal(); loadReceptionistData(); }
-   
     async function cancelReservation(roomId, bookingId) {
         if (!confirm("Cancel this reservation and make the room Available?")) return;
         if (bookingId) await db.from('bookings').update({ status: 'Cancelled' }).eq('id', bookingId);
         await db.from('rooms').update({ status: 'Available' }).eq('id', roomId);
-        closeActionModal();
-        loadReceptionistData();
+        closeActionModal(); loadReceptionistData();
     }
 
-    // RESERVATION LOGIC
     function openReservationModal(roomId, roomNum) {
         selectedRoom = { id: roomId, room_number: roomNum };
         document.getElementById('res-room-num').textContent = roomNum;
@@ -1106,15 +989,10 @@
         document.getElementById('res-checkin').value = '';
         document.getElementById('res-checkout').value = '';
         document.getElementById('res-error').classList.add('hidden');
-       
-        document.getElementById('reservation-modal').classList.remove('hidden');
-        document.getElementById('reservation-modal').classList.add('flex');
+        document.getElementById('reservation-modal').classList.remove('hidden'); document.getElementById('reservation-modal').classList.add('flex');
     }
 
-    function closeReservationModal() {
-        document.getElementById('reservation-modal').classList.add('hidden');
-        document.getElementById('reservation-modal').classList.remove('flex');
-    }
+    function closeReservationModal() { document.getElementById('reservation-modal').classList.add('hidden'); document.getElementById('reservation-modal').classList.remove('flex'); }
 
     async function submitReservation() {
         const name = document.getElementById('res-guest-name').value.trim();
@@ -1122,53 +1000,20 @@
         const checkin = document.getElementById('res-checkin').value;
         const checkout = document.getElementById('res-checkout').value;
         const errorEl = document.getElementById('res-error');
-       
-        if (!name || !checkin || !checkout) {
-            errorEl.textContent = "Please fill in Name, Check-in, and Check-out dates.";
-            errorEl.classList.remove('hidden');
-            return;
-        }
-
-        const btn = document.getElementById('res-submit-btn');
-        btn.innerText = "Saving...";
-        btn.disabled = true;
-
+        if (!name || !checkin || !checkout) { errorEl.textContent = "Please fill in Name, Check-in, and Check-out dates."; errorEl.classList.remove('hidden'); return; }
+        const btn = document.getElementById('res-submit-btn'); btn.innerText = "Saving..."; btn.disabled = true;
         try {
             let guestId;
             const { data: existingGuest } = await db.from('guests').select('id').eq('phone', phone).maybeSingle();
-           
-            if (existingGuest) {
-                guestId = existingGuest.id;
-            } else {
-                const { data: newGuest, error: guestErr } = await db.from('guests').insert({ full_name: name, phone: phone }).select().single();
-                if (guestErr) throw guestErr;
-                guestId = newGuest.id;
-            }
-
-            const { error: bookErr } = await db.from('bookings').insert({
-                room_id: selectedRoom.id,
-                guest_id: guestId,
-                check_in_date: checkin,
-                expected_check_out: checkout,
-                status: 'Reserved',
-                key_issued: false
-            });
+            if (existingGuest) { guestId = existingGuest.id; } 
+            else { const { data: newGuest, error: guestErr } = await db.from('guests').insert({ full_name: name, phone: phone }).select().single(); if (guestErr) throw guestErr; guestId = newGuest.id; }
+            const { error: bookErr } = await db.from('bookings').insert({ room_id: selectedRoom.id, guest_id: guestId, check_in_date: checkin, expected_check_out: checkout, status: 'Reserved', key_issued: false });
             if (bookErr) throw bookErr;
-
             const { error: roomErr } = await db.from('rooms').update({ status: 'Reserved' }).eq('id', selectedRoom.id);
             if (roomErr) throw roomErr;
-
-            closeReservationModal();
-            loadReceptionistData();
-
-        } catch (err) {
-            console.error(err);
-            errorEl.textContent = "Error: " + err.message;
-            errorEl.classList.remove('hidden');
-        } finally {
-            btn.innerText = "Save Reservation";
-            btn.disabled = false;
-        }
+            closeReservationModal(); loadReceptionistData();
+        } catch (err) { errorEl.textContent = "Error: " + err.message; errorEl.classList.remove('hidden'); } 
+        finally { btn.innerText = "Save Reservation"; btn.disabled = false; }
     }
 
     async function loadMovements() {
@@ -1177,7 +1022,6 @@
       const arrList = document.getElementById('arrivals-list');
       if (arrivals && arrivals.length > 0) arrList.innerHTML = arrivals.map(a => `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100"><div><p class="text-xs font-bold text-gray-800">${a.guests?.full_name}</p><p class="text-[10px] text-gray-500">Room ${a.rooms?.room_number}</p></div><span class="bg-green-100 text-green-700 text-[9px] font-bold px-2 py-1 rounded">Arrived</span></div>`).join('');
       else arrList.innerHTML = '<p class="text-xs text-gray-500 py-2">No arrivals yet.</p>';
-
       const { data: departures } = await db.from('bookings').select('*, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
       const depList = document.getElementById('departures-list');
       if (departures && departures.length > 0) depList.innerHTML = departures.map(d => `<div class="flex justify-between items-center bg-orange-50 p-2 rounded-lg border border-orange-100"><div><p class="text-xs font-bold text-gray-800">${d.guests?.full_name}</p><p class="text-[10px] text-gray-500">Room ${d.rooms?.room_number}</p></div><span class="bg-orange-100 text-orange-700 text-[9px] font-bold px-2 py-1 rounded">Due</span></div>`).join('');
@@ -1188,49 +1032,23 @@
       closeActionModal();
       selectedRoom = { room_number: roomNum, status: status, guestName: guestName, activeBookingId: bookingId };
       document.getElementById('modal-room-num').textContent = roomNum;
-     
-      const title = document.getElementById('arit-title');
-      const desc = document.getElementById('arit-desc');
-     
-      if (status === 'Occupied') {
-        title.textContent = "Guest Key Card";
-        desc.innerHTML = `Place the blank card for <strong>${guestName}</strong> on the ARIT machine.`;
-      } else {
-        title.textContent = "Master Key Card";
-        desc.innerHTML = `Place your <strong>Physical Master Card</strong> on the ARIT machine.`;
-      }
-      document.getElementById('arit-modal').classList.remove('hidden');
-      document.getElementById('arit-modal').classList.add('flex');
+      const title = document.getElementById('arit-title'); const desc = document.getElementById('arit-desc');
+      if (status === 'Occupied') { title.textContent = "Guest Key Card"; desc.innerHTML = `Place the blank card for <strong>${guestName}</strong> on the ARIT machine.`; } 
+      else { title.textContent = "Master Key Card"; desc.innerHTML = `Place your <strong>Physical Master Card</strong> on the ARIT machine.`; }
+      document.getElementById('arit-modal').classList.remove('hidden'); document.getElementById('arit-modal').classList.add('flex');
     }
-   
     function closeAritModal() { document.getElementById('arit-modal').classList.add('hidden'); document.getElementById('arit-modal').classList.remove('flex'); }
-   
     async function writeCard() {
-      const btn = document.getElementById('write-card-btn');
-      const overlay = document.getElementById('loading-overlay');
-      btn.disabled = true;
-      closeAritModal();
-      overlay.classList.remove('hidden');
-      overlay.classList.add('flex');
-     
-      if (selectedRoom.activeBookingId) {
-          await db.from('bookings').update({ key_issued: true }).eq('id', selectedRoom.activeBookingId);
-      }
-
+      const btn = document.getElementById('write-card-btn'); const overlay = document.getElementById('loading-overlay');
+      btn.disabled = true; closeAritModal(); overlay.classList.remove('hidden'); overlay.classList.add('flex');
+      if (selectedRoom.activeBookingId) { await db.from('bookings').update({ key_issued: true }).eq('id', selectedRoom.activeBookingId); }
       setTimeout(() => {
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
-          audio.play().catch(e => console.log('Audio block'));
-          overlay.classList.add('hidden');
-          overlay.classList.remove('flex');
-          btn.disabled = false;
-          alert(`✅ ARIT Hardware Success!\n\nCard successfully encoded for Room ${selectedRoom.room_number}.`);
-          loadReceptionistData();
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); audio.play().catch(e => console.log('Audio block'));
+          overlay.classList.add('hidden'); overlay.classList.remove('flex'); btn.disabled = false;
+          alert(`✅ ARIT Hardware Success!\n\nCard successfully encoded for Room ${selectedRoom.room_number}.`); loadReceptionistData();
       }, 2000);
     }
 
-    // ==========================================
-    // F&B LOGIC
-    // ==========================================
     async function checkNewOrders() { }
     async function loadLiveDashboardOrders() {
         if (!currentDept) return;
@@ -1239,29 +1057,16 @@
         if (currentDept === 'Waitress') queryDept = ['Kitchen', 'Food', 'Bar'];
         else if (currentDept === 'Kitchen') queryDept = ['Kitchen', 'Food'];
         else queryDept = ['Bar'];
-       
         const { data: orders } = await db.from('guest_orders').select('*').in('department', queryDept).in('status', ['Pending', 'Preparing', 'Ready']).order('created_at', { ascending: true });
-
-        if (!orders || orders.length === 0) {
-            list.innerHTML = '<p class="text-sm text-slate-400 py-6 col-span-full text-center">No active orders right now.</p>';
-            return;
-        }
-
+        if (!orders || orders.length === 0) { list.innerHTML = '<p class="text-sm text-slate-400 py-6 col-span-full text-center">No active orders right now.</p>'; return; }
         list.innerHTML = orders.map(order => {
             let itemsHtml = '';
-            try {
-                const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                if (Array.isArray(items)) {
-                    itemsHtml = items.map(item => `<div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-white font-bold text-sm">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join('');
-                }
-            } catch(e) {}
-
+            try { const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items; if (Array.isArray(items)) { itemsHtml = items.map(item => `<div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-white font-bold text-sm">${item.quantity || item.qty || 1}x ${item.name || item.item_name}</span></div>`).join(''); } } catch(e) {}
             let badgeColor = 'bg-slate-700 text-slate-300';
             if (order.status === 'Pending') badgeColor = 'bg-amber-500/20 text-amber-400';
             if (order.status === 'Preparing') badgeColor = 'bg-blue-500/20 text-blue-400';
             if (order.status === 'Ready') badgeColor = 'bg-emerald-500/20 text-emerald-400';
             let actionButtons = '';
-
             if (currentRole === 'waitress' || currentRole === 'barman' || currentRole === 'bar') {
                 if (order.status === 'Pending') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
                 if (order.status === 'Preparing') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
@@ -1270,179 +1075,79 @@
                 if (order.status === 'Pending') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Start Preparing</button>`;
                 if (order.status === 'Preparing') actionButtons += `<button onclick="updateOrderStatus('${order.id}', 'Ready')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm mt-2 transition active:scale-95 shadow-lg">Mark Ready</button>`;
             }
-
-            return `
-                <div class="glass-card p-5 rounded-2xl border-l-4 ${order.status === 'Pending' ? 'border-amber-500' : order.status === 'Preparing' ? 'border-blue-500' : 'border-emerald-500'} shadow-lg fade-in flex flex-col justify-between h-full">
-                    <div>
-                        <div class="flex justify-between items-start mb-4 pb-3 border-b border-slate-700">
-                            <div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${order.department}</span>
-                                <h3 class="font-black text-xl text-white mt-1">${order.room_number ? 'Room ' + order.room_number : 'Table ' + (order.table_number || 'N/A')}</h3>
-                            </div>
-                            <span class="text-[10px] font-bold px-2 py-1 rounded ${badgeColor}">${order.status}</span>
-                        </div>
-                        <div class="space-y-2 mb-2">${itemsHtml}</div>
-                    </div>
-                    <div class="flex flex-col gap-2 mt-4">${actionButtons}</div>
-                </div>
-            `;
+            return `<div class="glass-card p-5 rounded-2xl border-l-4 ${order.status === 'Pending' ? 'border-amber-500' : order.status === 'Preparing' ? 'border-blue-500' : 'border-emerald-500'} shadow-lg fade-in flex flex-col justify-between h-full"><div><div class="flex justify-between items-start mb-4 pb-3 border-b border-slate-700"><div><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${order.department}</span><h3 class="font-black text-xl text-white mt-1">${order.room_number ? 'Room ' + order.room_number : 'Table ' + (order.table_number || 'N/A')}</h3></div><span class="text-[10px] font-bold px-2 py-1 rounded ${badgeColor}">${order.status}</span></div><div class="space-y-2 mb-2">${itemsHtml}</div></div><div class="flex flex-col gap-2 mt-4">${actionButtons}</div></div>`;
         }).join('');
         lucide.createIcons();
     }
-
     async function updateOrderStatus(orderId, newStatus) { await db.from('guest_orders').update({ status: newStatus }).eq('id', orderId); loadLiveDashboardOrders(); }
 
     async function loadDarkOpsData(role) {
       const today = new Date().toISOString().split('T')[0];
       const dept = role === 'barman' || role === 'bar' ? 'Bar' : role === 'waitress' ? 'Waitress' : 'Kitchen';
-     
       const { data: orders } = await db.from('pos_orders').select('total_amount, payment_method').eq('department', dept).gte('created_at', today);
       let cash = 0, credit = 0;
       if (orders) orders.forEach(o => { if (o.payment_method === 'Charge_to_Room') credit += Number(o.total_amount); else cash += Number(o.total_amount); });
       document.getElementById('ops-total-sales').textContent = `₦${(cash + credit).toLocaleString()}`;
       document.getElementById('ops-credit-sales').textContent = `₦${credit.toLocaleString()}`;
       document.getElementById('ops-cash-sales').textContent = `₦${cash.toLocaleString()}`;
-
       const { data: shifts } = await db.from('shifts').select('*').eq('user_id', currentUser.id).eq('department', dept).eq('status', 'Active').limit(1);
       const shiftStatusEl = document.getElementById('ops-shift-status');
-      if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; }
-      else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
-
-      const btnContainer = document.getElementById('ops-action-buttons');
-      let buttonsHtml = '';
-
-      if (dept === 'Kitchen') {
-          buttonsHtml = `
-            <a href="order-board.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Kitchen Board</span></a>
-            <a href="stock-request.html?dept=Kitchen" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="package" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Stock Request</span></a>
-            <a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>
-          `;
-      } else if (dept === 'Waitress') {
-          buttonsHtml = `
-            <a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="utensils-crossed" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Take Order</span></a>
-            <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a>
-            <a href="waitress-sales.html?tab=board" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">My Orders</span></a>
-            <a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>
-          `;
-      } else {
-          buttonsHtml = `
-            <a href="pos.html?dept=Bar" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="wine" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar POS</span></a>
-            <a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a>
-            <a href="bar-orders.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar Orders</span></a>
-            <a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>
-          `;
-      }
-     
+      if (shifts && shifts.length > 0) { shiftStatusEl.textContent = "Active Shift"; shiftStatusEl.className = "text-lg font-bold text-emerald-400"; } else { shiftStatusEl.textContent = "No Active Shift"; shiftStatusEl.className = "text-lg font-bold text-red-400"; }
+      const btnContainer = document.getElementById('ops-action-buttons'); let buttonsHtml = '';
+      if (dept === 'Kitchen') { buttonsHtml = `<a href="order-board.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Kitchen Board</span></a><a href="stock-request.html?dept=Kitchen" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-emerald-500/30"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="package" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Stock Request</span></a><a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>`; } 
+      else if (dept === 'Waitress') { buttonsHtml = `<a href="waitress-sales.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="utensils-crossed" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Take Order</span></a><a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a><a href="waitress-sales.html?tab=board" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">My Orders</span></a><a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>`; } 
+      else { buttonsHtml = `<a href="pos.html?dept=Bar" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-indigo-500/30"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="wine" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar POS</span></a><a href="shift-handover.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-amber-500/30"><div class="bg-amber-500/20 p-3 rounded-full text-amber-400"><i data-lucide="clipboard-check" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Shift Handover</span></a><a href="bar-orders.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 relative border-orange-500/30"><div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i data-lucide="bell" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Bar Orders</span></a><a href="internal-chat.html" class="glass-card hover:bg-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition active:scale-95 border-purple-500/30"><div class="bg-purple-500/20 p-3 rounded-full text-purple-400"><i data-lucide="message-square" class="w-6 h-6"></i></div><span class="font-bold text-sm text-white text-center">Staff Chat</span></a>`; }
       btnContainer.innerHTML = buttonsHtml;
       document.getElementById('ops-stock-request-link').href = `stock-request.html?dept=${dept}`;
       document.getElementById('ops-bills-title').innerHTML = `<i data-lucide="receipt" class="w-5 h-5 text-amber-400"></i> Room ${dept} Bills (Checkout Due)`;
-
       const { data: departures } = await db.from('bookings').select('id, rooms(room_number), guests(full_name)').eq('expected_check_out', today).eq('status', 'Checked In');
       const list = document.getElementById('ops-room-bills-list');
       if (departures && departures.length > 0) {
         const { data: charges } = await db.from('folio_charges').select('booking_id, amount').eq('department', dept).in('booking_id', departures.map(d => d.id));
         let billsHtml = '', hasBills = false;
-        departures.forEach(d => {
-           const totalOwed = (charges?.filter(c => c.booking_id === d.id) || []).reduce((sum, c) => sum + Number(c.amount), 0);
-           if (totalOwed > 0) { hasBills = true; billsHtml += `<div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">${dept} Bill</p></div></div>`; }
-        });
+        departures.forEach(d => { const totalOwed = (charges?.filter(c => c.booking_id === d.id) || []).reduce((sum, c) => sum + Number(c.amount), 0); if (totalOwed > 0) { hasBills = true; billsHtml += `<div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700"><div><p class="font-bold text-white text-sm">Room ${d.rooms.room_number} - ${d.guests.full_name}</p><p class="text-[10px] text-amber-400 font-bold uppercase mt-1">Checking out today</p></div><div class="text-right"><p class="font-bold text-amber-400">₦${totalOwed.toLocaleString()}</p><p class="text-[9px] text-slate-500 uppercase">${dept} Bill</p></div></div>`; } });
         if (hasBills) list.innerHTML = billsHtml;
         else list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No ${dept.toLowerCase()} bills owed by checking-out guests today.</p>`;
       } else { list.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No guests checking out today.</p>'; }
-     
       lucide.createIcons();
     }
 
-    // ==========================================
-    // STANDARD VIEW (PREMIUM HILTON-STYLE DESIGN)
-    // ==========================================
     function renderStandardOperations(role) {
       const grid = document.getElementById('std-operations-grid');
       let buttons = '';
-
-      // Premium Glassmorphism Button Template (Gold/Champagne accents)
       const btn = (href, icon, color, bg, label) => `
         <a href="${href}" class="bg-slate-800/40 backdrop-blur-md p-4 rounded-3xl border border-slate-700/50 flex flex-col items-center justify-center gap-3 hover:bg-slate-700/60 active:scale-95 transition-all shadow-xl group cursor-pointer relative overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="${bg} p-3 rounded-2xl group-hover:scale-110 transition-transform duration-300 shadow-inner">
-                <i data-lucide="${icon}" class="w-6 h-6 ${color}"></i>
-            </div>
+            <div class="${bg} p-3 rounded-2xl group-hover:scale-110 transition-transform duration-300 shadow-inner"><i data-lucide="${icon}" class="w-6 h-6 ${color}"></i></div>
             <span class="text-xs font-bold text-slate-200 text-center leading-tight tracking-wide">${label}</span>
         </a>`;
-     
       const clockBtn = btn('attendance.html', 'clock', 'text-indigo-400', 'bg-indigo-500/20', 'Clock In/Out');
       const orderBtn = btn('order-board.html', 'bell', 'text-amber-400 animate-pulse', 'bg-amber-500/20', 'Live Orders');
       const auditBtn = btn('finance.html', 'bar-chart-2', 'text-amber-400', 'bg-amber-500/20', 'Audit & Finance');
       const maintenanceBtn = btn('maintenance.html', 'wrench', 'text-rose-400', 'bg-rose-500/20', 'Maintenance');
       const chatBtn = btn('internal-chat.html', 'message-square', 'text-amber-400', 'bg-amber-500/20', 'Staff Chat');
-     
-      if (role === 'super_admin') {
-          buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network');
-          buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff');
-      }
+      if (role === 'super_admin') { buttons += btn('super-admin.html', 'shield-check', 'text-yellow-400', 'bg-yellow-500/20', 'DEKY Network'); buttons += btn('super-manage-staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Super Manage Staff'); }
       else if (['md', 'admin', 'manager'].includes(role)) {
-          buttons += auditBtn;
-          buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit');
-          buttons += maintenanceBtn;
-          buttons += chatBtn;
-          buttons += btn('manage-highlights.html', 'image', 'text-rose-400', 'bg-rose-500/20', 'Manage Highlights');
-          buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In');
-          buttons += btn('checkout.html', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out');
-          buttons += btn('guest-history.html', 'users', 'text-indigo-400', 'bg-indigo-500/20', 'Guest Directory');
-          buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS');
-          buttons += orderBtn;
-          buttons += btn('admin-menu.html', 'coffee', 'text-amber-400', 'bg-amber-500/20', 'Menu Manager');
-          buttons += btn('payroll.html', 'banknote', 'text-emerald-400', 'bg-emerald-500/20', 'Payroll');
-          buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms');
-          buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff');
-          buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms');
-          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
-          buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager');
-          buttons += clockBtn;
-          buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal');
+          buttons += auditBtn; buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit'); buttons += maintenanceBtn; buttons += chatBtn; buttons += btn('manage-highlights.html', 'image', 'text-rose-400', 'bg-rose-500/20', 'Manage Highlights'); buttons += btn('checkin.html', 'log-in', 'text-blue-400', 'bg-blue-500/20', 'Check In'); buttons += btn('checkout.html', 'log-out', 'text-orange-400', 'bg-orange-500/20', 'Check Out'); buttons += btn('guest-history.html', 'users', 'text-indigo-400', 'bg-indigo-500/20', 'Guest Directory'); buttons += btn('pos.html', 'shopping-cart', 'text-teal-400', 'bg-teal-500/20', 'POS'); buttons += orderBtn; buttons += btn('admin-menu.html', 'coffee', 'text-amber-400', 'bg-amber-500/20', 'Menu Manager'); buttons += btn('payroll.html', 'banknote', 'text-emerald-400', 'bg-emerald-500/20', 'Payroll'); buttons += btn('manager-settings.html', 'settings', 'text-purple-400', 'bg-purple-500/20', 'Manage Rooms'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff'); buttons += btn('rooms.html', 'door-closed', 'text-blue-400', 'bg-blue-500/20', 'Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Stock Manager'); buttons += clockBtn; buttons += btn('guest-portal.html?room=101', 'smartphone', 'text-pink-400', 'bg-pink-500/20', 'Test Guest Portal');
       }
       else if (role === 'accountant') {
-          buttons += auditBtn;
-          buttons += btn('finance.html#reports', 'trending-up', 'text-indigo-400', 'bg-indigo-500/20', 'Reports & RevPAR');
-          buttons += btn('finance.html#md_report', 'file-text', 'text-cyan-400', 'bg-cyan-500/20', 'Report to MD');
-          buttons += btn('finance.html#expenses', 'shopping-bag', 'text-rose-400', 'bg-rose-500/20', 'Expenses & COGS');
-          buttons += btn('finance.html#folios', 'door-open', 'text-orange-400', 'bg-orange-500/20', 'Guest Folios');
-          buttons += btn('finance.html#kstock', 'chef-hat', 'text-indigo-400', 'bg-indigo-500/20', 'Kitchen Stock');
-          buttons += btn('finance.html#activity', 'users', 'text-blue-400', 'bg-blue-500/20', 'Staff Activity');
-          buttons += btn('finance.html#stockreq', 'file-plus', 'text-purple-400', 'bg-purple-500/20', 'Stock Requests');
-          buttons += btn('finance.html#badstock', 'alert-octagon', 'text-rose-400', 'bg-rose-500/20', 'Bad Stock');
-          buttons += btn('finance.html#credits', 'receipt', 'text-amber-400', 'bg-amber-500/20', 'Staff Debts');
-          buttons += btn('auditor.html', 'shield-alert', 'text-rose-400', 'bg-rose-500/20', 'Internal Audit');
-          buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit');
-          buttons += maintenanceBtn;
-          buttons += chatBtn;
-          buttons += btn('payroll.html', 'banknote', 'text-emerald-400', 'bg-emerald-500/20', 'Payroll');
-          buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List');
-          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
-          buttons += clockBtn;
+          buttons += auditBtn; buttons += btn('finance.html#reports', 'trending-up', 'text-indigo-400', 'bg-indigo-500/20', 'Reports & RevPAR'); buttons += btn('finance.html#md_report', 'file-text', 'text-cyan-400', 'bg-cyan-500/20', 'Report to MD'); buttons += btn('finance.html#expenses', 'shopping-bag', 'text-rose-400', 'bg-rose-500/20', 'Expenses & COGS'); buttons += btn('finance.html#folios', 'door-open', 'text-orange-400', 'bg-orange-500/20', 'Guest Folios'); buttons += btn('finance.html#kstock', 'chef-hat', 'text-indigo-400', 'bg-indigo-500/20', 'Kitchen Stock'); buttons += btn('finance.html#activity', 'users', 'text-blue-400', 'bg-blue-500/20', 'Staff Activity'); buttons += btn('finance.html#stockreq', 'file-plus', 'text-purple-400', 'bg-purple-500/20', 'Stock Requests'); buttons += btn('finance.html#badstock', 'alert-octagon', 'text-rose-400', 'bg-rose-500/20', 'Bad Stock'); buttons += btn('finance.html#credits', 'receipt', 'text-amber-400', 'bg-amber-500/20', 'Staff Debts'); buttons += btn('auditor.html', 'shield-alert', 'text-rose-400', 'bg-rose-500/20', 'Internal Audit'); buttons += btn('night-audit.html', 'moon', 'text-indigo-400', 'bg-indigo-500/20', 'Night Audit'); buttons += maintenanceBtn; buttons += chatBtn; buttons += btn('payroll.html', 'banknote', 'text-emerald-400', 'bg-emerald-500/20', 'Payroll'); buttons += btn('staff.html', 'users', 'text-cyan-400', 'bg-cyan-500/20', 'Staff List'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += clockBtn;
       }
       else if (role === 'supervisor') {
-          buttons += auditBtn;
-          buttons += maintenanceBtn;
-          buttons += chatBtn;
-          buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms');
-          buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance');
-          buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock');
-          buttons += clockBtn;
+          buttons += auditBtn; buttons += maintenanceBtn; buttons += chatBtn; buttons += btn('rooms.html', 'eye', 'text-purple-400', 'bg-purple-500/20', 'Inspect Rooms'); buttons += btn('attendance-report.html', 'clipboard-list', 'text-indigo-400', 'bg-indigo-500/20', 'Attendance'); buttons += btn('stock-manager.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Check Stock'); buttons += clockBtn;
       }
       else if (role === 'store_keeper') { buttons += btn('store.html', 'package', 'text-amber-400', 'bg-amber-500/20', 'Store'); buttons += chatBtn; buttons += clockBtn; }
       else if (role === 'laundry') { buttons += btn('laundry.html', 'shirt', 'text-blue-400', 'bg-blue-500/20', 'Laundry Hub'); buttons += maintenanceBtn; buttons += chatBtn; buttons += clockBtn; }
       else if (role === 'security') { buttons += btn('security-dashboard.html', 'shield', 'text-rose-400', 'bg-rose-500/20', 'Security Control'); buttons += chatBtn; buttons += clockBtn; }
       else { buttons += clockBtn; buttons += chatBtn; }
-
       grid.innerHTML = buttons; lucide.createIcons();
     }
 
     async function logout() {
-        clearInterval(heartbeatInterval);
-        clearInterval(orderCheckInterval);
+        clearInterval(heartbeatInterval); clearInterval(orderCheckInterval);
         if(hkRefreshInterval) clearInterval(hkRefreshInterval);
         if(recepOrdersInterval) clearInterval(recepOrdersInterval);
+        if(laundryRefreshInterval) clearInterval(laundryRefreshInterval);
         if(alertSoundInterval) clearInterval(alertSoundInterval);
         if (wakeLock !== null) wakeLock.release();
         localStorage.clear();
