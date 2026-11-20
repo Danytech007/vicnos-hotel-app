@@ -73,7 +73,6 @@
       <a href="rooms.html" class="bg-white p-3 rounded-2xl bank-card flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition"><i data-lucide="wrench" class="w-5 h-5 text-red-500"></i><p class="text-[9px] text-gray-500 font-bold uppercase text-center leading-tight mt-1">Repairs</p><p id="fd-ooo" class="text-lg font-extrabold text-gray-800">0</p></a>
     </div>
 
-    <!-- 3. LAUNDRY HUB (Inline Front Screen) -->
     <div class="bg-white p-5 rounded-3xl bank-card">
       <div class="flex justify-between items-center mb-4">
         <h2 class="font-bold text-gray-900 text-sm flex items-center gap-2"><i data-lucide="shirt" class="w-4 h-4 text-blue-500"></i> Laundry Orders</h2>
@@ -328,12 +327,12 @@
 
     async function addLaundryItem() {
       const name = document.getElementById('new-laundry-item').value;
-      const price = parseFloat(document.getElementById('new-laundry-item-price').value);
+      const price = parseFloat(document.getElementById('new-laundry-price').value);
       if (!name || !price) return alert("Enter both item name and price.");
       
       await db.from('laundry_services').insert({ item_name: name, price: price });
       document.getElementById('new-laundry-item').value = '';
-      document.getElementById('new-laundry-item-price').value = '';
+      document.getElementById('new-laundry-price').value = '';
       loadLaundryPrices();
     }
 
